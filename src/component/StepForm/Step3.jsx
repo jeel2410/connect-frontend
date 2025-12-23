@@ -1,0 +1,60 @@
+import React from 'react';
+import flag1 from "../../assets/image/flag1.png"
+import flag2 from "../../assets/image/flag2.png"
+import "../../styles/style.css"
+
+// const Step3 = ({ data, updateData }) => {
+//   return (
+//     <div className="step-content active">
+//       <h2 className="step-title">What's your Language</h2>
+//       <p className="step-description">Let others know about your languages</p>
+      
+//       <div className="form-group">
+//         <label>Occupation</label>
+//         <input
+//           type="text"
+//           value={data.occupation || ''}
+//           onChange={(e) => updateData('occupation', e.target.value)}
+//           placeholder="Software Engineer"
+//         />
+//       </div>
+//     </div>
+//   );
+// };
+const Step3 = ({ data, updateData }) => {
+  const languages = [
+    { id: 'english', name: 'English', flag: flag1 },
+    { id: 'spanish', name: 'Spanish', flag: flag2 }
+  ];
+
+  const selectedLanguage = data.language || '';
+
+  const selectLanguage = (langId) => {
+    updateData('language', langId);
+  };
+
+  return (
+    <div className="step-content active">
+      <h2 className="step-title">What's your Language</h2>
+      <p className="step-description">Let others know about your languages</p>
+      
+      <div className="language-selection">
+        {languages.map((lang) => (
+          <div
+            key={lang.id}
+            className={`language-option ${selectedLanguage === lang.id ? 'selected' : ''}`}
+            onClick={() => selectLanguage(lang.id)}
+          >
+            <img src={lang.flag} className="language-flag"></img>
+            <span className="language-name">{lang.name}</span>
+            <div className="language-radio">
+              {selectedLanguage === lang.id && <span className="radio-dot"></span>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default Step3;
