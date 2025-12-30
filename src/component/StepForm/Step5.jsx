@@ -1,7 +1,7 @@
 import React from 'react';
 import "../../styles/style.css"
 
-const Step5 = ({ data, updateData }) => {
+const Step5 = ({ data, updateData, errors, touched }) => {
    const interestOption = [
      'Shopping',
      'Music',
@@ -19,6 +19,7 @@ const Step5 = ({ data, updateData }) => {
       ? currentInterest.filter(i => i !== interest)
       : [...currentInterest, interest];
     updateData('interest', newInterest);
+    updateData('_touched_interest', true);
   };
 
   return ( 
@@ -40,6 +41,9 @@ const Step5 = ({ data, updateData }) => {
           ))}
         </div>
       </div>
+      {touched?.interest && errors?.interest && (
+        <div className="field-error-message">{errors.interest}</div>
+      )}
     </div> 
   ); 
 };

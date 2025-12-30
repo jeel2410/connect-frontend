@@ -21,7 +21,7 @@ import "../../styles/style.css"
 //     </div>
 //   );
 // };
-const Step3 = ({ data, updateData }) => {
+const Step3 = ({ data, updateData, errors, touched }) => {
   const languages = [
     { id: 'english', name: 'English', flag: flag1 },
     { id: 'spanish', name: 'Spanish', flag: flag2 }
@@ -31,6 +31,7 @@ const Step3 = ({ data, updateData }) => {
 
   const selectLanguage = (langId) => {
     updateData('language', langId);
+    updateData('_touched_language', true);
   };
 
   return (
@@ -53,6 +54,9 @@ const Step3 = ({ data, updateData }) => {
           </div>
         ))}
       </div>
+      {touched?.language && errors?.language && (
+        <div className="field-error-message">{errors.language}</div>
+      )}
     </div>
   );
 };

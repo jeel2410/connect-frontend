@@ -1,7 +1,7 @@
 import React from 'react';
 import "../../styles/style.css"
 
-const Step6 = ({ data, updateData }) => {
+const Step6 = ({ data, updateData, errors, touched }) => {
    const skillOption = [
      'Darlene Roberston',
      'Robert Fox',
@@ -17,6 +17,7 @@ const Step6 = ({ data, updateData }) => {
       ? currentSkill.filter(s => s !== skill)
       : [...currentSkill, skill];
     updateData('skill', newSkill);
+    updateData('_touched_skill', true);
   };
 
   return ( 
@@ -38,6 +39,9 @@ const Step6 = ({ data, updateData }) => {
           ))}
         </div>
       </div>
+      {touched?.skill && errors?.skill && (
+        <div className="field-error-message">{errors.skill}</div>
+      )}
     </div> 
   ); 
 };

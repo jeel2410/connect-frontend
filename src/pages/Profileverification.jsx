@@ -1,29 +1,202 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import { useNavigate, useLocation } from "react-router-dom";
 import "../../src/styles/style.css"
 import ProgressSteps from "../../src/component/StepForm/ProgressSteps";
 import FormNavigation from "../../src/component/StepForm/FormNavigation";
 import Step1 from "../../src/component/StepForm/Step1"
 import Step2 from "../../src/component/StepForm/Step2";
 import Step3 from "../../src/component/StepForm/Step3";
-
 import Step4 from "../../src/component/StepForm/Step4";
 import Step5 from "../../src/component/StepForm/Step5";
 import Step6 from "../../src/component/StepForm/Step6";
 import Step7 from "../../src/component/StepForm/Step7";
 import AuthImage from "../component/AuthImage";
 import logo from "../../src/assets/image/connect_logo.png";
+import { getCookie, setCookie, isAuthenticated } from "../utils/auth";
 
 const Profileverification = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
+  const [success, setSuccess] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
   const totalSteps = 7;
 
+  // Redirect if profile is already complete
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate("/", { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Get phone number from location state or localStorage
+  const phoneNumber = location.state?.phoneNumber || localStorage.getItem("phoneNumber") || "";
+
+  // Validation schema using Yup
+  const validationSchema = Yup.object().shape({
+    mobileNumber: Yup.string().required("Mobile number is required"),
+    fullName: Yup.string().required("Full name is required").min(2, "Full name must be at least 2 characters"),
+    city: Yup.string().required("City is required"),
+    religion: Yup.string().required("Religion is required"),
+    maritalStatus: Yup.string().required("Status is required"),
+    password: Yup.string()
+      .required("Password is required")
+      .min(6, "Password must be at least 6 characters"),
+    confirmPassword: Yup.string()
+      .required("Confirm password is required")
+      .oneOf([Yup.ref('password')], "Passwords must match"),
+    email: Yup.string()
+      .email("Invalid email address")
+      .required("Email is required"),
+    gender: Yup.string().required("Gender is required"),
+    birthDate: Yup.string().required("Date of birth is required").nullable(),
+    language: Yup.string().required("Preferred language is required"),
+    habits: Yup.array().min(1, "Please select at least one habit"),
+    interest: Yup.array().min(1, "Please select at least one interest"),
+    skill: Yup.array().min(1, "Please select at least one skill"),
+    photo: Yup.mixed()
+      .required("Profile image is required")
+      .test("fileSize", "File size must be less than 5MB", (value) => {
+        if (!value) return false;
+        if (value instanceof File) {
+          return value.size <= 5 * 1024 * 1024;
+        }
+        return true;
+      }),
+  });
+
+  const formik = useFormik({
+    initialValues: {
+      mobileNumber: phoneNumber || "",
+      fullName: "",
+      city: "",
+      religion: "",
+      maritalStatus: "",
+      password: "",
+      confirmPassword: "",
+      email: "",
+      gender: "",
+      birthDate: "",
+      language: "",
+      habits: [],
+      interest: [],
+      skill: [],
+      photo: null,
+    },
+    validationSchema: validationSchema,
+    enableReinitialize: true,
+    onSubmit: async (values, { setSubmitting, setFieldError }) => {
+      setApiError("");
+      setSuccess("");
+      setLoading(true);
+      setSubmitting(true);
+
+      try {
+        // Get auth token from cookie
+        const token = getCookie("authToken");
+        if (!token) {
+          throw new Error("Authentication required. Please login again.");
+        }
+
+        // Prepare FormData for file upload
+        const formData = new FormData();
+        
+        // Add text fields
+        formData.append("fullName", values.fullName);
+        formData.append("city", values.city);
+        formData.append("religion", values.religion);
+        formData.append("status", values.maritalStatus);
+        formData.append("gender", values.gender);
+        formData.append("dateOfBirth", values.birthDate || "");
+        formData.append("habits", (values.habits || []).join(","));
+        formData.append("interests", (values.interest || []).join(","));
+        formData.append("skills", (values.skill || []).join(","));
+        formData.append("preferredLanguage", values.language);
+        formData.append("email", values.email);
+        formData.append("password", values.password);
+
+        // Add profile image if it's a file
+        if (values.photo) {
+          // If photo is base64, convert to blob
+          if (typeof values.photo === 'string' && values.photo.startsWith('data:')) {
+            const response = await fetch(values.photo);
+            const blob = await response.blob();
+            formData.append("profileImage", blob, "profile.jpg");
+          } else if (values.photo instanceof File) {
+            formData.append("profileImage", values.photo);
+          }
+        }
+
+        const response = await fetch("http://localhost:5000/api/user/profile", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to complete profile. Please try again.");
+        }
+
+        // Update isProfileComplete to true in cookies
+        setCookie("isProfileComplete", "true", 7);
+
+        // Success
+        setSuccess("Profile completed successfully! Redirecting...");
+        
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+
+      } catch (err) {
+        setApiError(err.message || "Something went wrong. Please try again.");
+      } finally {
+        setLoading(false);
+        setSubmitting(false);
+      }
+    },
+  });
+
+  // Update formik values when phone number is available
+  useEffect(() => {
+    if (phoneNumber && !formik.values.mobileNumber) {
+      formik.setFieldValue("mobileNumber", phoneNumber);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phoneNumber]);
+
   const updateData = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field.startsWith("_touched_")) {
+      const actualField = field.replace("_touched_", "");
+      formik.setFieldTouched(actualField, true);
+    } else {
+      formik.setFieldValue(field, value);
+    }
   };
 
   const nextStep = () => {
-    if (currentStep < totalSteps) {
+    // Validate current step before proceeding
+    const currentStepFields = getStepFields(currentStep);
+    
+    // Mark all fields in current step as touched to show errors
+    currentStepFields.forEach(field => {
+      formik.setFieldTouched(field, true);
+    });
+
+    // Check if there are any errors for current step fields
+    const hasErrors = currentStepFields.some(field => {
+      return formik.errors[field];
+    });
+
+    // Only proceed if no errors and not on last step
+    if (!hasErrors && currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -34,27 +207,47 @@ const Profileverification = () => {
     }
   };
 
+  const getStepFields = (step) => {
+    switch (step) {
+      case 1:
+        return ['fullName', 'city', 'religion', 'maritalStatus', 'password', 'confirmPassword'];
+      case 2:
+        return ['email', 'gender', 'birthDate'];
+      case 3:
+        return ['language'];
+      case 4:
+        return ['habits'];
+      case 5:
+        return ['interest'];
+      case 6:
+        return ['skill'];
+      case 7:
+        return ['photo'];
+      default:
+        return [];
+    }
+  };
+
   const handleSubmit = () => {
-    console.log("Form submitted:", formData);
-    alert("Form submitted successfully!");
+    formik.handleSubmit();
   };
 
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <Step1 data={formData} updateData={updateData} />;
+        return <Step1 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} phoneNumber={phoneNumber} />;
       case 2:
-        return <Step2 data={formData} updateData={updateData} />;
+        return <Step2 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
       case 3:
-        return <Step3 data={formData} updateData={updateData} />;
+        return <Step3 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
       case 4:
-        return <Step4 data={formData} updateData={updateData} />;
+        return <Step4 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
       case 5:
-        return <Step5 data={formData} updateData={updateData} />;
+        return <Step5 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
       case 6:
-        return <Step6 data={formData} updateData={updateData} />;
+        return <Step6 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
       case 7:
-        return <Step7 data={formData} />;
+        return <Step7 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
       default:
         return;
     }
@@ -68,14 +261,30 @@ const Profileverification = () => {
         <div className="container">
           <div className="form-card">
             <div className="form-header">
-              <img src={logo} className="logo-image"></img>
+              <img src={logo} className="logo-image" alt="Connect Logo"></img>
               <ProgressSteps
                 currentStep={currentStep}
                 totalSteps={totalSteps}
               />
             </div>
 
-            <div className="form-content">{renderStep()}</div>
+            <div className="form-content">
+              {renderStep()}
+              
+              {/* API Error Message */}
+              {apiError && (
+                <div className="message-error">
+                  {apiError}
+                </div>
+              )}
+
+              {/* Success Message */}
+              {success && (
+                <div className="message-success">
+                  {success}
+                </div>
+              )}
+            </div>
 
             <FormNavigation
               currentStep={currentStep}
@@ -83,6 +292,7 @@ const Profileverification = () => {
               onNext={nextStep}
               onPrevious={prevStep}
               onSubmit={handleSubmit}
+              loading={loading || formik.isSubmitting}
             />
           </div>
         </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import "../../styles/style.css"
 
-const Step4 = ({ data, updateData }) => {
+const Step4 = ({ data, updateData, errors, touched }) => {
   const habitOptions = [
     'Regular Smoker',
     'Non Smoker',
@@ -19,6 +19,7 @@ const Step4 = ({ data, updateData }) => {
       ? currentHabits.filter(h => h !== habit)
       : [...currentHabits, habit];
     updateData('habits', newHabits);
+    updateData('_touched_habits', true);
   };
 
   return ( 
@@ -40,6 +41,9 @@ const Step4 = ({ data, updateData }) => {
           ))}
         </div>
       </div>
+      {touched?.habits && errors?.habits && (
+        <div className="field-error-message">{errors.habits}</div>
+      )}
     </div> 
   ); 
 };
