@@ -5,6 +5,7 @@ import AuthImage from "../component/AuthImage"
 import logo from "../../src/assets/image/connect_logo.png"
 import { useNavigate, useLocation } from "react-router-dom";
 import { setCookie } from "../utils/auth";
+import API_BASE_URL from "../utils/config";
 
 const OtpVerification = () => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -46,7 +47,7 @@ const OtpVerification = () => {
       }
 
       try {
-        const response = await fetch("http://localhost:5000/api/auth/verify-otp", {
+        const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -105,7 +106,7 @@ const OtpVerification = () => {
       } catch (err) {
         // Handle network errors (Failed to fetch)
         if (err.message === "Failed to fetch" || err.name === "TypeError") {
-          setApiError("Unable to connect to server. Please check if the server is running on http://localhost:5000");
+          setApiError(`Unable to connect to server. Please check if the server is running on ${API_BASE_URL}`);
           setFieldError("otp", "Server connection failed. Please try again later.");
         } else {
           setApiError(err.message || "Something went wrong. Please try again.");
@@ -202,7 +203,7 @@ const OtpVerification = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/send-otp", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/send-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -231,7 +232,7 @@ const OtpVerification = () => {
     } catch (err) {
       // Handle network errors (Failed to fetch)
       if (err.message === "Failed to fetch" || err.name === "TypeError") {
-        setApiError("Unable to connect to server. Please check if the server is running on http://localhost:5000");
+        setApiError(`Unable to connect to server. Please check if the server is running on ${API_BASE_URL}`);
       } else {
         setApiError(err.message || "Failed to resend OTP. Please try again.");
       }

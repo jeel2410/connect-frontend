@@ -7,6 +7,7 @@ import mobileIcon from "../../src/assets/image/mobile.png";
 import passwordIcon from "../../src/assets/image/password.png";
 import { useNavigate } from "react-router-dom";
 import { setCookie } from "../utils/auth";
+import API_BASE_URL from "../utils/config";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -38,7 +39,7 @@ const Login = () => {
       setSubmitting(true);
 
       try {
-        const response = await fetch("http://localhost:5000/api/auth/login-with-email", {
+        const response = await fetch(`${API_BASE_URL}/api/auth/login-with-email`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

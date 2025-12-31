@@ -15,6 +15,7 @@ import Step7 from "../../src/component/StepForm/Step7";
 import AuthImage from "../component/AuthImage";
 import logo from "../../src/assets/image/connect_logo.png";
 import { getCookie, setCookie, isAuthenticated } from "../utils/auth";
+import API_BASE_URL from "../utils/config";
 
 const Profileverification = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -131,7 +132,7 @@ const Profileverification = () => {
           }
         }
 
-        const response = await fetch("http://localhost:5000/api/user/profile", {
+        const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,
