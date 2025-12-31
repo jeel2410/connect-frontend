@@ -33,10 +33,44 @@ export const getProfileStatus = () => {
   return getCookie("isProfileComplete") === "true";
 };
 
+// Get user profile from cookie
+export const getUserProfile = () => {
+  const profileJson = getCookie("userProfile");
+  if (profileJson) {
+    try {
+      return JSON.parse(profileJson);
+    } catch (error) {
+      console.error("Error parsing user profile from cookie:", error);
+      return null;
+    }
+  }
+  return null;
+};
+
+// Get user current location from cookie
+export const getUserCurrentLocation = () => {
+  const locationJson = getCookie("userCurrentLocation");
+  if (locationJson) {
+    try {
+      return JSON.parse(locationJson);
+    } catch (error) {
+      console.error("Error parsing user current location from cookie:", error);
+      return null;
+    }
+  }
+  return null;
+};
+
 // Logout function
 export const logout = () => {
   deleteCookie("authToken");
   deleteCookie("isProfileComplete");
+  deleteCookie("userProfile");
+  deleteCookie("userFullName");
+  deleteCookie("userEmail");
+  deleteCookie("userProfileImage");
+  deleteCookie("userPhoneNumber");
+  deleteCookie("userCurrentLocation");
   localStorage.removeItem("phoneNumber");
   window.location.href = "/Login";
 };

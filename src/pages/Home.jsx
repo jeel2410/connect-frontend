@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Heart, MessageCircle } from "lucide-react";
 import Header from "../component/Header";
 import heroImage from "../../src/assets/image/hero_man.png";
@@ -19,9 +19,14 @@ import bootstrapIcon from "../../src/assets/image/language/bootstrap.png";
 import Footer from "../component/Footer";
 import { useNavigate } from "react-router-dom";
 import Usercard from "../component/Usercard";
+import { getCookie, setCookie, getUserProfile } from "../utils/auth";
+import API_BASE_URL from "../utils/config";
 
 export default function Home() {
   const navigate = useNavigate();
+  const [feedData, setFeedData] = useState([]);
+  const [loadingFeed, setLoadingFeed] = useState(false);
+  
   const technologies = [
     { icon: htmlIcom },
     { icon: cssIcon },
@@ -30,6 +35,174 @@ export default function Home() {
     { icon: angularIcon },
     { icon: reactIcon },
   ];
+
+  // Fetch user profile data and then feed data when component mounts
+  useEffect(() => {
+    const fetchUserProfileAndFeed = async () => {
+      try {
+        // Check if user is authenticated
+        const token = getCookie("authToken");
+        if (!token) {
+          return; // User not authenticated, skip API call
+        }
+
+        // First, fetch user profile
+        const profileResponse = await fetch(`${API_BASE_URL}/api/user/profile`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!profileResponse.ok) {
+          // If unauthorized, user might need to login again
+          if (profileResponse.status === 401) {
+            console.error("Unauthorized: Please login again");
+            return;
+          }
+          throw new Error("Failed to fetch user profile");
+        }
+
+        const profileData = await profileResponse.json();
+
+        // Check if response is successful and has profile data
+        let userProfile = null;
+        if (profileData.success && profileData.data && profileData.data.profile) {
+          const profile = profileData.data.profile;
+          
+          // Save entire profile data to cookie as JSON
+          setCookie("userProfile", JSON.stringify(profile), 7);
+          userProfile = profile;
+          
+          // Optionally save individual fields for easier access
+          if (profile.fullName) {
+            setCookie("userFullName", profile.fullName, 7);
+          }
+          if (profile.email) {
+            setCookie("userEmail", profile.email, 7);
+          }
+          if (profile.profileImage) {
+            setCookie("userProfileImage", profile.profileImage, 7);
+          }
+          if (profile.phoneNumber) {
+            setCookie("userPhoneNumber", profile.phoneNumber, 7);
+          }
+          
+          // Store currentLocation if available
+          if (profile.currentLocation && profile.currentLocation.coordinates) {
+            const coordinates = profile.currentLocation.coordinates;
+            // Only store if coordinates are valid (not [0, 0])
+            if (coordinates.length >= 2 && (coordinates[0] !== 0 || coordinates[1] !== 0)) {
+              setCookie("userCurrentLocation", JSON.stringify({
+                longitude: coordinates[0],
+                latitude: coordinates[1]
+              }), 7);
+            }
+          }
+        }
+
+        // Now fetch feed data if profile is available
+        if (!userProfile || !userProfile.gender) {
+          console.warn("User profile or gender not found, skipping feed fetch");
+          return;
+        }
+
+        // Determine opposite gender
+        const userGender = userProfile.gender;
+        const oppositeGender = userGender === "Male" ? "Female" : userGender === "Female" ? "Male" : null;
+        
+        if (!oppositeGender) {
+          console.warn("Unable to determine opposite gender");
+          return;
+        }
+
+        setLoadingFeed(true);
+
+        // Get location coordinates - prioritize stored location from profile
+        let latitude = null;
+        let longitude = null;
+
+        // First, check if user profile has currentLocation stored
+        if (userProfile.currentLocation && userProfile.currentLocation.coordinates) {
+          const coordinates = userProfile.currentLocation.coordinates;
+          // Check if coordinates are valid (not [0, 0])
+          if (coordinates.length >= 2 && (coordinates[0] !== 0 || coordinates[1] !== 0)) {
+            // Note: coordinates array is typically [longitude, latitude] in GeoJSON format
+            longitude = coordinates[0];
+            latitude = coordinates[1];
+            console.log("Using stored location from profile:", { latitude, longitude });
+          }
+        }
+
+        // If no stored location, request browser geolocation
+        if (latitude === null || longitude === null) {
+          if (navigator.geolocation) {
+            try {
+              const position = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                  enableHighAccuracy: true,
+                  timeout: 10000,
+                  maximumAge: 0
+                });
+              });
+
+              latitude = position.coords.latitude;
+              longitude = position.coords.longitude;
+              console.log("Using browser geolocation:", { latitude, longitude });
+            } catch (error) {
+              console.log("Location permission denied or error:", error);
+              // Continue without location - will only pass gender
+            }
+          }
+        }
+
+        // Build query parameters
+        const queryParams = new URLSearchParams();
+        queryParams.append("gender", oppositeGender);
+        queryParams.append("page", "1");
+        queryParams.append("limit", "10");
+        
+        if (latitude !== null && longitude !== null) {
+          queryParams.append("latitude", latitude.toString());
+          queryParams.append("longitude", longitude.toString());
+        }
+
+        // Call the feed API
+        const feedResponse = await fetch(`${API_BASE_URL}/api/feed/web?${queryParams.toString()}`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!feedResponse.ok) {
+          if (feedResponse.status === 401) {
+            console.error("Unauthorized: Please login again");
+            return;
+          }
+          throw new Error("Failed to fetch feed data");
+        }
+
+        const feedData = await feedResponse.json();
+
+        // Check if response is successful and has feed data
+        if (feedData.success && feedData.data) {
+          // Handle different possible response structures
+          const feed = Array.isArray(feedData.data) ? feedData.data : (feedData.data.profiles || feedData.data.feed || []);
+          setFeedData(feed);
+        }
+      } catch (error) {
+        console.error("Error fetching user profile or feed data:", error);
+        // Silently fail - don't disrupt user experience
+      } finally {
+        setLoadingFeed(false);
+      }
+    };
+
+    fetchUserProfileAndFeed();
+  }, []); // Empty dependency array - run only once on mount
 
   return (
     <div>
@@ -170,9 +343,9 @@ export default function Home() {
               Latest <span className="title-highlight">Profile</span>
             </h1>
           </div>
-          <button className="view-more-btn">View More</button>
+          <button className="view-more-btn" onClick={() => navigate("/search")}>View More</button>
         </div>
-        <Usercard></Usercard>
+        <Usercard feedData={feedData} loading={loadingFeed}></Usercard>
       </div>
 
       {/* third section */}

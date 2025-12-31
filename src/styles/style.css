@@ -2336,14 +2336,23 @@
 .profile-image-wrapper {
   position: relative;
   margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
 }
 
 .profile-image {
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   object-fit: cover;
+  object-position: center;
   padding: 2px;
   border: 2px solid #EA650A;
   transition: all 0.3s ease;
+  display: block;
+  margin: 0 auto;
 }
 
 .profile-card:hover .profile-image {

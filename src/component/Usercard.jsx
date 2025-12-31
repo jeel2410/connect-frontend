@@ -1,82 +1,54 @@
 import React from "react";
-import profile1 from "../../src/assets/image/profile/profile1.png"
-import profile2 from "../../src/assets/image/profile/profile2.png";
-import profile3 from "../../src/assets/image/profile/profile3.png";
-import profile4 from "../../src/assets/image/profile/profile4.png";
-import profile5 from "../../src/assets/image/profile/profile5.png";
-import profile6 from "../../src/assets/image/profile/profile6.png";
-import profile7 from "../../src/assets/image/profile/profile7.png";
-import profile8 from "../../src/assets/image/profile/profile8.png";
+import profile1 from "../../src/assets/image/profile/profile1.png";
 import close from "../../src/assets/image/close.png";
 import heart from "../../src/assets/image/heart.png";
 import c from "../../src/assets/image/c.png";
-export default function Usercard() {
-      const profiles = [
-    {
-      id: 1,
-      name: "Martina Parker",
-      address: "2464 Royal Ln. Mesa",
-      image: profile1,
-      verified: false,
-      featured: false,
-    },
-    {
-      id: 2,
-      name: "Courtney Henry",
-      address: "Washington Manchester",
-      image: profile2,
-      verified: true,
-      featured: true,
-    },
-    {
-      id: 3,
-      name: "Jane Cooper",
-      address: "2118 Thornridge Syracuse",
-      image: profile3,
-      verified: false,
-      featured: false,
-    },
-    {
-      id: 4,
-      name: "Wade Warren",
-      address: "82 Preston Rd. Inglewood",
-      image: profile4,
-      verified: false,
-      featured: false,
-    },
-    {
-      id: 5,
-      name: "Arlene McCoy",
-      address: "2972 Woiner Rds. Santa",
-      image: profile5,
-      verified: false,
-      featured: false,
-    },
-    {
-      id: 6,
-      name: "Robert Fox",
-      address: "38 Ranchvs. Richardson",
-      image: profile6,
-      verified: false,
-      featured: false,
-    },
-    {
-      id: 7,
-      name: "Darrell Steward",
-      address: "6391 Elgin St. Celina",
-      image: profile7,
-      verified: false,
-      featured: false,
-    },
-    {
-      id: 8,
-      name: "Cameron Williamson",
-      address: "35 W. Gray St. Utica",
-      image: profile8,
-      verified: false,
-      featured: false,
-    },
-  ];
+
+export default function Usercard({ feedData = [], loading = false }) {
+  // Map feed data to profile format
+  const profiles = feedData && feedData.length > 0 
+    ? feedData.map((item, index) => ({
+        id: item._id || item.id || index + 1,
+        name: item.fullName || item.name || "Unknown",
+        address: item.city || item.address || "Location not available",
+        image: item.profileImage || item.image || profile1,
+        verified: item.verified || false,
+        featured: item.featured || false,
+      }))
+    : [];
+
+  if (loading) {
+    return (
+      <div className="profile-grid">
+        <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
+          Loading profiles...
+        </div>
+      </div>
+    );
+  }
+
+  // Show "No user found" message if no data
+  if (!profiles || profiles.length === 0) {
+    return (
+      <div className="profile-grid">
+        <div style={{ 
+          textAlign: "center", 
+          padding: "60px 20px", 
+          color: "#666",
+          width: "100%",
+          gridColumn: "1 / -1"
+        }}>
+          <div style={{ fontSize: "24px", fontWeight: "600", marginBottom: "12px", color: "#333" }}>
+            No Users Found
+          </div>
+          <div style={{ fontSize: "16px", color: "#999" }}>
+            Try adjusting your filters or search criteria
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="profile-grid">
@@ -95,13 +67,13 @@ export default function Usercard() {
 
             <div className="profile-actions">
               <button className="action-btn ">
-                <img src={close}></img>
+                <img src={close} alt="Close"></img>
               </button>
               <button className={`action-btn-2 heart-btn`}>
-                <img src={heart} className="heart-btn-icon"></img>
+                <img src={heart} className="heart-btn-icon" alt="Like"></img>
               </button>
               <button className="action-btn chat-btn">
-                <img src={c} className="chatbtn-icon"></img>
+                <img src={c} className="chatbtn-icon" alt="Chat"></img>
               </button>
             </div>
           </div>

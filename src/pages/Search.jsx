@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import "../../src/styles/style.css";
 import Header from "../component/Header"
@@ -8,19 +8,224 @@ import leftarrow from "../../src/assets/image/leftarrow (1).png"
 import rightarrow from "../../src/assets/image/rightarrow.png"
 import FilterModal from "../component/FilterModal";
 import Footer from "../component/Footer";
+import { getCookie, getUserProfile } from "../utils/auth";
+import API_BASE_URL from "../utils/config";
 
 
 const Search = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const totalPages = 3;
+  const [feedData, setFeedData] = useState([]);
+  const [loadingFeed, setLoadingFeed] = useState(false);
+  const [filters, setFilters] = useState({
+    ageMin: null,
+    ageMax: null,
+    gender: null,
+    language: null,
+    habits: null,
+    relationship: null
+  });
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    limit: 20,
+    totalCount: 0,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false
+  });
+
+  // Fetch feed data with pagination
+  useEffect(() => {
+    const fetchFeedData = async () => {
+      try {
+        // Check if user is authenticated
+        const token = getCookie("authToken");
+        if (!token) {
+          return; // User not authenticated, skip API call
+        }
+
+        // Get user profile to determine gender
+        const userProfile = getUserProfile();
+        if (!userProfile || !userProfile.gender) {
+          console.warn("User profile or gender not found");
+          return;
+        }
+
+        // Determine gender - use filter if set, otherwise use opposite gender
+        let genderFilter = filters.gender;
+        if (!genderFilter || genderFilter === "Any") {
+          const userGender = userProfile.gender;
+          genderFilter = userGender === "Male" ? "Female" : userGender === "Female" ? "Male" : null;
+        }
+        
+        if (!genderFilter) {
+          console.warn("Unable to determine gender");
+          return;
+        }
+
+        setLoadingFeed(true);
+
+        // Check if any filters are applied
+        const hasFilters = filters.ageMin !== null || filters.ageMax !== null || 
+                          filters.language !== null || filters.habits !== null || 
+                          filters.relationship !== null || 
+                          (filters.gender !== null && filters.gender !== "Any");
+
+        // Get location coordinates only if no filters are applied
+        let latitude = null;
+        let longitude = null;
+
+        if (!hasFilters) {
+          // First, check if user profile has currentLocation stored
+          if (userProfile.currentLocation && userProfile.currentLocation.coordinates) {
+            const coordinates = userProfile.currentLocation.coordinates;
+            // Check if coordinates are valid (not [0, 0])
+            if (coordinates.length >= 2 && (coordinates[0] !== 0 || coordinates[1] !== 0)) {
+              // Note: coordinates array is typically [longitude, latitude] in GeoJSON format
+              longitude = coordinates[0];
+              latitude = coordinates[1];
+            }
+          }
+
+          // If no stored location, request browser geolocation
+          if (latitude === null || longitude === null) {
+            if (navigator.geolocation) {
+              try {
+                const position = await new Promise((resolve, reject) => {
+                  navigator.geolocation.getCurrentPosition(resolve, reject, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                  });
+                });
+
+                latitude = position.coords.latitude;
+                longitude = position.coords.longitude;
+              } catch (error) {
+                console.log("Location permission denied or error:", error);
+                // Continue without location - will only pass gender
+              }
+            }
+          }
+        }
+
+        // Build query parameters
+        const queryParams = new URLSearchParams();
+        queryParams.append("gender", genderFilter);
+        queryParams.append("page", currentPage.toString());
+        queryParams.append("limit", "20");
+        
+        // Only add location if no filters are applied
+        if (!hasFilters && latitude !== null && longitude !== null) {
+          queryParams.append("latitude", latitude.toString());
+          queryParams.append("longitude", longitude.toString());
+        }
+
+        // Add filter parameters if they exist
+        if (filters.ageMin !== null && filters.ageMin !== undefined) {
+          queryParams.append("ageMin", filters.ageMin.toString());
+        }
+        if (filters.ageMax !== null && filters.ageMax !== undefined) {
+          queryParams.append("ageMax", filters.ageMax.toString());
+        }
+        if (filters.language) {
+          queryParams.append("language", filters.language);
+        }
+        if (filters.habits) {
+          queryParams.append("habits", filters.habits);
+        }
+        if (filters.relationship) {
+          queryParams.append("relationship", filters.relationship);
+        }
+
+        // Call the feed API
+        const feedResponse = await fetch(`${API_BASE_URL}/api/feed/web?${queryParams.toString()}`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!feedResponse.ok) {
+          if (feedResponse.status === 401) {
+            console.error("Unauthorized: Please login again");
+            return;
+          }
+          throw new Error("Failed to fetch feed data");
+        }
+
+        const feedDataResponse = await feedResponse.json();
+
+        // Check if response is successful and has feed data
+        if (feedDataResponse.success && feedDataResponse.data) {
+          const profiles = feedDataResponse.data.profiles || [];
+          const paginationData = feedDataResponse.data.pagination || {};
+          
+          setFeedData(profiles);
+          setPagination({
+            currentPage: paginationData.currentPage || currentPage,
+            limit: paginationData.limit || 20,
+            totalCount: paginationData.totalCount || 0,
+            totalPages: paginationData.totalPages || 1,
+            hasNextPage: paginationData.hasNextPage || false,
+            hasPrevPage: paginationData.hasPrevPage || false
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching feed data:", error);
+        // Silently fail - don't disrupt user experience
+      } finally {
+        setLoadingFeed(false);
+      }
+    };
+
+    fetchFeedData();
+  }, [currentPage, filters]); // Re-fetch when page or filters change
 
   const handlePrevPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
+    if (pagination.hasPrevPage) {
+      setCurrentPage(currentPage - 1);
+    }
   };
 
   const handleNextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+    if (pagination.hasNextPage) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handleApplyFilters = (appliedFilters) => {
+    // Convert ageRange to ageMin and ageMax
+    const newFilters = {
+      ageMin: appliedFilters.ageRange ? appliedFilters.ageRange[0] : null,
+      ageMax: appliedFilters.ageRange ? appliedFilters.ageRange[1] : null,
+      gender: appliedFilters.gender && appliedFilters.gender !== "Any" ? appliedFilters.gender : null,
+      language: appliedFilters.language || null,
+      habits: appliedFilters.habits || null,
+      relationship: appliedFilters.relationship || null
+    };
+    
+    setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when filters are applied
+    setIsFilterOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      ageMin: null,
+      ageMax: null,
+      gender: null,
+      language: null,
+      habits: null,
+      relationship: null
+    });
+    setCurrentPage(1); // Reset to first page when filters are cleared
+    setIsFilterOpen(false);
   };
 
   return (
@@ -30,6 +235,8 @@ const Search = () => {
         <FilterModal
           isOpen={isFilterOpen}
           onClose={() => setIsFilterOpen(false)}
+          onApply={handleApplyFilters}
+          onClear={handleClearFilters}
         />
 
         <header className="header-search">
@@ -77,7 +284,7 @@ const Search = () => {
         <main className="main-content">
           <div className="content-header">
             <h1 className="page-title">
-              <span className="highlight">375</span> User Available Now
+              <span className="highlight">{pagination.totalCount}</span> User Available Now
             </h1>
             <button
               className="filter-btn"
@@ -87,37 +294,39 @@ const Search = () => {
               Filter
             </button>
           </div>
-          <Usercard></Usercard>
+          <Usercard feedData={feedData} loading={loadingFeed}></Usercard>
 
-          <div className="pagination">
-            <button
-              className="pagination-arrow"
-              onClick={handlePrevPage}
-              disabled={currentPage === 1}
-            >
-             <img src={leftarrow}></img>
-            </button>
-
-            {[1, 2, 3].map((page) => (
+          {pagination.totalPages > 1 && (
+            <div className="pagination">
               <button
-                key={page}
-                className={`pagination-number ${
-                  currentPage === page ? "active" : ""
-                }`}
-                onClick={() => setCurrentPage(page)}
+                className="pagination-arrow"
+                onClick={handlePrevPage}
+                disabled={!pagination.hasPrevPage}
               >
-                {page}
+               <img src={leftarrow} alt="Previous page"></img>
               </button>
-            ))}
 
-            <button
-              className="pagination-arrow"
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-            >
-             <img src={rightarrow}></img>
-            </button>
-          </div>
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  className={`pagination-number ${
+                    currentPage === page ? "active" : ""
+                  }`}
+                  onClick={() => handlePageChange(page)}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                className="pagination-arrow"
+                onClick={handleNextPage}
+                disabled={!pagination.hasNextPage}
+              >
+               <img src={rightarrow} alt="Next page"></img>
+              </button>
+            </div>
+          )}
         </main>
       </div>
     <Footer></Footer>

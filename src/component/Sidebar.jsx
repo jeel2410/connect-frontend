@@ -9,19 +9,26 @@ import chatIcon from "../../src/assets/image/profileicon/chat.png";
 import likeActiveIcon from "../../src/assets/image/profileicon/like_white.png";
 import likeIcon from "../../src/assets/image/profileicon/like.png";
 import { useNavigate, useLocation } from "react-router-dom";
+import { getUserProfile } from "../utils/auth";
 
-export default function Sidebar() {
+export default function Sidebar({ profileData = null }) {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Get profile data from prop or from cookies
+  const cachedProfile = profileData || getUserProfile();
+  
+  const displayName = cachedProfile?.fullName || "User";
+  const displayImage = cachedProfile?.profileImage || profileImage;
 
   return (
     <div>
       <div className="dating-profile-sidebar">
         <div className="dating-profile-image-container">
           <div className="dating-profile-sidebar-avatar">
-            <img src={profileImage} alt="Profile" />
+            <img src={displayImage} alt="Profile" />
           </div>
-          <h3 className="dating-profile-sidebar-name">Amelia Sutton</h3>
+          <h3 className="dating-profile-sidebar-name">{displayName}</h3>
         </div>
 
         <nav className="dating-profile-sidebar-nav">

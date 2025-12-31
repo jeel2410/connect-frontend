@@ -1,7 +1,7 @@
 import { useState } from "react";
 import closeICon from "../../src/assets/image/close_icon.png";
 import { X } from "lucide-react";
-const FilterModal = ({ isOpen, onClose }) => {
+const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
   const [ageRange, setAgeRange] = useState([0, 100]);
   const [gender, setGender] = useState("Male");
   const [habits, setHabits] = useState("Get Serious");
@@ -219,10 +219,38 @@ const FilterModal = ({ isOpen, onClose }) => {
         </div>
 
         <div className="modal-footer">
-          <button className="btn-clear" onClick={onClose}>
+          <button className="btn-clear" onClick={() => {
+            // Reset all filters
+            setAgeRange([0, 100]);
+            setGender("Any");
+            setHabits("");
+            setInterests([]);
+            setLanguage("");
+            setRelationship("");
+            setReligion("");
+            if (onClear) {
+              onClear();
+            } else {
+              onClose();
+            }
+          }}>
             Clear
           </button>
-          <button className="btn-apply" onClick={onClose}>
+          <button className="btn-apply" onClick={() => {
+            if (onApply) {
+              onApply({
+                ageRange,
+                gender,
+                habits,
+                interests,
+                language,
+                relationship,
+                religion
+              });
+            } else {
+              onClose();
+            }
+          }}>
             Apply
           </button>
         </div>
