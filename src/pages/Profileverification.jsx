@@ -181,7 +181,7 @@ const Profileverification = () => {
     }
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
     // Validate current step before proceeding
     const currentStepFields = getStepFields(currentStep);
     
@@ -190,10 +190,25 @@ const Profileverification = () => {
       formik.setFieldTouched(field, true);
     });
 
-    // Check if there are any errors for current step fields
-    const hasErrors = currentStepFields.some(field => {
-      return formik.errors[field];
-    });
+    // Validate each field in the current step using the full schema
+    let hasErrors = false;
+    const validationErrors = {};
+
+    for (const field of currentStepFields) {
+      try {
+        // Validate this specific field using validateAt
+        await validationSchema.validateAt(field, formik.values);
+        // Clear error if validation passes
+        if (formik.errors[field]) {
+          formik.setFieldError(field, undefined);
+        }
+      } catch (error) {
+        // Validation failed for this field
+        hasErrors = true;
+        validationErrors[field] = error.message;
+        formik.setFieldError(field, error.message);
+      }
+    }
 
     // Only proceed if no errors and not on last step
     if (!hasErrors && currentStep < totalSteps) {

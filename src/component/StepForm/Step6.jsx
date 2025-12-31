@@ -22,7 +22,7 @@ const Step6 = ({ data, updateData, errors, touched }) => {
 
   return ( 
     <div className="step-content active"> 
-      <h2 className="step-title">What's your interest?</h2> 
+      <h2 className="step-title">What's your Skills?</h2> 
       <p className="step-description">Let others know about your habits</p> 
        
       <div className="form-group">
