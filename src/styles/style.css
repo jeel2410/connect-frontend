@@ -1875,6 +1875,17 @@
 .search-field {
   flex: 1;
   border-right: 1px solid #E6EFFB;
+  min-width: 0;
+  padding-right: 30px;
+}
+
+.search-field:first-child {
+  flex: 1.5;
+  min-width: 200px;
+}
+
+.search-field:nth-child(2) {
+  min-width: 180px;
 }
 
 .search-label {
@@ -1886,16 +1897,84 @@
   margin-bottom: 9px;
 }
 
-.search-input,
-.search-select {
+.search-input {
   width: 100%;
-  /* padding: 10px 16px; */
   border: none;
   outline: none;
   transition: all 0.2s;
   background-color: white;
   font-size: 18px;
   font-family: 'Inter',sans-serif;
+  font-weight: 400;
+  min-width: 0;
+}
+
+.search-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-select-wrapper::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2325396F' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+  transition: transform 0.2s ease;
+}
+
+.search-select-wrapper:focus-within::after {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.search-select {
+  width: 100%;
+  border: none;
+  outline: none;
+  transition: all 0.2s;
+  background-color: white;
+  font-size: 18px;
+  font-family: 'Inter',sans-serif;
+  font-weight: 400;
+  color: #25396F;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 24px;
+  min-width: 0;
+}
+
+.search-select:hover {
+  color: #EA650A;
+}
+
+.search-select:focus {
+  color: #EA650A;
+  outline: none;
+}
+
+.search-select option {
+  padding: 12px 16px;
+  background-color: white;
+  color: #25396F;
+  font-size: 16px;
+  font-family: 'Inter',sans-serif;
+}
+
+.search-select option:first-child {
+  color: #7487B6;
+  font-weight: 400;
+}
+
+.search-select option:not(:first-child) {
+  color: #25396F;
   font-weight: 400;
 }
 
@@ -1904,6 +1983,7 @@
 .search-button-wrapper {
   display: flex;
   align-items: flex-end;
+  flex-shrink: 0;
 }
 
 .search-button {

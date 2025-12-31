@@ -77,12 +77,15 @@ export default function Home() {
 
                   <div className="search-field">
                     <label className="search-label">Job Type</label>
-                    <select className="search-select">
-                      <option>Software Developer</option>
-                      <option>Designer</option>
-                      <option>Marketing</option>
-                      <option>Sales</option>
-                    </select>
+                    <div className="search-select-wrapper">
+                      <select className="search-select">
+                        <option value="">Select Job Type</option>
+                        <option value="software-developer">Software Developer</option>
+                        <option value="designer">Designer</option>
+                        <option value="marketing">Marketing</option>
+                        <option value="sales">Sales</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div className="search-button-wrapper">
@@ -132,7 +135,7 @@ export default function Home() {
                   <div className="review-text">
                     <div className="rating">
                       <span className="rating-value">4.9</span>
-                      <spa className="review-count">(370 review)</spa>
+                      <span className="review-count">(370 review)</span>
                     </div>
                   </div>
                 </div>

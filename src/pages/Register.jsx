@@ -83,11 +83,20 @@ const Register = () => {
           }),
         });
 
-        const data = await response.json();
-
+        // Check if response is ok before parsing JSON
         if (!response.ok) {
-          throw new Error(data.message || "Failed to send OTP. Please try again.");
+          let errorMessage = "Failed to send OTP. Please try again.";
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+          } catch (parseError) {
+            // If JSON parsing fails, use status text
+            errorMessage = response.statusText || errorMessage;
+          }
+          throw new Error(errorMessage);
         }
+
+        const data = await response.json();
 
         // Success
         setSuccess("OTP sent successfully! Please check your phone.");
@@ -103,8 +112,14 @@ const Register = () => {
         }, 1500);
 
       } catch (err) {
-        setApiError(err.message || "Something went wrong. Please try again.");
-        setFieldError("phoneNumber", err.message || "Failed to send OTP");
+        // Handle network errors (Failed to fetch)
+        if (err.message === "Failed to fetch" || err.name === "TypeError") {
+          setApiError("Unable to connect to server. Please check if the server is running on http://localhost:5000");
+          setFieldError("phoneNumber", "Server connection failed. Please try again later.");
+        } else {
+          setApiError(err.message || "Something went wrong. Please try again.");
+          setFieldError("phoneNumber", err.message || "Failed to send OTP");
+        }
       } finally {
         setLoading(false);
         setSubmitting(false);

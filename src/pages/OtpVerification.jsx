@@ -57,11 +57,20 @@ const OtpVerification = () => {
           }),
         });
 
-        const data = await response.json();
-
+        // Check if response is ok before parsing JSON
         if (!response.ok) {
-          throw new Error(data.message || "Invalid OTP. Please try again.");
+          let errorMessage = "Invalid OTP. Please try again.";
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+          } catch (parseError) {
+            // If JSON parsing fails, use status text
+            errorMessage = response.statusText || errorMessage;
+          }
+          throw new Error(errorMessage);
         }
+
+        const data = await response.json();
 
         // Success - handle response
         if (data.success && data.data) {
@@ -94,8 +103,14 @@ const OtpVerification = () => {
         }
 
       } catch (err) {
-        setApiError(err.message || "Something went wrong. Please try again.");
-        setFieldError("otp", err.message || "Invalid OTP");
+        // Handle network errors (Failed to fetch)
+        if (err.message === "Failed to fetch" || err.name === "TypeError") {
+          setApiError("Unable to connect to server. Please check if the server is running on http://localhost:5000");
+          setFieldError("otp", "Server connection failed. Please try again later.");
+        } else {
+          setApiError(err.message || "Something went wrong. Please try again.");
+          setFieldError("otp", err.message || "Invalid OTP");
+        }
         // Clear OTP on error
         setOtp(["", "", "", "", "", ""]);
         formik.setFieldValue("otp", "");
@@ -197,15 +212,29 @@ const OtpVerification = () => {
         }),
       });
 
-      const data = await response.json();
-
+      // Check if response is ok before parsing JSON
       if (!response.ok) {
-        throw new Error(data.message || "Failed to resend OTP. Please try again.");
+        let errorMessage = "Failed to resend OTP. Please try again.";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (parseError) {
+          // If JSON parsing fails, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
+
+      const data = await response.json();
 
       setSuccess("OTP resent successfully! Please check your phone.");
     } catch (err) {
-      setApiError(err.message || "Failed to resend OTP. Please try again.");
+      // Handle network errors (Failed to fetch)
+      if (err.message === "Failed to fetch" || err.name === "TypeError") {
+        setApiError("Unable to connect to server. Please check if the server is running on http://localhost:5000");
+      } else {
+        setApiError(err.message || "Failed to resend OTP. Please try again.");
+      }
     }
   };
 

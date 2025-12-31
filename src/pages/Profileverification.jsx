@@ -55,9 +55,9 @@ const Profileverification = () => {
     gender: Yup.string().required("Gender is required"),
     birthDate: Yup.string().required("Date of birth is required").nullable(),
     language: Yup.string().required("Preferred language is required"),
-    habits: Yup.array().min(1, "Please select at least one habit"),
-    interest: Yup.array().min(1, "Please select at least one interest"),
-    skill: Yup.array().min(1, "Please select at least one skill"),
+    habits: Yup.array(),
+    interest: Yup.array(),
+    skill: Yup.array(),
     photo: Yup.mixed()
       .required("Profile image is required")
       .test("fileSize", "File size must be less than 5MB", (value) => {
