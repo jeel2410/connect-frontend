@@ -14,9 +14,11 @@ import Register from "./pages/Register";
 import OtpVerification from "./pages/OtpVerification";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 function App() {
   return (
+    <GoogleOAuthProvider clientId="170636486729-3vukdoguir9jlts95cream1v42hum60f.apps.googleusercontent.com">
     <Router>
       <Routes>
         {/* Public Routes - Redirect to home if already authenticated */}
@@ -114,6 +116,7 @@ function App() {
         />
       </Routes>
     </Router>
+    </GoogleOAuthProvider>
   );
 }
 
