@@ -1,14 +1,18 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import profile1 from "../../src/assets/image/profile/profile1.png";
 import close from "../../src/assets/image/close.png";
 import heart from "../../src/assets/image/heart.png";
 import c from "../../src/assets/image/c.png";
 
-export default function Usercard({ feedData = [], loading = false }) {
+export default function Usercard({ feedData = [], loading = false, onLike = null, onConnect = null }) {
+  const navigate = useNavigate();
+
   // Map feed data to profile format
   const profiles = feedData && feedData.length > 0 
     ? feedData.map((item, index) => ({
         id: item._id || item.id || index + 1,
+        userId: item._id || item.id, // Store the actual user ID for API calls
         name: item.fullName || item.name || "Unknown",
         address: item.city || item.address || "Location not available",
         image: item.profileImage || item.image || profile1,
@@ -16,6 +20,26 @@ export default function Usercard({ feedData = [], loading = false }) {
         featured: item.featured || false,
       }))
     : [];
+
+  const handleLikeClick = (userId, e) => {
+    e.stopPropagation(); // Prevent navigation when clicking like button
+    if (onLike && userId) {
+      onLike(userId);
+    }
+  };
+
+  const handleConnectClick = (userId, e) => {
+    e.stopPropagation(); // Prevent navigation when clicking connect button
+    if (onConnect && userId) {
+      onConnect(userId);
+    }
+  };
+
+  const handleProfileClick = (userId) => {
+    if (userId) {
+      navigate(`/userprofile`, { state: { userId } });
+    }
+  };
 
   if (loading) {
     return (
@@ -53,7 +77,12 @@ export default function Usercard({ feedData = [], loading = false }) {
     <div>
       <div className="profile-grid">
         {profiles.map((profile) => (
-          <div key={profile.id} className="profile-card">
+          <div 
+            key={profile.id} 
+            className="profile-card"
+            style={{ cursor: "pointer" }}
+            onClick={() => handleProfileClick(profile.userId)}
+          >
             <div className="profile-image-wrapper">
               <img
                 src={profile.image}
@@ -65,15 +94,21 @@ export default function Usercard({ feedData = [], loading = false }) {
             <h3 className="profile-name">{profile.name}</h3>
             <p className="profile-address">{profile.address}</p>
 
-            <div className="profile-actions">
+            <div className="profile-actions" onClick={(e) => e.stopPropagation()}>
               <button className="action-btn ">
                 <img src={close} alt="Close"></img>
               </button>
-              <button className={`action-btn-2 heart-btn`}>
+              <button 
+                className={`action-btn-2 heart-btn`}
+                onClick={(e) => handleLikeClick(profile.userId, e)}
+              >
                 <img src={heart} className="heart-btn-icon" alt="Like"></img>
               </button>
-              <button className="action-btn chat-btn">
-                <img src={c} className="chatbtn-icon" alt="Chat"></img>
+              <button 
+                className="action-btn chat-btn"
+                onClick={(e) => handleConnectClick(profile.userId, e)}
+              >
+                <img src={c} className="chatbtn-icon" alt="Connect"></img>
               </button>
             </div>
           </div>

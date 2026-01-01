@@ -36,6 +36,231 @@ export default function Home() {
     { icon: reactIcon },
   ];
 
+  // Function to fetch feed data (extracted for reuse after like)
+  const fetchFeedData = async () => {
+    try {
+      // Check if user is authenticated
+      const token = getCookie("authToken");
+      if (!token) {
+        return; // User not authenticated, skip API call
+      }
+
+      // Get user profile from cookie
+      const userProfileJson = getCookie("userProfile");
+      let userProfile = null;
+      if (userProfileJson) {
+        try {
+          userProfile = JSON.parse(userProfileJson);
+        } catch (error) {
+          console.error("Error parsing user profile:", error);
+        }
+      }
+
+      // If no profile in cookie, fetch it
+      if (!userProfile) {
+        const profileResponse = await fetch(`${API_BASE_URL}/api/user/profile`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!profileResponse.ok) {
+          if (profileResponse.status === 401) {
+            console.error("Unauthorized: Please login again");
+            return;
+          }
+          throw new Error("Failed to fetch user profile");
+        }
+
+        const profileData = await profileResponse.json();
+        if (profileData.success && profileData.data && profileData.data.profile) {
+          const profile = profileData.data.profile;
+          setCookie("userProfile", JSON.stringify(profile), 7);
+          userProfile = profile;
+        }
+      }
+
+      // Now fetch feed data if profile is available
+      if (!userProfile || !userProfile.gender) {
+        console.warn("User profile or gender not found, skipping feed fetch");
+        return;
+      }
+
+      // Determine opposite gender
+      const userGender = userProfile.gender;
+      const oppositeGender = userGender === "Male" ? "Female" : userGender === "Female" ? "Male" : null;
+      
+      if (!oppositeGender) {
+        console.warn("Unable to determine opposite gender");
+        return;
+      }
+
+      setLoadingFeed(true);
+
+      // Get location coordinates - prioritize stored location from profile
+      let latitude = null;
+      let longitude = null;
+
+      // First, check if user profile has currentLocation stored
+      if (userProfile.currentLocation && userProfile.currentLocation.coordinates) {
+        const coordinates = userProfile.currentLocation.coordinates;
+        // Check if coordinates are valid (not [0, 0])
+        if (coordinates.length >= 2 && (coordinates[0] !== 0 || coordinates[1] !== 0)) {
+          // Note: coordinates array is typically [longitude, latitude] in GeoJSON format
+          longitude = coordinates[0];
+          latitude = coordinates[1];
+        }
+      }
+
+      // If no stored location, request browser geolocation
+      if (latitude === null || longitude === null) {
+        if (navigator.geolocation) {
+          try {
+            const position = await new Promise((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+              });
+            });
+
+            latitude = position.coords.latitude;
+            longitude = position.coords.longitude;
+          } catch (error) {
+            console.log("Location permission denied or error:", error);
+            // Continue without location - will only pass gender
+          }
+        }
+      }
+
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      queryParams.append("gender", oppositeGender);
+      queryParams.append("page", "1");
+      queryParams.append("limit", "10");
+      
+      if (latitude !== null && longitude !== null) {
+        queryParams.append("latitude", latitude.toString());
+        queryParams.append("longitude", longitude.toString());
+      }
+
+      // Call the feed API
+      const feedResponse = await fetch(`${API_BASE_URL}/api/feed/web?${queryParams.toString()}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!feedResponse.ok) {
+        if (feedResponse.status === 401) {
+          console.error("Unauthorized: Please login again");
+          return;
+        }
+        throw new Error("Failed to fetch feed data");
+      }
+
+      const feedData = await feedResponse.json();
+
+      // Check if response is successful and has feed data
+      if (feedData.success && feedData.data) {
+        // Handle different possible response structures
+        const feed = Array.isArray(feedData.data) ? feedData.data : (feedData.data.profiles || feedData.data.feed || []);
+        setFeedData(feed);
+      }
+    } catch (error) {
+      console.error("Error fetching feed data:", error);
+      // Silently fail - don't disrupt user experience
+    } finally {
+      setLoadingFeed(false);
+    }
+  };
+
+  // Handle like action
+  const handleLike = async (likedUserId) => {
+    try {
+      const token = getCookie("authToken");
+      if (!token) {
+        console.error("User not authenticated");
+        return;
+      }
+
+      // Call the like API
+      const likeResponse = await fetch(`${API_BASE_URL}/api/connection/like/${likedUserId}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!likeResponse.ok) {
+        if (likeResponse.status === 401) {
+          console.error("Unauthorized: Please login again");
+          return;
+        }
+        const errorData = await likeResponse.json();
+        throw new Error(errorData.message || "Failed to like user");
+      }
+
+      const likeData = await likeResponse.json();
+      
+      if (likeData.success) {
+        // Refetch all feeds after successful like
+        await fetchFeedData();
+      } else {
+        throw new Error(likeData.message || "Failed to like user");
+      }
+    } catch (error) {
+      console.error("Error liking user:", error);
+      // Optionally show error message to user
+    }
+  };
+
+  // Handle connect/connection request action
+  const handleConnect = async (receiverId) => {
+    try {
+      const token = getCookie("authToken");
+      if (!token) {
+        console.error("User not authenticated");
+        return;
+      }
+
+      // Call the connection request API
+      const connectResponse = await fetch(`${API_BASE_URL}/api/connection/connectionrequest/${receiverId}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!connectResponse.ok) {
+        if (connectResponse.status === 401) {
+          console.error("Unauthorized: Please login again");
+          return;
+        }
+        const errorData = await connectResponse.json();
+        throw new Error(errorData.message || "Failed to send connection request");
+      }
+
+      const connectData = await connectResponse.json();
+      
+      if (connectData.success) {
+        // Refetch all feeds after successful connection request
+        await fetchFeedData();
+      } else {
+        throw new Error(connectData.message || "Failed to send connection request");
+      }
+    } catch (error) {
+      console.error("Error sending connection request:", error);
+      // Optionally show error message to user
+    }
+  };
+
   // Fetch user profile data and then feed data when component mounts
   useEffect(() => {
     const fetchUserProfileAndFeed = async () => {
@@ -102,102 +327,11 @@ export default function Home() {
           }
         }
 
-        // Now fetch feed data if profile is available
-        if (!userProfile || !userProfile.gender) {
-          console.warn("User profile or gender not found, skipping feed fetch");
-          return;
-        }
-
-        // Determine opposite gender
-        const userGender = userProfile.gender;
-        const oppositeGender = userGender === "Male" ? "Female" : userGender === "Female" ? "Male" : null;
-        
-        if (!oppositeGender) {
-          console.warn("Unable to determine opposite gender");
-          return;
-        }
-
-        setLoadingFeed(true);
-
-        // Get location coordinates - prioritize stored location from profile
-        let latitude = null;
-        let longitude = null;
-
-        // First, check if user profile has currentLocation stored
-        if (userProfile.currentLocation && userProfile.currentLocation.coordinates) {
-          const coordinates = userProfile.currentLocation.coordinates;
-          // Check if coordinates are valid (not [0, 0])
-          if (coordinates.length >= 2 && (coordinates[0] !== 0 || coordinates[1] !== 0)) {
-            // Note: coordinates array is typically [longitude, latitude] in GeoJSON format
-            longitude = coordinates[0];
-            latitude = coordinates[1];
-            console.log("Using stored location from profile:", { latitude, longitude });
-          }
-        }
-
-        // If no stored location, request browser geolocation
-        if (latitude === null || longitude === null) {
-          if (navigator.geolocation) {
-            try {
-              const position = await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject, {
-                  enableHighAccuracy: true,
-                  timeout: 10000,
-                  maximumAge: 0
-                });
-              });
-
-              latitude = position.coords.latitude;
-              longitude = position.coords.longitude;
-              console.log("Using browser geolocation:", { latitude, longitude });
-            } catch (error) {
-              console.log("Location permission denied or error:", error);
-              // Continue without location - will only pass gender
-            }
-          }
-        }
-
-        // Build query parameters
-        const queryParams = new URLSearchParams();
-        queryParams.append("gender", oppositeGender);
-        queryParams.append("page", "1");
-        queryParams.append("limit", "10");
-        
-        if (latitude !== null && longitude !== null) {
-          queryParams.append("latitude", latitude.toString());
-          queryParams.append("longitude", longitude.toString());
-        }
-
-        // Call the feed API
-        const feedResponse = await fetch(`${API_BASE_URL}/api/feed/web?${queryParams.toString()}`, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!feedResponse.ok) {
-          if (feedResponse.status === 401) {
-            console.error("Unauthorized: Please login again");
-            return;
-          }
-          throw new Error("Failed to fetch feed data");
-        }
-
-        const feedData = await feedResponse.json();
-
-        // Check if response is successful and has feed data
-        if (feedData.success && feedData.data) {
-          // Handle different possible response structures
-          const feed = Array.isArray(feedData.data) ? feedData.data : (feedData.data.profiles || feedData.data.feed || []);
-          setFeedData(feed);
-        }
+        // Now fetch feed data
+        await fetchFeedData();
       } catch (error) {
         console.error("Error fetching user profile or feed data:", error);
         // Silently fail - don't disrupt user experience
-      } finally {
-        setLoadingFeed(false);
       }
     };
 
@@ -345,7 +479,7 @@ export default function Home() {
           </div>
           <button className="view-more-btn" onClick={() => navigate("/search")}>View More</button>
         </div>
-        <Usercard feedData={feedData} loading={loadingFeed}></Usercard>
+        <Usercard feedData={feedData} loading={loadingFeed} onLike={handleLike} onConnect={handleConnect}></Usercard>
       </div>
 
       {/* third section */}

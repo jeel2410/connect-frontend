@@ -3414,6 +3414,150 @@ body {
   flex-direction: column;
   z-index: 1000;
 }
+
+.notification-wrapper {
+  position: relative;
+}
+
+.profile-wrapper {
+  position: relative;
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  z-index: 999;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid #E8EDF3;
+  overflow: hidden;
+}
+
+.profile-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: none;
+  background: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  color: #09122E;
+  text-align: left;
+  width: 100%;
+}
+
+.profile-dropdown-item:hover {
+  background-color: #F9FBFE;
+}
+
+.profile-dropdown-item:first-child {
+  border-bottom: 1px solid #E8EDF3;
+}
+
+.profile-dropdown-item span {
+  flex: 1;
+}
+
+.mobile-profile-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-signout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: white;
+  border: 1px solid #DC2626;
+  border-radius: 12px;
+  cursor: pointer;
+  padding: 12px;
+  transition: background-color 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  color: #DC2626;
+}
+
+.mobile-signout-btn:hover {
+  background-color: #FEF2F2;
+}
+
+.notification-dropdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: 998;
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  background: white;
+  border-radius: 16px;
+  width: 400px;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+  z-index: 999;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid #E8EDF3;
+}
+
+.notification-dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #E8EDF3;
+}
+
+.notification-dropdown-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #09122E;
+  font-family: 'Basier Square', sans-serif;
+  margin: 0;
+}
+
+.notification-dropdown-body {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 500px;
+}
+
+.notification-dropdown-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notification-dropdown-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.notification-dropdown-body::-webkit-scrollbar-thumb {
+  background: #E8EDF3;
+  border-radius: 10px;
+}
+
+.notification-dropdown-body::-webkit-scrollbar-thumb:hover {
+  background: #C7D0DD;
+}
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -3453,6 +3597,102 @@ body {
 }
 .modal-body::-webkit-scrollbar {
   display: none;
+}
+
+.notification-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px 24px;
+  border-bottom: 1px solid #E8EDF3;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.notification-item:hover {
+  background-color: #F9FBFE;
+}
+
+.notification-item.unread {
+  background-color: #FFF8F3;
+}
+
+.notification-item.unread:hover {
+  background-color: #FFF0E9;
+}
+
+.notification-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.notification-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #09122E;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.4;
+}
+
+.notification-item.unread .notification-title {
+  font-weight: 700;
+}
+
+.notification-message {
+  font-size: 14px;
+  color: #777E90;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+.notification-time {
+  font-size: 12px;
+  color: #959CB2;
+  font-family: 'Inter', sans-serif;
+  margin-top: 8px;
+}
+
+.notification-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #EA650A;
+  margin-left: 12px;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+/* Notification Badge */
+.notification-btn {
+  position: relative;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background-color: #EA650A;
+  color: white;
+  border-radius: 10px;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  padding: 0 6px;
+  box-shadow: 0 2px 4px rgba(234, 101, 10, 0.3);
+  border: 2px solid white;
 }
 
 .filter-section {
@@ -3710,6 +3950,28 @@ body {
 }
 
 @media (max-width: 768px) {
+  .notification-dropdown {
+    width: 320px;
+    right: -10px;
+  }
+
+  .notification-dropdown-header {
+    padding: 16px 20px;
+  }
+
+  .notification-dropdown-header h2 {
+    font-size: 18px;
+  }
+
+  .notification-item {
+    padding: 14px 20px;
+  }
+
+  .profile-dropdown {
+    width: 180px;
+    right: 0;
+  }
+
   .users-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 15px;
@@ -4239,7 +4501,7 @@ body {
 .dating-profile-wrapper {
   display: flex;
   gap: 30px;
-  padding: 20px 120px;
+  padding: 20px 120px 0 120px;
   margin: 0 auto;
 }
 
@@ -4441,7 +4703,12 @@ body {
 
 /* More Information Section */
 .dating-profile-section {
-  padding: 0px 30px 30px 30px;
+  padding: 0px 30px 0 30px;
+}
+
+.dating-profile-section > *:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
 .dating-profile-section h3 {
@@ -4498,9 +4765,15 @@ body {
 }
 
 .dating-profile-info-group {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   border-bottom: 1px solid #DDE2EE;
-  padding-bottom: 16px;
+  padding-bottom: 12px;
+}
+
+.dating-profile-info-group:last-child {
+  margin-bottom: 0;
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 .dating-profile-info-group label {
@@ -4548,10 +4821,16 @@ body {
   grid-template-columns: repeat(2, 1fr);
   gap: 25px 60px;
   margin-top: 25px;
+  margin-bottom: 0;
+}
+
+.dating-profile-info-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 .dating-profile-info-item{
   border-bottom: 1px solid #DDE2EE;
-  padding-bottom: 24px;
+  padding-bottom: 16px;
 }
 .dating-profile-info-item label {
   display: block;
@@ -4582,7 +4861,7 @@ body {
 
 @media (max-width: 992px) {
   .dating-profile-wrapper {
-    padding: 20px 60px;
+    padding: 20px 60px 0 60px;
     flex-direction: column;
   }
 
@@ -4599,7 +4878,7 @@ body {
 @media (max-width: 768px) {
 
    .dating-profile-wrapper {
-    padding: 20px 40px;
+    padding: 20px 40px 0 40px;
     flex-direction: column;
   }
  .dating-profile-header {
@@ -4652,7 +4931,7 @@ body {
 @media (max-width: 480px) {
 
    .dating-profile-wrapper {
-    padding: 20px 10px;
+    padding: 20px 10px 0 10px;
     flex-direction: column;
   }
   .dating-profile-header-left {

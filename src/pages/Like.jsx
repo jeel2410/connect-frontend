@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
 import Sidebar from "../component/Sidebar";
@@ -7,72 +7,138 @@ import outlineHeart from "../../src/assets/image/outline_icon.png"
 import blackHeart from "../../src/assets/image/black_icon.png"
 import heartIcon from "../../src/assets/image/favourite_Icon.png";
 import profile1 from "../../src/assets/image/profile/profile1.png"
-import profile2 from "../../src/assets/image/profile/profile2.png"
-import profile3 from "../../src/assets/image/profile/profile3.png"
-import profile4 from "../../src/assets/image/profile/profile4.png"
-import profile5 from "../../src/assets/image/profile/profile5.png"
-import profile6 from "../../src/assets/image/profile/profile6.png"
+import { getCookie } from "../utils/auth";
+import API_BASE_URL from "../utils/config";
 
 const Likes = () => {
   const [activeTab, setActiveTab] = useState("myFavorite");
-  const [favorites, setFavorites] = useState({});
+  const [likedProfiles, setLikedProfiles] = useState([]);
+  const [whoLikedMe, setWhoLikedMe] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingWhoLikedMe, setLoadingWhoLikedMe] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const myFavoriteUsers = [
-    {
-      id: 1,
-      name: "Ralph Edwards",
-      address: "2464 Royal Ln.",
-      image: profile2,
-      isFavorite: true,
-    },
-    {
-      id: 2,
-      name: "Kathryn Murphy",
-      address: "7529 E. Lincoln St.",
-      image:profile1,
-      isFavorite: true,
-    },
-    {
-      id: 3,
-      name: "Annette Black",
-      address: "8080 Railroad St.",
-      image: profile3,
-      isFavorite: true,
-    },
-    {
-      id: 4,
-      name: "Devon Lane",
-      address: "3605 Parker Rd.",
-      image:profile4,
-      isFavorite: true,
-    },
-    {
-      id: 5,
-      name: "Albert Flores",
-      address: "775 Rolling Green Rd.",
-      image: profile5,
-      isFavorite: true,
-    },
-    {
-      id: 6,
-      name: "Wade Warren",
-      address: "3605 Parker Rd.",
-      image:profile6,
-      isFavorite: true,
-    },
-    {
-      id: 7,
-      name: "Savannah Nguyen",
-      address: "3890 Poplar Dr.",
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop",
-      isFavorite: true,
-    },
-  ];
- const toggleFavorite = (userId) => {
-    setFavorites((prev) => ({
-      ...prev,
-      [userId]: !prev[userId],
-    }));
+  // Fetch liked profiles from API
+  const fetchLikedProfiles = useCallback(async (search = "") => {
+    try {
+      setLoading(true);
+      const token = getCookie("authToken");
+      if (!token) {
+        console.error("User not authenticated");
+        setLoading(false);
+        return;
+      }
+
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      if (search && search.trim() !== "") {
+        queryParams.append("search", search.trim());
+      }
+
+      const url = `${API_BASE_URL}/api/connection/likes${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error("Unauthorized: Please login again");
+          setLoading(false);
+          return;
+        }
+        throw new Error("Failed to fetch liked profiles");
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        // Handle different possible response structures
+        const profiles = Array.isArray(data.data) 
+          ? data.data 
+          : (data.data.liked || data.data.profiles || data.data.likes || []);
+        
+        setLikedProfiles(profiles);
+      } else {
+        setLikedProfiles([]);
+      }
+    } catch (error) {
+      console.error("Error fetching liked profiles:", error);
+      setLikedProfiles([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch "who liked me" profiles from API
+  const fetchWhoLikedMe = useCallback(async () => {
+    try {
+      setLoadingWhoLikedMe(true);
+      const token = getCookie("authToken");
+      if (!token) {
+        console.error("User not authenticated");
+        setLoadingWhoLikedMe(false);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/connection/who-liked-me`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error("Unauthorized: Please login again");
+          setLoadingWhoLikedMe(false);
+          return;
+        }
+        throw new Error("Failed to fetch who liked me");
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        // Handle different possible response structures
+        const profiles = Array.isArray(data.data) 
+          ? data.data 
+          : (data.data.liked || data.data.profiles || data.data.likes || data.data.whoLikedMe || []);
+        
+        setWhoLikedMe(profiles);
+      } else {
+        setWhoLikedMe([]);
+      }
+    } catch (error) {
+      console.error("Error fetching who liked me:", error);
+      setWhoLikedMe([]);
+    } finally {
+      setLoadingWhoLikedMe(false);
+    }
+  }, []);
+
+  // Fetch liked profiles on component mount, when search changes, or when tab changes
+  useEffect(() => {
+    if (activeTab === "myFavorite") {
+      // Debounce search to avoid too many API calls
+      const timeoutId = setTimeout(() => {
+        fetchLikedProfiles(searchQuery);
+      }, 500); // Wait 500ms after user stops typing
+
+      return () => clearTimeout(timeoutId);
+    } else if (activeTab === "likes") {
+      // Fetch who liked me when "Likes" tab is active
+      fetchWhoLikedMe();
+    }
+  }, [searchQuery, activeTab, fetchLikedProfiles, fetchWhoLikedMe]);
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
   };
 
   return (
@@ -84,55 +150,133 @@ const Likes = () => {
           <div className="likes-page-card">
             <div className="likes-page-header">
               <h1>Likes</h1>
-              <div className="likes-page-search">
-                <span className="likes-page-search-icon">
-                  <img src={searchIcon} alt="search" />
-                </span>
-                <input type="text" placeholder="Search here" />
-              </div>
+              {activeTab === "myFavorite" && (
+                <div className="likes-page-search">
+                  <span className="likes-page-search-icon">
+                    <img src={searchIcon} alt="search" />
+                  </span>
+                  <input 
+                    type="text" 
+                    placeholder="Search here" 
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                  />
+                </div>
+              )}
             </div>
             <div className="likes-page-tabs">
               <button
                 className={`likes-page-tab ${activeTab === "myFavorite" ? "active" : ""}`}
                 onClick={() => setActiveTab("myFavorite")}
               >
-                <img src={blackHeart}></img> My Favorite
+                <img src={blackHeart} alt="My Favorite"></img> My Favorite
               </button>
               <button
                 className={`likes-page-tab ${activeTab === "likes" ? "active" : ""}`}
                 onClick={() => setActiveTab("likes")}
               >
-                 <img src={outlineHeart}></img>  Likes
+                 <img src={outlineHeart} alt="Likes"></img>  Likes
               </button>
             </div>
             {activeTab === "myFavorite" && (
-              <div className="likes-grid">
-                {myFavoriteUsers.map((user) => (
-                  <div key={user.id} className="like-card">
-                      <button
-                        className="heart-btn-container"
-                        onClick={() => toggleFavorite(user.id)}
-                      >
-                        <img
-                          src={heartIcon}
-                          alt="favorite"
-                        />
-                      </button>
-                    <img
-                      src={user.image}
-                      alt={user.name}
-                      className="like-avatar"
-                    />
-                    <div className="like-info">
-                      <h3>{user.name}</h3>
-                      <p>{user.address}</p>
+              <>
+                {loading && likedProfiles.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
+                    Loading profiles...
+                  </div>
+                ) : likedProfiles.length === 0 ? (
+                  <div style={{ 
+                    textAlign: "center", 
+                    padding: "60px 20px", 
+                    color: "#666" 
+                  }}>
+                    <div style={{ fontSize: "24px", fontWeight: "600", marginBottom: "12px", color: "#333" }}>
+                      No Liked Profiles Found
+                    </div>
+                    <div style={{ fontSize: "16px", color: "#999" }}>
+                      {searchQuery ? "Try a different search term" : "You haven't liked any profiles yet"}
                     </div>
                   </div>
-                ))}
-              </div>
+                ) : (
+                  <div className="likes-grid">
+                    {likedProfiles.map((user) => (
+                      <div key={user._id || user.id} className="like-card">
+                        <button
+                          className="heart-btn-container"
+                          onClick={() => {
+                            // Optionally handle unlike functionality here
+                            console.log("Unlike user:", user._id || user.id);
+                          }}
+                        >
+                          <img
+                            src={heartIcon}
+                            alt="favorite"
+                          />
+                        </button>
+                        <img
+                          src={user.profileImage || user.image || profile1}
+                          alt={user.fullName || user.name || "User"}
+                          className="like-avatar"
+                        />
+                        <div className="like-info">
+                          <h3>{user.fullName || user.name || "Unknown"}</h3>
+                          <p>{user.city || user.address || "Location not available"}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
             {activeTab === "likes" && (
-            <></>
+              <>
+                {loadingWhoLikedMe && whoLikedMe.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
+                    Loading profiles...
+                  </div>
+                ) : whoLikedMe.length === 0 ? (
+                  <div style={{ 
+                    textAlign: "center", 
+                    padding: "60px 20px", 
+                    color: "#666" 
+                  }}>
+                    <div style={{ fontSize: "24px", fontWeight: "600", marginBottom: "12px", color: "#333" }}>
+                      No One Liked You Yet
+                    </div>
+                    <div style={{ fontSize: "16px", color: "#999" }}>
+                      Start exploring profiles to get likes!
+                    </div>
+                  </div>
+                ) : (
+                  <div className="likes-grid">
+                    {whoLikedMe.map((user) => (
+                      <div key={user._id || user.id} className="like-card">
+                        <button
+                          className="heart-btn-container"
+                          onClick={() => {
+                            // Optionally handle like back functionality here
+                            console.log("Like back user:", user._id || user.id);
+                          }}
+                        >
+                          <img
+                            src={heartIcon}
+                            alt="favorite"
+                          />
+                        </button>
+                        <img
+                          src={user.profileImage || user.image || profile1}
+                          alt={user.fullName || user.name || "User"}
+                          className="like-avatar"
+                        />
+                        <div className="like-info">
+                          <h3>{user.fullName || user.name || "Unknown"}</h3>
+                          <p>{user.city || user.address || "Location not available"}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

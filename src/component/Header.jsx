@@ -1,13 +1,111 @@
-import React, { useState } from "react";
-import { MapPin, Bell, Menu, User, X } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { MapPin, Bell, Menu, User, X, LogOut } from "lucide-react";
 import logo from "../assets/image/connect_logo.png"
 import location from "../assets/image/location.png";
 import notification from "../assets/image/Notification.png";
 import userIcon from "../assets/image/user_icon.png"
+import NotificationModal from "./NotificationModal";
+import { getCookie, logout } from "../utils/auth";
+import API_BASE_URL from "../utils/config";
 import "../styles/style.css"
 
 const Header = () => {
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notificationModalOpen, setNotificationModalOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const profileMenuRef = useRef(null);
+
+  const handleProfileClick = () => {
+    navigate("/profile");
+    setProfileMenuOpen(false);
+  };
+
+  const handleNotificationClick = () => {
+    setNotificationModalOpen(true);
+  };
+
+  const handleProfileMenuToggle = () => {
+    setProfileMenuOpen(!profileMenuOpen);
+  };
+
+  const handleSignOut = () => {
+    setProfileMenuOpen(false);
+    setMobileMenuOpen(false);
+    logout();
+  };
+
+  // Close profile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setProfileMenuOpen(false);
+      }
+    };
+
+    if (profileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [profileMenuOpen]);
+
+  // Fetch unread notification count
+  const fetchUnreadCount = async () => {
+    try {
+      const token = getCookie("authToken");
+      if (!token) {
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/notifications/unread-count`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          return;
+        }
+        throw new Error("Failed to fetch unread count");
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data !== undefined) {
+        // Handle different possible response structures
+        const count = typeof data.data === "number" 
+          ? data.data 
+          : (data.data.count || data.data.unreadCount || 0);
+        
+        setUnreadCount(count);
+      }
+    } catch (err) {
+      console.error("Error fetching unread count:", err);
+    }
+  };
+
+  // Fetch unread count on mount and when notification modal closes
+  useEffect(() => {
+    fetchUnreadCount();
+    // Refresh count every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!notificationModalOpen) {
+      // Refresh count when modal closes
+      fetchUnreadCount();
+    }
+  }, [notificationModalOpen]);
 
   return (
     <header className="header">
@@ -40,15 +138,39 @@ const Header = () => {
               />
             </svg>
           </button>
-          <button className="icon-btn">
-            <img src={notification} alt="Notifications"></img>
-          </button>
-          <button className="profile-section">
-            <Menu size={20} color="#777E90"/>
-            <button className="profile-btn">
-             <img src={userIcon} alt="User"></img>
-          </button>
-          </button>
+          <div className="notification-wrapper">
+            <button className="icon-btn notification-btn" onClick={handleNotificationClick}>
+              <img src={notification} alt="Notifications"></img>
+              {unreadCount > 0 && (
+                <span className="notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
+              )}
+            </button>
+            <NotificationModal 
+              isOpen={notificationModalOpen} 
+              onClose={() => setNotificationModalOpen(false)}
+              onNotificationRead={fetchUnreadCount}
+            />
+          </div>
+          <div className="profile-wrapper" ref={profileMenuRef}>
+            <button className="profile-section" onClick={handleProfileMenuToggle}>
+              <Menu size={20} color="#777E90"/>
+              <button className="profile-btn">
+               <img src={userIcon} alt="User"></img>
+            </button>
+            </button>
+            {profileMenuOpen && (
+              <div className="profile-dropdown">
+                <button className="profile-dropdown-item" onClick={handleProfileClick}>
+                  <User size={18} color="#09122E" />
+                  <span>My Profile</span>
+                </button>
+                <button className="profile-dropdown-item" onClick={handleSignOut}>
+                  <LogOut size={18} color="#DC2626" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Mobile Menu Button */}
@@ -93,12 +215,28 @@ const Header = () => {
                 <span>Ahmedabad, Gujarat</span>
               </button>
               <div className="mobile-action-buttons">
-                <button className="mobile-icon-btn">
-                  <img src={notification} alt="Notifications"></img>
-                </button>
-                <button className="mobile-profile-btn">
-                  <img src={userIcon} alt="User"></img>
-                </button>
+                <div className="notification-wrapper">
+                  <button className="mobile-icon-btn notification-btn" onClick={handleNotificationClick}>
+                    <img src={notification} alt="Notifications"></img>
+                    {unreadCount > 0 && (
+                      <span className="notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
+                    )}
+                  </button>
+                  <NotificationModal 
+                    isOpen={notificationModalOpen} 
+                    onClose={() => setNotificationModalOpen(false)}
+                    onNotificationRead={fetchUnreadCount}
+                  />
+                </div>
+                <div className="mobile-profile-menu">
+                  <button className="mobile-profile-btn" onClick={handleProfileClick}>
+                    <img src={userIcon} alt="User"></img>
+                  </button>
+                  <button className="mobile-signout-btn" onClick={handleSignOut}>
+                    <LogOut size={18} color="#DC2626" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

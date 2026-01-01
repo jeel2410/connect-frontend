@@ -34,9 +34,8 @@ const Search = () => {
     hasPrevPage: false
   });
 
-  // Fetch feed data with pagination
-  useEffect(() => {
-    const fetchFeedData = async () => {
+  // Function to fetch feed data (extracted for reuse after like)
+  const fetchFeedData = async () => {
       try {
         // Check if user is authenticated
         const token = getCookie("authToken");
@@ -178,10 +177,94 @@ const Search = () => {
       } finally {
         setLoadingFeed(false);
       }
-    };
+  };
 
+  // Fetch feed data with pagination
+  useEffect(() => {
     fetchFeedData();
   }, [currentPage, filters]); // Re-fetch when page or filters change
+
+  // Handle like action
+  const handleLike = async (likedUserId) => {
+    try {
+      const token = getCookie("authToken");
+      if (!token) {
+        console.error("User not authenticated");
+        return;
+      }
+
+      // Call the like API
+      const likeResponse = await fetch(`${API_BASE_URL}/api/connection/like/${likedUserId}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!likeResponse.ok) {
+        if (likeResponse.status === 401) {
+          console.error("Unauthorized: Please login again");
+          return;
+        }
+        const errorData = await likeResponse.json();
+        throw new Error(errorData.message || "Failed to like user");
+      }
+
+      const likeData = await likeResponse.json();
+      
+      if (likeData.success) {
+        // Refetch all feeds after successful like
+        await fetchFeedData();
+      } else {
+        throw new Error(likeData.message || "Failed to like user");
+      }
+    } catch (error) {
+      console.error("Error liking user:", error);
+      // Optionally show error message to user
+    }
+  };
+
+  // Handle connect/connection request action
+  const handleConnect = async (receiverId) => {
+    try {
+      const token = getCookie("authToken");
+      if (!token) {
+        console.error("User not authenticated");
+        return;
+      }
+
+      // Call the connection request API
+      const connectResponse = await fetch(`${API_BASE_URL}/api/connection/connectionrequest/${receiverId}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!connectResponse.ok) {
+        if (connectResponse.status === 401) {
+          console.error("Unauthorized: Please login again");
+          return;
+        }
+        const errorData = await connectResponse.json();
+        throw new Error(errorData.message || "Failed to send connection request");
+      }
+
+      const connectData = await connectResponse.json();
+      
+      if (connectData.success) {
+        // Refetch all feeds after successful connection request
+        await fetchFeedData();
+      } else {
+        throw new Error(connectData.message || "Failed to send connection request");
+      }
+    } catch (error) {
+      console.error("Error sending connection request:", error);
+      // Optionally show error message to user
+    }
+  };
 
   const handlePrevPage = () => {
     if (pagination.hasPrevPage) {
@@ -294,7 +377,7 @@ const Search = () => {
               Filter
             </button>
           </div>
-          <Usercard feedData={feedData} loading={loadingFeed}></Usercard>
+          <Usercard feedData={feedData} loading={loadingFeed} onLike={handleLike} onConnect={handleConnect}></Usercard>
 
           {pagination.totalPages > 1 && (
             <div className="pagination">
