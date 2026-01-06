@@ -18,7 +18,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 
 function App() {
   return (
-    <GoogleOAuthProvider clientId="170636486729-3vukdoguir9jlts95cream1v42hum60f.apps.googleusercontent.com">
+    <GoogleOAuthProvider clientId="891198943361-e6pu3ag403m4s97gvbiuasgljgfbvcda.apps.googleusercontent.com">
     <Router>
       <Routes>
         {/* Public Routes - Redirect to home if already authenticated */}
