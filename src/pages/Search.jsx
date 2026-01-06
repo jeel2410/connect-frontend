@@ -101,7 +101,6 @@ const Search = () => {
                 latitude = position.coords.latitude;
                 longitude = position.coords.longitude;
               } catch (error) {
-                console.log("Location permission denied or error:", error);
                 // Continue without location - will only pass gender
               }
             }

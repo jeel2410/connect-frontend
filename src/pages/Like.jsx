@@ -205,7 +205,6 @@ const Likes = () => {
                           className="heart-btn-container"
                           onClick={() => {
                             // Optionally handle unlike functionality here
-                            console.log("Unlike user:", user._id || user.id);
                           }}
                         >
                           <img
@@ -213,14 +212,18 @@ const Likes = () => {
                             alt="favorite"
                           />
                         </button>
-                        <img
-                          src={user.profileImage || user.image || profile1}
-                          alt={user.fullName || user.name || "User"}
-                          className="like-avatar"
-                        />
-                        <div className="like-info">
-                          <h3>{user.fullName || user.name || "Unknown"}</h3>
-                          <p>{user.city || user.address || "Location not available"}</p>
+                        <div 
+                          className="like-profile-content"
+                        >
+                          <img
+                            src={user.profileImage || user.image || profile1}
+                            alt={user.fullName || user.name || "User"}
+                            className="like-avatar"
+                          />
+                          <div className="like-info">
+                            <h3>{user.fullName || user.name || "Unknown"}</h3>
+                            <p>{user.city || user.address || "Location not available"}</p>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -255,7 +258,6 @@ const Likes = () => {
                           className="heart-btn-container"
                           onClick={() => {
                             // Optionally handle like back functionality here
-                            console.log("Like back user:", user._id || user.id);
                           }}
                         >
                           <img
@@ -263,14 +265,18 @@ const Likes = () => {
                             alt="favorite"
                           />
                         </button>
-                        <img
-                          src={user.profileImage || user.image || profile1}
-                          alt={user.fullName || user.name || "User"}
-                          className="like-avatar"
-                        />
-                        <div className="like-info">
-                          <h3>{user.fullName || user.name || "Unknown"}</h3>
-                          <p>{user.city || user.address || "Location not available"}</p>
+                        <div 
+                          className="like-profile-content"
+                        >
+                          <img
+                            src={user.profileImage || user.image || profile1}
+                            alt={user.fullName || user.name || "User"}
+                            className="like-avatar"
+                          />
+                          <div className="like-info">
+                            <h3>{user.fullName || user.name || "Unknown"}</h3>
+                            <p>{user.city || user.address || "Location not available"}</p>
+                          </div>
                         </div>
                       </div>
                     ))}

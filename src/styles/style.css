@@ -5693,20 +5693,33 @@ like page */
 }
 
 
+/* Profile Content Container */
+.like-profile-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
 /* Avatar */
 .like-avatar {
-  width: 56px;
-  height: 56px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   border: 2px solid #EA650A;
   padding: 2px;
   object-fit: cover;
   margin-bottom: 12px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* User Info */
 .like-info {
   width: 100%;
+  text-align: center;
 }
 
 .like-info h3 {

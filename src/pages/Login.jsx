@@ -101,7 +101,6 @@ const Login = () => {
   // Google Login Handler
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
-      console.log("Google token response:", tokenResponse);
       try {
         setGoogleLoading(true);
         setApiError("");

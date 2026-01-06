@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
 import Sidebar from "../component/Sidebar";
@@ -8,15 +9,11 @@ import messageIcon from "../../src/assets/image/bluemessageIcon.png";
 import wrongICon from "../../src/assets/image/wrong.png"
 import rightIcon from "../../src/assets/image/right.png"
 import profile1 from "../../src/assets/image/profile/profile1.png"
-import profile2 from "../../src/assets/image/profile/profile2.png"
-import profile3 from "../../src/assets/image/profile/profile3.png"
-import profile4 from "../../src/assets/image/profile/profile4.png"
-import profile5 from "../../src/assets/image/profile/profile5.png"
-import profile6 from "../../src/assets/image/profile/profile6.png"
 import { getCookie } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 
 const Connection = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("active");
   const [activeConnections, setActiveConnections] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -256,8 +253,53 @@ const Connection = () => {
     }
   };
 
-  const handleMessage = (id) => {
-    console.log("Message:", id);
+  // Handle message click - fetch chat history and navigate to chat page
+  const handleMessage = async (connection) => {
+    const userId = connection._id || connection.id;
+    
+    try {
+      const token = getCookie("authToken");
+      if (!token) {
+        console.error("User not authenticated");
+        return;
+      }
+
+      // Call the chat history API
+      const response = await fetch(`${API_BASE_URL}/api/chat/history/${userId}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error("Unauthorized: Please login again");
+          return;
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to fetch chat history");
+      }
+
+      const data = await response.json();
+      
+      // Navigate to chat page with userId and chat history data
+      navigate("/chat", {
+        state: {
+          userId: userId,
+          chatHistory: data.data || data
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching chat history:", error);
+      // Still navigate to chat page even if API fails
+      navigate("/chat", {
+        state: {
+          userId: userId
+        }
+      });
+    }
   };
 
   return (
@@ -334,13 +376,15 @@ const Connection = () => {
                             className="connections-page-avatar"
                           />
                           <div className="connection-name-content">
-                            <h3>{connection.fullName || connection.name || "Unknown"}</h3>
+                            <h3>
+                              {connection.fullName || connection.name || "Unknown"}
+                            </h3>
                             <p>{connection.username || connection.city || connection.address || ""}</p>
                           </div>
                         </div>
                         <button
                           className="connections-page-message-btn"
-                          onClick={() => handleMessage(connection._id || connection.id)}
+                          onClick={() => handleMessage(connection)}
                         >
                           <img src={messageIcon} alt="message" /> Message
                         </button>
