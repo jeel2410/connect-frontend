@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Bell, Menu, User, X, LogOut } from "lucide-react";
+import { MapPin, Bell, Menu, User, X, LogOut, LayoutDashboard } from "lucide-react";
 import logo from "../assets/image/connect_logo.png"
 import location from "../assets/image/location.png";
 import notification from "../assets/image/Notification.png";
 import userIcon from "../assets/image/user_icon.png"
 import NotificationModal from "./NotificationModal";
-import { getCookie, logout } from "../utils/auth";
+import { getCookie, logout, isAdmin } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 import "../styles/style.css"
 
@@ -16,6 +16,7 @@ const Header = () => {
   const [notificationModalOpen, setNotificationModalOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [userIsAdmin, setUserIsAdmin] = useState(false);
   const profileMenuRef = useRef(null);
 
   const handleProfileClick = () => {
@@ -23,11 +24,21 @@ const Header = () => {
     setProfileMenuOpen(false);
   };
 
+  const handleAdminClick = () => {
+    navigate("/admin");
+    setProfileMenuOpen(false);
+    setMobileMenuOpen(false);
+  };
+
   const handleNotificationClick = () => {
     setNotificationModalOpen(true);
   };
 
   const handleProfileMenuToggle = () => {
+    // Refresh admin status when opening menu
+    if (!profileMenuOpen) {
+      setUserIsAdmin(isAdmin());
+    }
     setProfileMenuOpen(!profileMenuOpen);
   };
 
@@ -91,6 +102,11 @@ const Header = () => {
       console.error("Error fetching unread count:", err);
     }
   };
+
+  // Check if user is admin
+  useEffect(() => {
+    setUserIsAdmin(isAdmin());
+  }, []);
 
   // Fetch unread count on mount and when notification modal closes
   useEffect(() => {
@@ -164,6 +180,12 @@ const Header = () => {
                   <User size={18} color="#09122E" />
                   <span>My Profile</span>
                 </button>
+                {userIsAdmin && (
+                  <button className="profile-dropdown-item" onClick={handleAdminClick}>
+                    <LayoutDashboard size={18} color="#09122E" />
+                    <span>Admin</span>
+                  </button>
+                )}
                 <button className="profile-dropdown-item" onClick={handleSignOut}>
                   <LogOut size={18} color="#DC2626" />
                   <span>Sign Out</span>
@@ -232,6 +254,12 @@ const Header = () => {
                   <button className="mobile-profile-btn" onClick={handleProfileClick}>
                     <img src={userIcon} alt="User"></img>
                   </button>
+                  {userIsAdmin && (
+                    <button className="mobile-admin-btn" onClick={handleAdminClick}>
+                      <LayoutDashboard size={18} color="#09122E" />
+                      <span>Admin</span>
+                    </button>
+                  )}
                   <button className="mobile-signout-btn" onClick={handleSignOut}>
                     <LogOut size={18} color="#DC2626" />
                     <span>Sign Out</span>

@@ -1,0 +1,102 @@
+[
+  {
+    "id": 1,
+    "name": "Photography"
+  },
+  {
+    "id": 2,
+    "name": "Reading"
+  },
+  {
+    "id": 3,
+    "name": "Traveling"
+  },
+  {
+    "id": 4,
+    "name": "Cooking"
+  },
+  {
+    "id": 5,
+    "name": "Music"
+  },
+  {
+    "id": 6,
+    "name": "Sports"
+  },
+  {
+    "id": 7,
+    "name": "Gaming"
+  },
+  {
+    "id": 8,
+    "name": "Dancing"
+  },
+  {
+    "id": 9,
+    "name": "Painting"
+  },
+  {
+    "id": 10,
+    "name": "Writing"
+  },
+  {
+    "id": 11,
+    "name": "Hiking"
+  },
+  {
+    "id": 12,
+    "name": "Swimming"
+  },
+  {
+    "id": 13,
+    "name": "Cycling"
+  },
+  {
+    "id": 14,
+    "name": "Yoga"
+  },
+  {
+    "id": 15,
+    "name": "Meditation"
+  },
+  {
+    "id": 16,
+    "name": "Movies"
+  },
+  {
+    "id": 17,
+    "name": "Theater"
+  },
+  {
+    "id": 18,
+    "name": "Fashion"
+  },
+  {
+    "id": 19,
+    "name": "Technology"
+  },
+  {
+    "id": 20,
+    "name": "Art"
+  },
+  {
+    "id": 21,
+    "name": "Gardening"
+  },
+  {
+    "id": 22,
+    "name": "Fishing"
+  },
+  {
+    "id": 23,
+    "name": "Chess"
+  },
+  {
+    "id": 24,
+    "name": "Volunteering"
+  },
+  {
+    "id": 25,
+    "name": "Learning Languages"
+  }
+]

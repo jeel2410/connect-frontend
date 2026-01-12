@@ -61,6 +61,12 @@ export const getUserCurrentLocation = () => {
   return null;
 };
 
+// Check if user is admin
+export const isAdmin = () => {
+  const profile = getUserProfile();
+  return profile && profile.role === 'admin';
+};
+
 // Logout function
 export const logout = () => {
   deleteCookie("authToken");

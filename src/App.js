@@ -12,7 +12,9 @@ import Like from "./pages/Like";
 import Chat from "./pages/Chat";
 import Register from "./pages/Register";
 import OtpVerification from "./pages/OtpVerification";
+import Admin from "./pages/Admin";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
@@ -112,6 +114,14 @@ function App() {
             <ProtectedRoute>
               <Chat />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <AdminProtectedRoute>
+              <Admin />
+            </AdminProtectedRoute>
           }
         />
       </Routes>

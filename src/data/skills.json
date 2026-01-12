@@ -1,0 +1,102 @@
+[
+  {
+    "id": 1,
+    "name": "JavaScript"
+  },
+  {
+    "id": 2,
+    "name": "React"
+  },
+  {
+    "id": 3,
+    "name": "Node.js"
+  },
+  {
+    "id": 4,
+    "name": "Python"
+  },
+  {
+    "id": 5,
+    "name": "Java"
+  },
+  {
+    "id": 6,
+    "name": "HTML/CSS"
+  },
+  {
+    "id": 7,
+    "name": "TypeScript"
+  },
+  {
+    "id": 8,
+    "name": "Vue.js"
+  },
+  {
+    "id": 9,
+    "name": "Angular"
+  },
+  {
+    "id": 10,
+    "name": "PHP"
+  },
+  {
+    "id": 11,
+    "name": "Ruby"
+  },
+  {
+    "id": 12,
+    "name": "Go"
+  },
+  {
+    "id": 13,
+    "name": "Swift"
+  },
+  {
+    "id": 14,
+    "name": "Kotlin"
+  },
+  {
+    "id": 15,
+    "name": "C++"
+  },
+  {
+    "id": 16,
+    "name": "C#"
+  },
+  {
+    "id": 17,
+    "name": "SQL"
+  },
+  {
+    "id": 18,
+    "name": "MongoDB"
+  },
+  {
+    "id": 19,
+    "name": "PostgreSQL"
+  },
+  {
+    "id": 20,
+    "name": "Docker"
+  },
+  {
+    "id": 21,
+    "name": "Kubernetes"
+  },
+  {
+    "id": 22,
+    "name": "AWS"
+  },
+  {
+    "id": 23,
+    "name": "Git"
+  },
+  {
+    "id": 24,
+    "name": "GraphQL"
+  },
+  {
+    "id": 25,
+    "name": "REST API"
+  }
+]
