@@ -163,6 +163,456 @@ export const deleteSkill = async (skillId) => {
   }
 };
 
+// Habits API
+export const getHabits = async (page = 1, limit = 10, search = "", isActive = null) => {
+  try {
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    if (search) {
+      queryParams.append("search", search);
+    }
+    if (isActive !== null) {
+      queryParams.append("isActive", isActive.toString());
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/habits?${queryParams.toString()}`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Habits API endpoint not found. Please ensure the backend endpoint /api/admin/habits is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to fetch habits: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to fetch habits");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching habits:", error);
+    throw error;
+  }
+};
+
+export const createHabit = async (habitData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/habits`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(habitData),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Habits API endpoint not found. Please ensure the backend endpoint /api/admin/habits is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to create habit: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to create habit");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error creating habit:", error);
+    throw error;
+  }
+};
+
+export const updateHabit = async (habitId, habitData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/habits/${habitId}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(habitData),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Habits API endpoint not found. Please ensure the backend endpoint /api/admin/habits/:id is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to update habit: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to update habit");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error updating habit:", error);
+    throw error;
+  }
+};
+
+export const deleteHabit = async (habitId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/habits/${habitId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Habits API endpoint not found. Please ensure the backend endpoint /api/admin/habits/:id is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to delete habit: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to delete habit");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error deleting habit:", error);
+    throw error;
+  }
+};
+
+// Companies API
+export const getCompanies = async (page = 1, limit = 10, search = "", isActive = null) => {
+  try {
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    if (search) {
+      queryParams.append("search", search);
+    }
+    if (isActive !== null) {
+      queryParams.append("isActive", isActive.toString());
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/companies?${queryParams.toString()}`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Companies API endpoint not found. Please ensure the backend endpoint /api/admin/companies is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to fetch companies: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to fetch companies");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching companies:", error);
+    throw error;
+  }
+};
+
+export const createCompany = async (companyData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/companies`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(companyData),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Companies API endpoint not found. Please ensure the backend endpoint /api/admin/companies is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to create company: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to create company");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error creating company:", error);
+    throw error;
+  }
+};
+
+export const updateCompany = async (companyId, companyData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/companies/${companyId}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(companyData),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Companies API endpoint not found. Please ensure the backend endpoint /api/admin/companies/:id is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to update company: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to update company");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error updating company:", error);
+    throw error;
+  }
+};
+
+export const deleteCompany = async (companyId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/companies/${companyId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Companies API endpoint not found. Please ensure the backend endpoint /api/admin/companies/:id is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to delete company: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to delete company");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error deleting company:", error);
+    throw error;
+  }
+};
+
+// Industries API
+export const getIndustries = async (page = 1, limit = 10, search = "", isActive = null) => {
+  try {
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    if (search) {
+      queryParams.append("search", search);
+    }
+    if (isActive !== null) {
+      queryParams.append("isActive", isActive.toString());
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/industries?${queryParams.toString()}`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Industries API endpoint not found. Please ensure the backend endpoint /api/admin/industries is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to fetch industries: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to fetch industries");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching industries:", error);
+    throw error;
+  }
+};
+
+export const createIndustry = async (industryData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/industries`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(industryData),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Industries API endpoint not found. Please ensure the backend endpoint /api/admin/industries is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to create industry: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to create industry");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error creating industry:", error);
+    throw error;
+  }
+};
+
+export const updateIndustry = async (industryId, industryData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/industries/${industryId}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(industryData),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Industries API endpoint not found. Please ensure the backend endpoint /api/admin/industries/:id is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to update industry: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to update industry");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error updating industry:", error);
+    throw error;
+  }
+};
+
+export const deleteIndustry = async (industryId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/industries/${industryId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Industries API endpoint not found. Please ensure the backend endpoint /api/admin/industries/:id is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to delete industry: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to delete industry");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error deleting industry:", error);
+    throw error;
+  }
+};
+
 // Interests API
 export const getInterests = async (page = 1, limit = 10, search = "", isActive = null) => {
   try {
