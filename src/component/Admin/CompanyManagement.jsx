@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Search, Plus, Edit2, Trash2, X, Save, ChevronLeft, ChevronRight } from "lucide-react";
 import { getCompanies, createCompany, updateCompany, deleteCompany } from "../../utils/adminApi";
+import API_BASE_URL from "../../utils/config";
+import { getCookie } from "../../utils/auth";
 
 const CompanyManagement = () => {
   const [companies, setCompanies] = useState([]);
+  const [industries, setIndustries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,7 +20,7 @@ const CompanyManagement = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState(null);
-  const [formData, setFormData] = useState({ name: "" });
+  const [formData, setFormData] = useState({ name: "", industryId: "" });
   const [submitting, setSubmitting] = useState(false);
   const itemsPerPage = 10;
 
@@ -45,8 +48,34 @@ const CompanyManagement = () => {
     }
   };
 
+  // Fetch industries from API
+  const fetchIndustries = async () => {
+    try {
+      const token = getCookie("authToken");
+      const response = await fetch(`${API_BASE_URL}/api/list/industries`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch industries");
+      }
+
+      const data = await response.json();
+      if (data.success && data.data) {
+        setIndustries(data.data.industries || data.data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching industries:", err);
+    }
+  };
+
   useEffect(() => {
     fetchCompanies();
+    fetchIndustries();
   }, [currentPage]);
 
   // Debounce search
@@ -77,13 +106,16 @@ const CompanyManagement = () => {
   };
 
   const handleAdd = () => {
-    setFormData({ name: "" });
+    setFormData({ name: "", industryId: "" });
     setIsAddModalOpen(true);
   };
 
   const handleEdit = (company) => {
     setEditingCompany(company);
-    setFormData({ name: company.name || "" });
+    setFormData({ 
+      name: company.name || "",
+      industryId: company.industry?._id || ""
+    });
     setIsEditModalOpen(true);
   };
 
@@ -114,23 +146,30 @@ const CompanyManagement = () => {
       return;
     }
 
+    if (!formData.industryId) {
+      alert("Please select an industry");
+      return;
+    }
+
     try {
       setSubmitting(true);
       if (isEditModalOpen) {
         // Update existing company
         await updateCompany(editingCompany._id, {
           name: formData.name.trim(),
+          industry: formData.industryId,
         });
       } else {
         // Add new company
         await createCompany({
           name: formData.name.trim(),
+          industry: formData.industryId,
         });
       }
 
       setIsAddModalOpen(false);
       setIsEditModalOpen(false);
-      setFormData({ name: "" });
+      setFormData({ name: "", industryId: "" });
       setEditingCompany(null);
       await fetchCompanies(); // Refresh the list
     } catch (err) {
@@ -167,25 +206,26 @@ const CompanyManagement = () => {
           <thead>
             <tr>
               <th>Name</th>
+              <th>Industry</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="2" className="empty-state">
+                <td colSpan="3" className="empty-state">
                   Loading...
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan="2" className="empty-state" style={{ color: "red" }}>
+                <td colSpan="3" className="empty-state" style={{ color: "red" }}>
                   {error}
                 </td>
               </tr>
             ) : companies.length === 0 ? (
               <tr>
-                <td colSpan="2" className="empty-state">
+                <td colSpan="3" className="empty-state">
                   No companies found
                 </td>
               </tr>
@@ -193,6 +233,7 @@ const CompanyManagement = () => {
               companies.map((company) => (
                 <tr key={company._id}>
                   <td>{company.name || "N/A"}</td>
+                  <td>{company.industry?.name || "N/A"}</td>
                   <td>
                     <div className="action-buttons">
                       <button
@@ -289,11 +330,28 @@ const CompanyManagement = () => {
                   type="text"
                   className="form-input"
                   value={formData.name}
-                  onChange={(e) => setFormData({ name: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Enter company name"
                   required
                   disabled={submitting}
                 />
+              </div>
+              <div className="form-group">
+                <label>Industry</label>
+                <select
+                  className="form-input"
+                  value={formData.industryId}
+                  onChange={(e) => setFormData({ ...formData, industryId: e.target.value })}
+                  required
+                  disabled={submitting}
+                >
+                  <option value="">Select an industry</option>
+                  {industries.map((industry) => (
+                    <option key={industry._id} value={industry._id}>
+                      {industry.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="modal-actions">
                 <button
@@ -334,11 +392,28 @@ const CompanyManagement = () => {
                   type="text"
                   className="form-input"
                   value={formData.name}
-                  onChange={(e) => setFormData({ name: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Enter company name"
                   required
                   disabled={submitting}
                 />
+              </div>
+              <div className="form-group">
+                <label>Industry</label>
+                <select
+                  className="form-input"
+                  value={formData.industryId}
+                  onChange={(e) => setFormData({ ...formData, industryId: e.target.value })}
+                  required
+                  disabled={submitting}
+                >
+                  <option value="">Select an industry</option>
+                  {industries.map((industry) => (
+                    <option key={industry._id} value={industry._id}>
+                      {industry.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="modal-actions">
                 <button

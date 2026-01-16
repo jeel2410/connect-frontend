@@ -1,5 +1,5 @@
 import React from "react";
-import { Users, Briefcase, Heart, LayoutDashboard, MapPin, Activity, Building2, Factory } from "lucide-react";
+import { Users, Briefcase, Heart, LayoutDashboard, MapPin, Activity, Building2, Factory, CreditCard, Bell } from "lucide-react";
 
 const AdminSidebar = ({ activeTab, setActiveTab }) => {
   const menuItems = [
@@ -9,7 +9,9 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
     { id: "interests", label: "Interests", icon: Heart },
     { id: "companies", label: "Companies", icon: Building2 },
     { id: "industries", label: "Industries", icon: Factory },
+    { id: "cards", label: "Cards", icon: CreditCard },
     { id: "cities", label: "Cities", icon: MapPin },
+    { id: "broadcast", label: "Broadcast Notification", icon: Bell },
   ];
 
   return (

@@ -10,6 +10,14 @@ const getAuthHeaders = () => {
   };
 };
 
+// Helper function to get auth headers for FormData (no Content-Type header)
+const getAuthHeadersFormData = () => {
+  const token = getCookie("authToken");
+  return {
+    "Authorization": `Bearer ${token}`,
+  };
+};
+
 // Users API
 export const getUsers = async (page = 1, limit = 10, search = "") => {
   try {
@@ -845,6 +853,226 @@ export const deleteCity = async (cityId) => {
     return data;
   } catch (error) {
     console.error("Error deleting city:", error);
+    throw error;
+  }
+};
+
+// Cards API
+export const getCards = async (page = 1, limit = 10, search = "", isActive = null) => {
+  try {
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    if (search) {
+      queryParams.append("search", search);
+    }
+    if (isActive !== null) {
+      queryParams.append("isActive", isActive.toString());
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/cards?${queryParams.toString()}`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Cards API endpoint not found. Please ensure the backend endpoint /api/admin/cards is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to fetch cards: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to fetch cards");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching cards:", error);
+    throw error;
+  }
+};
+
+export const createCard = async (cardData) => {
+  try {
+    const formData = new FormData();
+    formData.append("name", cardData.name);
+    formData.append("description", cardData.description || "");
+    formData.append("url", cardData.url || "");
+    
+    // Append features array
+    if (cardData.features && Array.isArray(cardData.features)) {
+      cardData.features.forEach((feature) => {
+        formData.append("features[]", feature);
+      });
+    }
+    
+    // Append logo image if it's a File
+    if (cardData.logo_image instanceof File) {
+      formData.append("logo_image", cardData.logo_image);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/cards`, {
+      method: "POST",
+      headers: getAuthHeadersFormData(),
+      body: formData,
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Cards API endpoint not found. Please ensure the backend endpoint /api/admin/cards is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to create card: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to create card");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error creating card:", error);
+    throw error;
+  }
+};
+
+export const updateCard = async (cardId, cardData) => {
+  try {
+    const formData = new FormData();
+    formData.append("name", cardData.name);
+    formData.append("description", cardData.description || "");
+    formData.append("url", cardData.url || "");
+    
+    // Append features array
+    if (cardData.features && Array.isArray(cardData.features)) {
+      cardData.features.forEach((feature) => {
+        formData.append("features[]", feature);
+      });
+    }
+    
+    // Append logo image if it's a File (only if it's a new file)
+    if (cardData.logo_image instanceof File) {
+      formData.append("logo_image", cardData.logo_image);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/cards/${cardId}`, {
+      method: "PUT",
+      headers: getAuthHeadersFormData(),
+      body: formData,
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Cards API endpoint not found. Please ensure the backend endpoint /api/admin/cards/:id is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to update card: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to update card");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error updating card:", error);
+    throw error;
+  }
+};
+
+export const deleteCard = async (cardId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/cards/${cardId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Cards API endpoint not found. Please ensure the backend endpoint /api/admin/cards/:id is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to delete card: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to delete card");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error deleting card:", error);
+    throw error;
+  }
+};
+
+// Broadcast Notification API
+export const broadcastNotification = async (notificationData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/notifications/broadcast`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(notificationData),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      if (response.status === 404) {
+        throw new Error("Broadcast notification API endpoint not found. Please ensure the backend endpoint /api/admin/notifications/broadcast is implemented.");
+      }
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        throw new Error(`Failed to send broadcast notification: ${response.status} ${response.statusText}`);
+      }
+      throw new Error(errorData.message || "Failed to send broadcast notification");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error sending broadcast notification:", error);
     throw error;
   }
 };

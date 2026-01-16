@@ -7,7 +7,9 @@ import HabitManagement from "../component/Admin/HabitManagement";
 import InterestManagement from "../component/Admin/InterestManagement";
 import CompanyManagement from "../component/Admin/CompanyManagement";
 import IndustryManagement from "../component/Admin/IndustryManagement";
+import CardManagement from "../component/Admin/CardManagement";
 import CityManagement from "../component/Admin/CityManagement";
+import BroadcastNotification from "../component/Admin/BroadcastNotification";
 import "../styles/admin.css";
 
 const Admin = () => {
@@ -27,7 +29,9 @@ const Admin = () => {
               {activeTab === "interests" && "Interest Management"}
               {activeTab === "companies" && "Company Management"}
               {activeTab === "industries" && "Industry Management"}
+              {activeTab === "cards" && "Card Management"}
               {activeTab === "cities" && "City Management"}
+              {activeTab === "broadcast" && "Broadcast Notification"}
             </h1>
             <p className="admin-subtitle">
               {activeTab === "users" && "View and manage all users"}
@@ -36,7 +40,9 @@ const Admin = () => {
               {activeTab === "interests" && "Add, edit, and delete interests"}
               {activeTab === "companies" && "Add, edit, and delete companies"}
               {activeTab === "industries" && "Add, edit, and delete industries"}
+              {activeTab === "cards" && "Add, edit, and delete cards"}
               {activeTab === "cities" && "Add, edit, and delete cities"}
+              {activeTab === "broadcast" && "Send notifications to all users"}
             </p>
           </div>
           <div className="admin-content-body">
@@ -46,7 +52,9 @@ const Admin = () => {
             {activeTab === "interests" && <InterestManagement />}
             {activeTab === "companies" && <CompanyManagement />}
             {activeTab === "industries" && <IndustryManagement />}
+            {activeTab === "cards" && <CardManagement />}
             {activeTab === "cities" && <CityManagement />}
+            {activeTab === "broadcast" && <BroadcastNotification />}
           </div>
         </div>
       </div>
