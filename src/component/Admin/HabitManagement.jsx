@@ -88,6 +88,12 @@ const HabitManagement = () => {
   };
 
   const handleDelete = async (habitId) => {
+    // Check if there's only one habit remaining
+    if (totalHabits <= 1) {
+      alert("Cannot delete the last habit. At least one habit must remain.");
+      return;
+    }
+
     if (!window.confirm("Are you sure you want to delete this habit?")) {
       return;
     }
@@ -206,8 +212,9 @@ const HabitManagement = () => {
                       <button
                         className="action-btn delete-btn"
                         onClick={() => handleDelete(habit._id)}
-                        title="Delete"
-                        disabled={loading}
+                        title={totalHabits <= 1 ? "Cannot delete the last habit" : "Delete"}
+                        disabled={loading || totalHabits <= 1}
+                        style={totalHabits <= 1 ? { opacity: 0.5, cursor: "not-allowed" } : {}}
                       >
                         <Trash2 size={16} />
                       </button>

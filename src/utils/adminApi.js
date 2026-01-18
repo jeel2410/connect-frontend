@@ -917,6 +917,13 @@ export const createCard = async (cardData) => {
       });
     }
     
+    // Append eligibles array
+    if (cardData.eligibles && Array.isArray(cardData.eligibles)) {
+      cardData.eligibles.forEach((eligible) => {
+        formData.append("eligibles[]", eligible);
+      });
+    }
+    
     // Append logo image if it's a File
     if (cardData.logo_image instanceof File) {
       formData.append("logo_image", cardData.logo_image);
@@ -966,6 +973,13 @@ export const updateCard = async (cardId, cardData) => {
     if (cardData.features && Array.isArray(cardData.features)) {
       cardData.features.forEach((feature) => {
         formData.append("features[]", feature);
+      });
+    }
+    
+    // Append eligibles array
+    if (cardData.eligibles && Array.isArray(cardData.eligibles)) {
+      cardData.eligibles.forEach((eligible) => {
+        formData.append("eligibles[]", eligible);
       });
     }
     

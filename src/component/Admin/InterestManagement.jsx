@@ -88,6 +88,12 @@ const InterestManagement = () => {
   };
 
   const handleDelete = async (interestId) => {
+    // Check if there's only one interest remaining
+    if (totalInterests <= 1) {
+      alert("Cannot delete the last interest. At least one interest must remain.");
+      return;
+    }
+
     if (!window.confirm("Are you sure you want to delete this interest?")) {
       return;
     }
@@ -206,8 +212,9 @@ const InterestManagement = () => {
                       <button
                         className="action-btn delete-btn"
                         onClick={() => handleDelete(interest._id)}
-                        title="Delete"
-                        disabled={loading}
+                        title={totalInterests <= 1 ? "Cannot delete the last interest" : "Delete"}
+                        disabled={loading || totalInterests <= 1}
+                        style={totalInterests <= 1 ? { opacity: 0.5, cursor: "not-allowed" } : {}}
                       >
                         <Trash2 size={16} />
                       </button>

@@ -88,6 +88,12 @@ const SkillManagement = () => {
   };
 
   const handleDelete = async (skillId) => {
+    // Check if there's only one skill remaining
+    if (totalSkills <= 1) {
+      alert("Cannot delete the last skill. At least one skill must remain.");
+      return;
+    }
+
     if (!window.confirm("Are you sure you want to delete this skill?")) {
       return;
     }
@@ -206,8 +212,9 @@ const SkillManagement = () => {
                       <button
                         className="action-btn delete-btn"
                         onClick={() => handleDelete(skill._id)}
-                        title="Delete"
-                        disabled={loading}
+                        title={totalSkills <= 1 ? "Cannot delete the last skill" : "Delete"}
+                        disabled={loading || totalSkills <= 1}
+                        style={totalSkills <= 1 ? { opacity: 0.5, cursor: "not-allowed" } : {}}
                       >
                         <Trash2 size={16} />
                       </button>

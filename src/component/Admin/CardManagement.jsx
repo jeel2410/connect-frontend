@@ -23,9 +23,11 @@ const CardManagement = () => {
     url: "", 
     logo_image: null,
     logo_image_preview: null,
-    features: []
+    features: [],
+    eligibles: []
   });
   const [newFeature, setNewFeature] = useState("");
+  const [newEligible, setNewEligible] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const itemsPerPage = 10;
 
@@ -91,9 +93,11 @@ const CardManagement = () => {
       url: "", 
       logo_image: null,
       logo_image_preview: null,
-      features: []
+      features: [],
+      eligibles: []
     });
     setNewFeature("");
+    setNewEligible("");
     setIsAddModalOpen(true);
   };
 
@@ -105,9 +109,11 @@ const CardManagement = () => {
       url: card.url || "",
       logo_image: null,
       logo_image_preview: card.logo_image || null,
-      features: card.features && Array.isArray(card.features) ? [...card.features] : []
+      features: card.features && Array.isArray(card.features) ? [...card.features] : [],
+      eligibles: card.eligibles && Array.isArray(card.eligibles) ? [...card.eligibles] : []
     });
     setNewFeature("");
+    setNewEligible("");
     setIsEditModalOpen(true);
   };
 
@@ -162,6 +168,23 @@ const CardManagement = () => {
     });
   };
 
+  const handleAddEligible = () => {
+    if (newEligible.trim()) {
+      setFormData({
+        ...formData,
+        eligibles: [...formData.eligibles, newEligible.trim()]
+      });
+      setNewEligible("");
+    }
+  };
+
+  const handleRemoveEligible = (index) => {
+    setFormData({
+      ...formData,
+      eligibles: formData.eligibles.filter((_, i) => i !== index)
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -179,7 +202,8 @@ const CardManagement = () => {
           description: formData.description.trim(),
           url: formData.url.trim(),
           logo_image: formData.logo_image,
-          features: formData.features
+          features: formData.features,
+          eligibles: formData.eligibles
         });
       } else {
         // Add new card
@@ -188,7 +212,8 @@ const CardManagement = () => {
           description: formData.description.trim(),
           url: formData.url.trim(),
           logo_image: formData.logo_image,
-          features: formData.features
+          features: formData.features,
+          eligibles: formData.eligibles
         });
       }
 
@@ -200,9 +225,11 @@ const CardManagement = () => {
         url: "", 
         logo_image: null,
         logo_image_preview: null,
-        features: []
+        features: [],
+        eligibles: []
       });
       setNewFeature("");
+      setNewEligible("");
       setEditingCard(null);
       await fetchCards(); // Refresh the list
     } catch (err) {
@@ -243,25 +270,26 @@ const CardManagement = () => {
               <th>Description</th>
               <th>URL</th>
               <th>Features</th>
+              <th>Eligibles</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="6" className="empty-state">
+                <td colSpan="7" className="empty-state">
                   Loading...
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan="6" className="empty-state" style={{ color: "red" }}>
+                <td colSpan="7" className="empty-state" style={{ color: "red" }}>
                   {error}
                 </td>
               </tr>
             ) : cards.length === 0 ? (
               <tr>
-                <td colSpan="6" className="empty-state">
+                <td colSpan="7" className="empty-state">
                   No cards found
                 </td>
               </tr>
@@ -289,6 +317,13 @@ const CardManagement = () => {
                   <td>
                     {card.features && Array.isArray(card.features) && card.features.length > 0 ? (
                       <span>{card.features.length} feature(s)</span>
+                    ) : (
+                      "N/A"
+                    )}
+                  </td>
+                  <td>
+                    {card.eligibles && Array.isArray(card.eligibles) && card.eligibles.length > 0 ? (
+                      <span>{card.eligibles.length} eligible(s)</span>
                     ) : (
                       "N/A"
                     )}
@@ -497,6 +532,68 @@ const CardManagement = () => {
                   </div>
                 )}
               </div>
+              <div className="form-group">
+                <label>Eligibles</label>
+                <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={newEligible}
+                    onChange={(e) => setNewEligible(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddEligible();
+                      }
+                    }}
+                    placeholder="Enter eligible and press Enter or click Add"
+                    disabled={submitting}
+                  />
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={handleAddEligible}
+                    disabled={submitting}
+                  >
+                    Add
+                  </button>
+                </div>
+                {formData.eligibles.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                    {formData.eligibles.map((eligible, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          padding: "4px 8px",
+                          backgroundColor: "#f0f0f0",
+                          borderRadius: "4px",
+                          fontSize: "14px"
+                        }}
+                      >
+                        {eligible}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveEligible(index)}
+                          disabled={submitting}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "0",
+                            display: "flex",
+                            alignItems: "center"
+                          }}
+                        >
+                          <XCircle size={14} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="modal-actions">
                 <button
                   type="button"
@@ -627,6 +724,68 @@ const CardManagement = () => {
                         <button
                           type="button"
                           onClick={() => handleRemoveFeature(index)}
+                          disabled={submitting}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "0",
+                            display: "flex",
+                            alignItems: "center"
+                          }}
+                        >
+                          <XCircle size={14} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="form-group">
+                <label>Eligibles</label>
+                <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={newEligible}
+                    onChange={(e) => setNewEligible(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddEligible();
+                      }
+                    }}
+                    placeholder="Enter eligible and press Enter or click Add"
+                    disabled={submitting}
+                  />
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={handleAddEligible}
+                    disabled={submitting}
+                  >
+                    Add
+                  </button>
+                </div>
+                {formData.eligibles.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                    {formData.eligibles.map((eligible, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          padding: "4px 8px",
+                          backgroundColor: "#f0f0f0",
+                          borderRadius: "4px",
+                          fontSize: "14px"
+                        }}
+                      >
+                        {eligible}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveEligible(index)}
                           disabled={submitting}
                           style={{
                             background: "none",
