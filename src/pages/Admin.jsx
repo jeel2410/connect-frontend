@@ -26,8 +26,8 @@ const Admin = () => {
               {activeTab === "users" && "User Management"}
               {activeTab === "skills" && "Skill Management"}
               {activeTab === "habits" && "Habit Management"}
-              {activeTab === "interests" && "Interest Management"}
               {activeTab === "companies" && "Company Management"}
+              {activeTab === "interests" && "Interest Management"}
               {activeTab === "industries" && "Industry Management"}
               {activeTab === "cards" && "Card Management"}
               {activeTab === "cities" && "City Management"}
@@ -38,8 +38,8 @@ const Admin = () => {
               {activeTab === "skills" && "Add, edit, and delete skills"}
               {activeTab === "habits" && "Add, edit, and delete habits"}
               {activeTab === "interests" && "Add, edit, and delete interests"}
-              {activeTab === "companies" && "Add, edit, and delete companies"}
               {activeTab === "industries" && "Add, edit, and delete industries"}
+              {activeTab === "companies" && "Add, edit, and delete companies"}
               {activeTab === "cards" && "Add, edit, and delete cards"}
               {activeTab === "cities" && "Add, edit, and delete cities"}
               {activeTab === "broadcast" && "Send notifications to all users"}
