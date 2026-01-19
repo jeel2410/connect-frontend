@@ -317,7 +317,25 @@ export default function EditProfile() {
                     <input
                       type="date"
                       value={data.birthDate || ""}
-                      onChange={(e) => updateData("birthDate", e.target.value)}
+                      onChange={(e) => {
+                        const selectedDate = e.target.value;
+                        // Validate 18+ on change
+                        if (selectedDate) {
+                          const birthDate = new Date(selectedDate);
+                          const today = new Date();
+                          let age = today.getFullYear() - birthDate.getFullYear();
+                          const monthDiff = today.getMonth() - birthDate.getMonth();
+                          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                            age--;
+                          }
+                          if (age < 18) {
+                            alert("You must be at least 18 years old");
+                            return;
+                          }
+                        }
+                        updateData("birthDate", selectedDate);
+                      }}
+                      max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
                       className="form-input"
                     />
                   </div>

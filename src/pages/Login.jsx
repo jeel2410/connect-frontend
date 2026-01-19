@@ -116,7 +116,6 @@ const Login = () => {
             accessToken: tokenResponse.access_token,
           }),
         });
-
         if (!response.ok) {
           let errorMessage = "Google login failed. Please try again.";
           try {

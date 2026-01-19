@@ -1,13 +1,55 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "../../styles/style.css";
 import mobileIcon from "../../assets/image/mobile.png";
-import passwordIcon from "../../assets/image/password.png"
 import fullnameIcon from "../../assets/image/firstname.png"
 import cityIcon from "../../assets/image/city.png"
 import religionIcon from "../../assets/image/religion.png"
 import statusIcon from "../../assets/image/status.png"
+import API_BASE_URL from "../../utils/config";
+import { getCookie } from "../../utils/auth";
 
 const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
+  const [cities, setCities] = useState([]);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const [citiesError, setCitiesError] = useState("");
+
+  // Fetch cities from API
+  useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        setLoadingCities(true);
+        setCitiesError("");
+        const token = getCookie("authToken");
+        const response = await fetch(`${API_BASE_URL}/api/list/city`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch cities");
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.data && result.data.city) {
+          setCities(result.data.city);
+        } else {
+          setCities([]);
+        }
+      } catch (err) {
+        console.error("Error fetching cities:", err);
+        setCitiesError("Failed to load cities");
+        setCities([]);
+      } finally {
+        setLoadingCities(false);
+      }
+    };
+
+    fetchCities();
+  }, []);
   return (
     <div className="step-content active">
       <h2 className="step-title">About You</h2>
@@ -65,11 +107,20 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
               onChange={(e) => updateData("city", e.target.value)}
               onBlur={() => updateData("_touched_city", true)}
               className={touched?.city && errors?.city ? "input-error" : ""}
+              disabled={loadingCities}
             >
-              <option value="">Select City</option>
-              <option value="ahmedabad">Ahmedabad</option>
-              <option value="Baroda">Baroda</option>
+              <option value="">{loadingCities ? "Loading cities..." : "Select City"}</option>
+              {cities.map((city) => (
+                <option key={city._id || city.name} value={city.name}>
+                  {city.name.charAt(0).toUpperCase() + city.name.slice(1)}
+                </option>
+              ))}
             </select>
+            {citiesError && (
+              <div className="field-error-message" style={{ color: "#666", fontSize: "12px" }}>
+                {citiesError}
+              </div>
+            )}
             {touched?.city && errors?.city && (
               <div className="field-error-message">{errors.city}</div>
             )}
@@ -120,50 +171,6 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
             </select>
             {touched?.maritalStatus && errors?.maritalStatus && (
               <div className="field-error-message">{errors.maritalStatus}</div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="form-group">
-        <div className="input-wrapper">
-          <div className="input-icon">
-            <img src={passwordIcon} alt="Password"></img>
-          </div>
-          <div className="input-content">
-            <label className="input-label">Password</label>
-            <input
-              type="password"
-              name="password"
-              value={data.password || ""}
-              onChange={(e) => updateData("password", e.target.value)}
-              onBlur={() => updateData("_touched_password", true)}
-              className={`form-input ${touched?.password && errors?.password ? "input-error" : ""}`}
-            />
-            {touched?.password && errors?.password && (
-              <div className="field-error-message">{errors.password}</div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="form-group">
-        <div className="input-wrapper">
-          <div className="input-icon">
-            <img src={passwordIcon} alt="Confirm Password"></img>
-          </div>
-          <div className="input-content">
-            <label className="input-label">Confirm Password</label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={data.confirmPassword || ""}
-              onChange={(e) => updateData("confirmPassword", e.target.value)}
-              onBlur={() => updateData("_touched_confirmPassword", true)}
-              className={`form-input ${touched?.confirmPassword && errors?.confirmPassword ? "input-error" : ""}`}
-            />
-            {touched?.confirmPassword && errors?.confirmPassword && (
-              <div className="field-error-message">{errors.confirmPassword}</div>
             )}
           </div>
         </div>
