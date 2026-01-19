@@ -41,11 +41,11 @@ export default function AuthImage() {
          Suspendisse semper magna id euismod neque ultricies Proi pharetra sap non Condiment purus. Morbi eu sem turpis.
         </p>
 
-        <div className="pagination-dots">
+        {/* <div className="pagination-dots">
           {paginationDots.map((dot) => (
             <span key={dot.id} className={`dot ${dot.active ? "active" : ""}`} />
           ))}
-        </div>
+        </div> */}
       </div>
     </div>
   );

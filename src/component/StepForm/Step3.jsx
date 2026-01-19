@@ -30,8 +30,12 @@ const Step3 = ({ data, updateData, errors, touched }) => {
   const selectedLanguage = data.language || '';
 
   const selectLanguage = (langId) => {
+    // Set language value first, which will trigger validation
     updateData('language', langId);
-    updateData('_touched_language', true);
+    // Mark as touched after validation has a chance to run
+    setTimeout(() => {
+      updateData('_touched_language', true);
+    }, 50);
   };
 
   return (

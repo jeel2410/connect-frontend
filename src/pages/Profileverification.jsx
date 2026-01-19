@@ -44,17 +44,23 @@ const Profileverification = () => {
     city: Yup.string().required("City is required"),
     religion: Yup.string().required("Religion is required"),
     maritalStatus: Yup.string().required("Status is required"),
-    password: Yup.string()
-      .required("Password is required")
-      .min(6, "Password must be at least 6 characters"),
-    confirmPassword: Yup.string()
-      .required("Confirm password is required")
-      .oneOf([Yup.ref('password')], "Passwords must match"),
     email: Yup.string()
       .email("Invalid email address")
       .required("Email is required"),
     gender: Yup.string().required("Gender is required"),
-    birthDate: Yup.string().required("Date of birth is required").nullable(),
+    birthDate: Yup.string()
+      .required("Date of birth is required")
+      .test("age-18", "You must be at least 18 years old", function(value) {
+        if (!value) return false;
+        const birthDate = new Date(value);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        return age >= 18;
+      }),
     language: Yup.string().required("Preferred language is required"),
     habits: Yup.array(),
     interest: Yup.array(),
@@ -77,8 +83,6 @@ const Profileverification = () => {
       city: "",
       religion: "",
       maritalStatus: "",
-      password: "",
-      confirmPassword: "",
       email: "",
       gender: "",
       birthDate: "",
@@ -118,7 +122,6 @@ const Profileverification = () => {
         formData.append("skills", (values.skill || []).join(","));
         formData.append("preferredLanguage", values.language);
         formData.append("email", values.email);
-        formData.append("password", values.password);
 
         // Add profile image if it's a file
         if (values.photo) {
@@ -173,12 +176,38 @@ const Profileverification = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phoneNumber]);
 
-  const updateData = (field, value) => {
+  const updateData = async (field, value) => {
     if (field.startsWith("_touched_")) {
       const actualField = field.replace("_touched_", "");
       formik.setFieldTouched(actualField, true);
     } else {
-      formik.setFieldValue(field, value);
+      // Set the field value first
+      formik.setFieldValue(field, value, false); // false = don't validate immediately
+      
+      // Immediately clear error if value is provided (for required fields)
+      // This prevents showing error when a valid value is selected
+      if (value && formik.errors[field]) {
+        formik.setFieldError(field, undefined);
+      }
+      
+      // Then validate to ensure the value is correct
+      setTimeout(async () => {
+        try {
+          // Create updated values object with the new value
+          const updatedValues = { ...formik.values, [field]: value };
+          // Validate the field with updated values
+          await validationSchema.validateAt(field, updatedValues);
+          // If validation passes, ensure error is cleared
+          if (formik.errors[field]) {
+            formik.setFieldError(field, undefined);
+          }
+        } catch (error) {
+          // Validation failed - only show error if field is touched
+          if (formik.touched[field]) {
+            formik.setFieldError(field, error.message);
+          }
+        }
+      }, 0);
     }
   };
 
@@ -226,7 +255,7 @@ const Profileverification = () => {
   const getStepFields = (step) => {
     switch (step) {
       case 1:
-        return ['fullName', 'city', 'religion', 'maritalStatus', 'password', 'confirmPassword'];
+        return ['fullName', 'city', 'religion', 'maritalStatus'];
       case 2:
         return ['email', 'gender', 'birthDate'];
       case 3:
