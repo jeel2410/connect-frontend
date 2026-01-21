@@ -1,117 +1,103 @@
-import React from "react";
-import hdfcicon from "../../src/assets/image/bankCard/hdfclogo.png";
-import icici from "../../src/assets/image/bankCard/icici.png";
-import paytm from "../../src/assets/image/bankCard/paytm.png";
-import sbi from "../../src/assets/image/bankCard/sbi.png";
-import hsbc from "../../src/assets/image/bankCard/hsbc.png";
-import idfc from "../../src/assets/image/bankCard/idfc.png";
-import kotak from "../../src/assets/image/bankCard/kotak.png";
-import jio from "../../src/assets/image/bankCard/jio.png";
-export default function OfferCard() {
-  const offers = [
-    {
-      id: 1,
-      bank: "HDFC Bank",
-      img: hdfcicon,
-      card: " Classic Credit Card",
-      features: [
-        "Cashback Benefits",
-        "5% Cashback on transactions made through PayZapp and SatyBuy Platforms",
-        "2.5% Cashback on all other online spends.",
-        "Milestone Rewards",
-      ],
-    },
-    {
-      id: 2,
-      bank: "ICICI Bank",
-      img: icici,
-      card: "Platinum Card",
-      features: [
-        "Cashback Benefits",
-        "5% Cashback on transactions made through PayZapp and SatyBuy Platforms",
-        "2.5% Cashback on all other online spends.",
-        "Milestone Rewards",
-      ],
-    },
-    {
-      id: 3,
-      bank: "Paytm",
-      card: "Credit/Debit Card",
-      discount: "20% Cashback",
-        img:paytm,
-      features: [
-        "Cashback Benefits",
-        "5% Cashback on transactions made through PayZapp and SatyBuy Platforms",
-        "2.5% Cashback on all other online spends.",
-        "Milestone Rewards",
-      ],
-    },
-    {
-      id: 4,
-      bank: "SBI Bank",
-      card: "Credit/Debit Card",
-      discount: "10% Instant Discount",
-        img:sbi,
-      features: [
-        "Cashback Benefits",
-        "5% Cashback on transactions made through PayZapp and SatyBuy Platforms",
-        "2.5% Cashback on all other online spends.",
-        "Milestone Rewards",
-      ],
-    },
-    {
-      id: 5,
-      bank: "HSBC Bank",
-      card: "Credit/Debit Card",
-      discount: "10% Instant Discount",
-        img:hsbc,
-      features: [
-        "Cashback Benefits",
-        "5% Cashback on transactions made through PayZapp and SatyBuy Platforms",
-        "2.5% Cashback on all other online spends.",
-        "Milestone Rewards",
-      ],
-    },
-    {
-      id: 6,
-      bank: "IDFC Bank",
-      card: "Credit/Debit Card",
-      discount: "10% Instant Discount",
-        img:idfc,
-      features: [
-        "Cashback Benefits",
-        "5% Cashback on transactions made through PayZapp and SatyBuy Platforms",
-        "2.5% Cashback on all other online spends.",
-        "Milestone Rewards",
-      ],
-    },
-    {
-      id: 7,
-      bank: "Kotak Bank",
-      card: "Credit/Debit Card",
-      discount: "10% Instant Discount",
-        img:kotak,
-      features: [
-        "Cashback Benefits",
-        "5% Cashback on transactions made through PayZapp and SatyBuy Platforms",
-        "2.5% Cashback on all other online spends.",
-        "Milestone Rewards",
-      ],
-    },
-    {
-      id: 8,
-      bank: "AU Card",
-      card: "Credit/Debit Card",
-      discount: "10% Instant Discount",
-      img:jio,
-      features: [
-        "Cashback Benefits",
-        "5% Cashback on transactions made through PayZapp and SatyBuy Platforms",
-        "2.5% Cashback on all other online spends.",
-        "Milestone Rewards",
-      ],
-    },
-  ];
+import React, { useState, useEffect } from "react";
+import { getCookie } from "../utils/auth";
+import API_BASE_URL from "../utils/config";
+
+export default function OfferCard({ searchQuery = "" }) {
+  const [cards, setCards] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState({}); // Track active tab for each card: { cardId: 'features' | 'eligibility' }
+
+  // Fetch cards from API
+  useEffect(() => {
+    const fetchCards = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const token = getCookie("authToken");
+        
+        // Build query string with search parameter if provided
+        const queryParams = new URLSearchParams();
+        if (searchQuery && searchQuery.trim()) {
+          queryParams.append("search", searchQuery.trim());
+        }
+        
+        const url = `${API_BASE_URL}/api/list/cards${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+        
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch cards");
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.data && result.data.cards) {
+          setCards(result.data.cards);
+        } else {
+          setCards([]);
+        }
+      } catch (err) {
+        console.error("Error fetching cards:", err);
+        setError("Failed to load cards. Please try again.");
+        setCards([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCards();
+  }, [searchQuery]);
+
+  // Map card data to display format
+  const mapCardToOffer = (card) => {
+    // Extract bank name from card name (e.g., "HDFC Bank Classic Credit Card" -> "HDFC Bank")
+    const nameParts = card.name.split(" ");
+    const bankName = nameParts.length > 2 ? `${nameParts[0]} ${nameParts[1]}` : nameParts[0];
+    const cardName = nameParts.slice(2).join(" ") || card.name;
+    
+    return {
+      id: card._id,
+      bank: bankName || card.name,
+      img: card.logo_image || null,
+      card: cardName || card.description || "",
+      features: card.features || [],
+      eligibles: card.eligibles || [],
+      url: card.url || "#",
+    };
+  };
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
+        Loading cards...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ textAlign: "center", padding: "40px", color: "#dc2626" }}>
+        {error}
+      </div>
+    );
+  }
+
+  if (cards.length === 0) {
+    return (
+      <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
+        No cards available
+      </div>
+    );
+  }
+
+  const offers = cards.map(mapCardToOffer);
   return (
     <div>
       <div className="offers-page-grid">
@@ -119,37 +105,76 @@ export default function OfferCard() {
           <div key={offer.id} className="offers-page-card">
             <div className="offers-page-card-header">
               <div className="offers-page-bank-info">
-                <div className="offers-page-bank-icon">
-                  <img src={offer.img}></img>
-                </div>
+                {offer.img && (
+                  <div className="offers-page-bank-icon">
+                    <img 
+                      src={offer.img} 
+                      alt={offer.bank}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                        objectPosition: "center"
+                      }}
+                    />
+                  </div>
+                )}
                 <div>
                   <h3>{offer.bank}</h3>
                   <p>{offer.card}</p>
                 </div>
               </div>
-              <button className="offers-page-apply-btn">Apply Now</button>
+              <a 
+                href={offer.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="offers-page-apply-btn"
+              >
+                Apply Now
+              </a>
             </div>
 
             <div className="offer-page-badge-contant">
-              <button className="offers-page-discount-badge">
+              <button 
+                className={`offers-page-discount-badge ${activeTab[offer.id] !== 'eligibility' ? 'active' : ''}`}
+                onClick={() => setActiveTab(prev => ({ ...prev, [offer.id]: 'features' }))}
+              >
                 features & benefits
               </button>
 
-              <div className="offers-page-eligibility">
-                <span className="offers-page-eligibility-link">
-                  Eligibility & Documents
-                </span>
-              </div>
+              {offer.eligibles && offer.eligibles.length > 0 && (
+                <div className="offers-page-eligibility">
+                  <span 
+                    className={`offers-page-eligibility-link ${activeTab[offer.id] === 'eligibility' ? 'active' : ''}`}
+                    onClick={() => setActiveTab(prev => ({ ...prev, [offer.id]: 'eligibility' }))}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    Eligibility & Documents
+                  </span>
+                </div>
+              )}
             </div>
 
-            <div className="offers-page-features">
-              <h4>Key Features</h4>
-              <ul>
-                {offer.features.map((feature, index) => (
-                  <li key={index}>{feature}</li>
-                ))}
-              </ul>
-            </div>
+            {/* Display Features or Eligibilities based on active tab */}
+            {activeTab[offer.id] === 'eligibility' && offer.eligibles && offer.eligibles.length > 0 ? (
+              <div className="offers-page-features">
+                <h4>Eligibility & Documents</h4>
+                <ul>
+                  {offer.eligibles.map((eligible, index) => (
+                    <li key={index}>{eligible}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="offers-page-features">
+                <h4>Key Features</h4>
+                <ul>
+                  {offer.features.map((feature, index) => (
+                    <li key={index}>{feature}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         ))}
       </div>

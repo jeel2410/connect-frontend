@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
 import Sidebar from "../component/Sidebar";
@@ -14,6 +14,7 @@ import API_BASE_URL from "../utils/config";
 
 const Connection = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("active");
   const [activeConnections, setActiveConnections] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -171,6 +172,36 @@ const Connection = () => {
     }
   }, [activeTab]);
 
+  // Refresh active connections when navigating back to this page or when page becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      // Refresh active connections when page becomes visible and active tab is selected
+      if (document.visibilityState === 'visible' && activeTab === "active") {
+        fetchActiveConnections();
+      }
+    };
+
+    // Listen for visibility change event (when user switches tabs/windows or navigates back)
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Refresh when location changes (helps catch navigation back from other pages)
+    // This runs whenever the location object changes, including navigation back
+    if (activeTab === "active") {
+      // Small delay to ensure we're back on the connection page
+      const timeoutId = setTimeout(() => {
+        fetchActiveConnections();
+      }, 100);
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [location, activeTab]);
+
   // Handle reject incoming connection request
   const handleReject = async (requestId) => {
     try {
@@ -208,6 +239,48 @@ const Connection = () => {
       }
     } catch (error) {
       console.error("Error rejecting connection request:", error);
+      // Optionally show error message to user
+    }
+  };
+
+  // Handle cancel pending connection request
+  const handleCancelPending = async (receiverId) => {
+    try {
+      const token = getCookie("authToken");
+      if (!token) {
+        console.error("User not authenticated");
+        return;
+      }
+
+      // Use removeConnection endpoint to cancel pending request
+      // This will delete the pending request between the users
+      const cancelResponse = await fetch(`${API_BASE_URL}/api/connection/connection/${receiverId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!cancelResponse.ok) {
+        if (cancelResponse.status === 401) {
+          console.error("Unauthorized: Please login again");
+          return;
+        }
+        const errorData = await cancelResponse.json();
+        throw new Error(errorData.message || "Failed to cancel connection request");
+      }
+
+      const cancelData = await cancelResponse.json();
+      
+      if (cancelData.success) {
+        // Refetch pending requests after successful cancel
+        await fetchPendingRequests();
+      } else {
+        throw new Error(cancelData.message || "Failed to cancel connection request");
+      }
+    } catch (error) {
+      console.error("Error canceling connection request:", error);
       // Optionally show error message to user
     }
   };
@@ -329,19 +402,31 @@ const Connection = () => {
             <div className="connections-page-tabs">
               <button
                 className={`connections-page-tab ${activeTab === "active" ? "active" : ""}`}
-                onClick={() => setActiveTab("active")}
+                onClick={() => {
+                  setActiveTab("active");
+                  // Always refresh when clicking active tab, even if already active
+                  fetchActiveConnections();
+                }}
               >
                 Active({activeConnections.length})
               </button>
               <button
                 className={`connections-page-tab ${activeTab === "incoming" ? "active" : ""}`}
-                onClick={() => setActiveTab("incoming")}
+                onClick={() => {
+                  setActiveTab("incoming");
+                  // Always refresh when clicking incoming tab, even if already active
+                  fetchIncomingRequests();
+                }}
               >
                 Incoming ({incomingRequests.length})
               </button>
               <button
                 className={`connections-page-tab ${activeTab === "pending" ? "active" : ""}`}
-                onClick={() => setActiveTab("pending")}
+                onClick={() => {
+                  setActiveTab("pending");
+                  // Always refresh when clicking pending tab, even if already active
+                  fetchPendingRequests();
+                }}
               >
                 Pending({pendingRequests.length})
               </button>
@@ -369,7 +454,16 @@ const Connection = () => {
                   <div className="connections-page-grid">
                     {activeConnections.map((connection) => (
                       <div key={connection._id || connection.id} className="connections-page-item">
-                        <div className="connections-page-container">
+                        <div 
+                          className="connections-page-container"
+                          onClick={() => {
+                            const userId = connection._id || connection.id || connection.userId;
+                            if (userId) {
+                              navigate("/userprofile", { state: { userId } });
+                            }
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
                           <img
                             src={connection.profileImage || connection.image || profile1}
                             alt={connection.fullName || connection.name || "User"}
@@ -384,7 +478,10 @@ const Connection = () => {
                         </div>
                         <button
                           className="connections-page-message-btn"
-                          onClick={() => handleMessage(connection)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMessage(connection);
+                          }}
                         >
                           <img src={messageIcon} alt="message" /> Message
                         </button>
@@ -417,7 +514,16 @@ const Connection = () => {
                   <div className="connections-page-grid">
                     {incomingRequests.map((request) => (
                       <div key={request.requestId || request._id || request.id} className="connections-page-item incoming-item">
-                        <div className="connections-page-container">
+                        <div 
+                          className="connections-page-container"
+                          onClick={() => {
+                            const userId = request._id || request.id || request.userId;
+                            if (userId) {
+                              navigate("/userprofile", { state: { userId } });
+                            }
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
                           <img
                             src={request.profileImage || request.image || profile1}
                             alt={request.fullName || request.name || "User"}
@@ -431,13 +537,19 @@ const Connection = () => {
                         <div className="incoming-actions">
                           <button
                             className="reject-btn"
-                            onClick={() => handleReject(request.requestId || request._id || request.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleReject(request.requestId || request._id || request.id);
+                            }}
                           >
                             <img src={wrongICon} alt="Reject"></img> Reject
                           </button>
                           <button
                             className="accept-btn"
-                            onClick={() => handleAccept(request.requestId || request._id || request.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAccept(request.requestId || request._id || request.id);
+                            }}
                           >
                             <img src={rightIcon} alt="Accept"></img> Accept
                           </button>
@@ -470,8 +582,17 @@ const Connection = () => {
                 ) : (
                   <div className="connections-page-grid">
                     {pendingRequests.map((request) => (
-                      <div key={request._id || request.id} className="connections-page-item pending-item">
-                        <div className="connections-page-container">
+                      <div key={request._id || request.id} className="connections-page-item pending-item" style={{ position: "relative" }}>
+                        <div 
+                          className="connections-page-container"
+                          onClick={() => {
+                            const userId = request._id || request.id || request.userId;
+                            if (userId) {
+                              navigate("/userprofile", { state: { userId } });
+                            }
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
                           <img
                             src={request.profileImage || request.image || profile1}
                             alt={request.fullName || request.name || "User"}
@@ -482,6 +603,33 @@ const Connection = () => {
                             <p>{request.username || request.city || request.address || ""}</p>
                           </div>
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const receiverId = request._id || request.id || request.userId;
+                            if (receiverId) {
+                              handleCancelPending(receiverId);
+                            }
+                          }}
+                          title="Cancel request"
+                          style={{
+                            position: "absolute",
+                            top: "12px",
+                            right: "12px",
+                            background: "#FBEAEA",
+                            border: "none",
+                            borderRadius: "50%",
+                            width: "32px",
+                            height: "32px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            padding: "0"
+                          }}
+                        >
+                          <img src={wrongICon} alt="Cancel" style={{ width: "16px", height: "16px" }}></img>
+                        </button>
                       </div>
                     ))}
                   </div>

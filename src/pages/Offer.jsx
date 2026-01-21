@@ -1,10 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import creditcardicon from "../../src/assets/image/credit.png";
 import OfferCard from "../component/OfferCard";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
 
 const Offer = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
   return (
     <>
     <Header></Header>
@@ -16,16 +22,16 @@ const Offer = () => {
               <img src={creditcardicon} alt="search" />
             </span>
 
-            <select className="offers-page-select">
-              <option value="">Select Credit Card</option>
-              <option value="hdfc">HDFC Credit Card</option>
-              <option value="icici">ICICI Credit Card</option>
-              <option value="axis">Axis Credit Card</option>
-              <option value="sbi">SBI Credit Card</option>
-            </select>
+            <input
+              type="text"
+              className="offers-page-select"
+              placeholder="Search credit cards..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+            />
           </div>
         </div>
-        <OfferCard></OfferCard>
+        <OfferCard searchQuery={searchQuery}></OfferCard>
       </div>
       <Footer></Footer>
     </>

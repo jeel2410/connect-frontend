@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
 import Sidebar from "../component/Sidebar";
@@ -11,6 +12,7 @@ import { getCookie } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 
 const Likes = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("myFavorite");
   const [likedProfiles, setLikedProfiles] = useState([]);
   const [whoLikedMe, setWhoLikedMe] = useState([]);
@@ -203,7 +205,8 @@ const Likes = () => {
                       <div key={user._id || user.id} className="like-card">
                         <button
                           className="heart-btn-container"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             // Optionally handle unlike functionality here
                           }}
                         >
@@ -214,6 +217,13 @@ const Likes = () => {
                         </button>
                         <div 
                           className="like-profile-content"
+                          onClick={() => {
+                            const userId = user._id || user.id || user.userId;
+                            if (userId) {
+                              navigate("/userprofile", { state: { userId } });
+                            }
+                          }}
+                          style={{ cursor: "pointer" }}
                         >
                           <img
                             src={user.profileImage || user.image || profile1}
@@ -256,7 +266,8 @@ const Likes = () => {
                       <div key={user._id || user.id} className="like-card">
                         <button
                           className="heart-btn-container"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             // Optionally handle like back functionality here
                           }}
                         >
@@ -267,6 +278,13 @@ const Likes = () => {
                         </button>
                         <div 
                           className="like-profile-content"
+                          onClick={() => {
+                            const userId = user._id || user.id || user.userId;
+                            if (userId) {
+                              navigate("/userprofile", { state: { userId } });
+                            }
+                          }}
+                          style={{ cursor: "pointer" }}
                         >
                           <img
                             src={user.profileImage || user.image || profile1}

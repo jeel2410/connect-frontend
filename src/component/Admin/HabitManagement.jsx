@@ -290,7 +290,7 @@ const HabitManagement = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Habit Name</label>
                 <input
                   type="text"
@@ -335,7 +335,7 @@ const HabitManagement = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Habit Name</label>
                 <input
                   type="text"

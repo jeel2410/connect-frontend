@@ -418,7 +418,7 @@ const CardManagement = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Card Name *</label>
                 <input
                   type="text"
@@ -430,7 +430,7 @@ const CardManagement = () => {
                   disabled={submitting}
                 />
               </div>
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Description</label>
                 <textarea
                   className="form-input"
@@ -441,7 +441,7 @@ const CardManagement = () => {
                   disabled={submitting}
                 />
               </div>
-              <div className="form-group">
+              <div className="form-groups">
                 <label>URL</label>
                 <input
                   type="url"
@@ -452,7 +452,7 @@ const CardManagement = () => {
                   disabled={submitting}
                 />
               </div>
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Logo Image</label>
                 <input
                   type="file"
@@ -470,7 +470,7 @@ const CardManagement = () => {
                   </div>
                 )}
               </div>
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Features</label>
                 <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
                   <input
@@ -532,7 +532,7 @@ const CardManagement = () => {
                   </div>
                 )}
               </div>
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Eligibles</label>
                 <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
                   <input
@@ -627,7 +627,7 @@ const CardManagement = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Card Name *</label>
                 <input
                   type="text"
@@ -639,7 +639,7 @@ const CardManagement = () => {
                   disabled={submitting}
                 />
               </div>
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Description</label>
                 <textarea
                   className="form-input"
@@ -650,7 +650,7 @@ const CardManagement = () => {
                   disabled={submitting}
                 />
               </div>
-              <div className="form-group">
+              <div className="form-groups">
                 <label>URL</label>
                 <input
                   type="url"
@@ -661,7 +661,7 @@ const CardManagement = () => {
                   disabled={submitting}
                 />
               </div>
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Logo Image</label>
                 <input
                   type="file"
@@ -679,7 +679,7 @@ const CardManagement = () => {
                   </div>
                 )}
               </div>
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Features</label>
                 <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
                   <input
@@ -741,7 +741,7 @@ const CardManagement = () => {
                   </div>
                 )}
               </div>
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Eligibles</label>
                 <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
                   <input

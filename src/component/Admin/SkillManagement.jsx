@@ -290,7 +290,7 @@ const SkillManagement = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Skill Name</label>
                 <input
                   type="text"
@@ -335,7 +335,7 @@ const SkillManagement = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Skill Name</label>
                 <input
                   type="text"

@@ -283,7 +283,7 @@ const CityManagement = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
-              <div className="form-group">
+              <div className="form-groups">
                 <label>City Name</label>
                 <input
                   type="text"
@@ -328,7 +328,7 @@ const CityManagement = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
-              <div className="form-group">
+              <div className="form-groups">
                 <label>City Name</label>
                 <input
                   type="text"
