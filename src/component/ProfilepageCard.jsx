@@ -1,10 +1,11 @@
-import React from "react";
-
+import React, { useState, useEffect } from "react";
 import mobileIcon from "../../src/assets/image/mobile.png"
 import emailIcon from "../../src/assets/image/email.png"
 import calenderIcon from "../../src/assets/image/calender.png"
 import cityIcon from "../../src/assets/image/city.png"
 import ProfilecardHeader from "./ProfilecardHeader";
+import { getCookie } from "../utils/auth";
+import API_BASE_URL from "../utils/config";
 
 // Helper function to calculate age from date of birth
 const calculateAge = (dateOfBirth) => {
@@ -28,6 +29,63 @@ const formatDate = (dateString) => {
 };
 
 export default function ProfilepageCard({ profileData }) {
+  // All hooks must be called before any conditional returns
+  const [industryName, setIndustryName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+
+  // Fetch industry and company names
+  useEffect(() => {
+    if (!profileData) return;
+
+    const fetchIndustryAndCompanies = async () => {
+      try {
+        const token = getCookie("authToken");
+        if (!token) return;
+
+        // Fetch industry name
+        if (profileData.industry) {
+          const industriesResponse = await fetch(`${API_BASE_URL}/api/list/industries`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+          if (industriesResponse.ok) {
+            const industriesResult = await industriesResponse.json();
+            if (industriesResult.success && industriesResult.data && industriesResult.data.industries) {
+              const industry = industriesResult.data.industries.find(ind => ind._id === profileData.industry);
+              if (industry) setIndustryName(industry.name);
+            }
+          }
+        }
+
+        // Fetch company name
+        if (profileData.company) {
+          const companiesResponse = await fetch(`${API_BASE_URL}/api/list/companies`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+          if (companiesResponse.ok) {
+            const companiesResult = await companiesResponse.json();
+            if (companiesResult.success && companiesResult.data && companiesResult.data.companies) {
+              const company = companiesResult.data.companies.find(c => c._id === profileData.company);
+              if (company) setCompanyName(company.name);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching industry/companies:", err);
+      }
+    };
+
+    fetchIndustryAndCompanies();
+  }, [profileData?.industry, profileData?.company]);
+
+  // Early return after hooks
   if (!profileData) {
     return (
       <div className="dating-profile-main">
@@ -154,6 +212,24 @@ export default function ProfilepageCard({ profileData }) {
                   {profileData.skills.map((skill, index) => (
                     <span key={index} className="dating-profile-tag">{skill}</span>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {industryName && (
+              <div className="dating-profile-info-group">
+                <label>Industry</label>
+                <div className="dating-profile-tags">
+                  <span className="dating-profile-tag">{industryName}</span>
+                </div>
+              </div>
+            )}
+
+            {companyName && (
+              <div className="dating-profile-info-group">
+                <label>Company</label>
+                <div className="dating-profile-tags">
+                  <span className="dating-profile-tag">{companyName}</span>
                 </div>
               </div>
             )}

@@ -98,7 +98,7 @@ const BroadcastNotification = () => {
         )}
 
         <form onSubmit={handleSubmit} className="modal-form">
-          <div className="form-group">
+          <div className="form-groups">
             <label>Notification Title *</label>
             <input
               type="text"
@@ -114,7 +114,7 @@ const BroadcastNotification = () => {
             />
           </div>
 
-          <div className="form-group">
+          <div className="form-groups">
             <label>Notification Description *</label>
             <textarea
               className="form-input"

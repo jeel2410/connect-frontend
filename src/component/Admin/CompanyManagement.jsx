@@ -324,7 +324,7 @@ const CompanyManagement = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Company Name</label>
                 <input
                   type="text"
@@ -336,7 +336,7 @@ const CompanyManagement = () => {
                   disabled={submitting}
                 />
               </div>
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Industry</label>
                 <select
                   className="form-input"
@@ -386,7 +386,7 @@ const CompanyManagement = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Company Name</label>
                 <input
                   type="text"
@@ -398,7 +398,7 @@ const CompanyManagement = () => {
                   disabled={submitting}
                 />
               </div>
-              <div className="form-group">
+              <div className="form-groups">
                 <label>Industry</label>
                 <select
                   className="form-input"

@@ -37,6 +37,12 @@ export default function EditProfile() {
   const [skills, setSkills] = useState([]);
   const [profileImage, setProfileImage] = useState(null);
   const [profileImageFile, setProfileImageFile] = useState(null);
+  const [industry, setIndustry] = useState("");
+  const [company, setCompany] = useState("");
+  const [industriesList, setIndustriesList] = useState([]);
+  const [companiesList, setCompaniesList] = useState([]);
+  const [loadingIndustries, setLoadingIndustries] = useState(false);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
 
   // Load current profile data
   useEffect(() => {
@@ -87,6 +93,8 @@ export default function EditProfile() {
           setInterests(profile.interests || []);
           setHabits(profile.habits || []);
           setSkills(profile.skills || []);
+          setIndustry(profile.industry || "");
+          setCompany(profile.company || "");
           if (profile.profileImage) {
             setProfileImage(profile.profileImage);
           }
@@ -101,6 +109,71 @@ export default function EditProfile() {
 
     fetchProfile();
   }, []);
+
+  // Fetch industries on component mount
+  useEffect(() => {
+    const fetchIndustries = async () => {
+      try {
+        setLoadingIndustries(true);
+        const token = getCookie("authToken");
+        const response = await fetch(`${API_BASE_URL}/api/list/industries`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.industries) {
+            setIndustriesList(result.data.industries);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching industries:", err);
+      } finally {
+        setLoadingIndustries(false);
+      }
+    };
+
+    fetchIndustries();
+  }, []);
+
+  // Fetch companies when industry is selected
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      if (!industry) {
+        setCompaniesList([]);
+        return;
+      }
+
+      try {
+        setLoadingCompanies(true);
+        const token = getCookie("authToken");
+        const response = await fetch(`${API_BASE_URL}/api/list/companies?industryId=${industry}`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.companies) {
+            setCompaniesList(result.data.companies);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching companies:", err);
+      } finally {
+        setLoadingCompanies(false);
+      }
+    };
+
+    fetchCompanies();
+  }, [industry]);
 
   const updateData = (field, value) => {
     setData(prev => ({ ...prev, [field]: value }));
@@ -156,6 +229,8 @@ export default function EditProfile() {
       formData.append("skills", skills.join(","));
       formData.append("preferredLanguage", data.preferredLanguage);
       formData.append("email", data.email);
+      formData.append("industry", industry || "");
+      formData.append("company", company || "");
 
       // Add profile image if it's a new file
       if (profileImageFile) {
@@ -502,6 +577,47 @@ export default function EditProfile() {
                     <img src={dropdownIcon} alt="Dropdown"></img>
                   </span>
                 </div>
+                <div className="edit-profile-field-inline">
+                  <label>Industry <span className="required">*</span></label>
+                  <select
+                    value={industry || ""}
+                    onChange={(e) => {
+                      setIndustry(e.target.value);
+                      setCompany(""); // Clear company when industry changes
+                    }}
+                    disabled={loadingIndustries}
+                  >
+                    <option value="">Select Industry</option>
+                    {industriesList.map((ind) => (
+                      <option key={ind._id} value={ind._id}>
+                        {ind.name}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="edit-profile-select-arrow">
+                    <img src={dropdownIcon} alt="Dropdown"></img>
+                  </span>
+                </div>
+                {industry && (
+                  <div className="edit-profile-field-inline">
+                    <label>Company</label>
+                    <select
+                      value={company || ""}
+                      onChange={(e) => setCompany(e.target.value)}
+                      disabled={loadingCompanies}
+                    >
+                      <option value="">Select Company</option>
+                      {companiesList.map((comp) => (
+                        <option key={comp._id} value={comp._id}>
+                          {comp.name}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="edit-profile-select-arrow">
+                      <img src={dropdownIcon} alt="Dropdown"></img>
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Profile Image Upload */}

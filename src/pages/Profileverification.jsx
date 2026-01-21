@@ -12,6 +12,7 @@ import Step4 from "../../src/component/StepForm/Step4";
 import Step5 from "../../src/component/StepForm/Step5";
 import Step6 from "../../src/component/StepForm/Step6";
 import Step7 from "../../src/component/StepForm/Step7";
+import Step8 from "../../src/component/StepForm/Step8";
 import AuthImage from "../component/AuthImage";
 import logo from "../../src/assets/image/connect_logo.png";
 import { getCookie, setCookie, isAuthenticated } from "../utils/auth";
@@ -24,7 +25,7 @@ const Profileverification = () => {
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
-  const totalSteps = 7;
+  const totalSteps = 8;
 
   // Redirect if profile is already complete
   useEffect(() => {
@@ -65,6 +66,8 @@ const Profileverification = () => {
     habits: Yup.array(),
     interest: Yup.array(),
     skill: Yup.array(),
+    industry: Yup.string().required("Industry is required"),
+    company: Yup.string(),
     photo: Yup.mixed()
       .required("Profile image is required")
       .test("fileSize", "File size must be less than 5MB", (value) => {
@@ -90,6 +93,8 @@ const Profileverification = () => {
       habits: [],
       interest: [],
       skill: [],
+      industry: "",
+      company: "",
       photo: null,
     },
     validationSchema: validationSchema,
@@ -122,6 +127,8 @@ const Profileverification = () => {
         formData.append("skills", (values.skill || []).join(","));
         formData.append("preferredLanguage", values.language);
         formData.append("email", values.email);
+        formData.append("industry", values.industry || "");
+        formData.append("company", values.company || "");
 
         // Add profile image if it's a file
         if (values.photo) {
@@ -267,6 +274,8 @@ const Profileverification = () => {
       case 6:
         return ['skill'];
       case 7:
+        return ['industry', 'company'];
+      case 8:
         return ['photo'];
       default:
         return [];
@@ -292,6 +301,8 @@ const Profileverification = () => {
       case 6:
         return <Step6 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
       case 7:
+        return <Step8 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
+      case 8:
         return <Step7 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
       default:
         return;

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import userProfile from "../assets/image/userProfile.png"
 import closeIcon from "../assets/image/close.png"
 import heartfillIcon from "../assets/image/fill_heart.png"
+import heartOutlineIcon from "../assets/image/outline_icon.png"
 import blackcIcon from "../assets/image/black_c.png"
 import messageIcon from "../assets/image/message.png"
 import { getCookie } from "../utils/auth";
@@ -35,9 +36,12 @@ export default function UserProfileModal({ userId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [sendingConnect, setSendingConnect] = useState(false);
-  const [connectStatus, setConnectStatus] = useState(null); // 'pending', 'connected', 'none'
+  const [isConnected, setIsConnected] = useState(false);
+  const [hasPendingRequest, setHasPendingRequest] = useState(false);
   const [sendingLike, setSendingLike] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [industryName, setIndustryName] = useState("");
+  const [companyName, setCompanyName] = useState("");
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -80,6 +84,12 @@ export default function UserProfileModal({ userId }) {
           // Handle different possible response structures
           const profile = data.data.profile || data.data;
           setProfileData(profile);
+          // Set isLiked status from the profile response
+          setIsLiked(profile.isLiked || profile.likedByMe || false);
+          // Set connection status - simple: connected or not
+          setIsConnected(profile.isConnected || profile.alreadyConnect || false);
+          // Check if there's a pending request
+          setHasPendingRequest(profile.hasSentRequest || profile.sendRequest || false);
         } else {
           setError("Profile data not found");
         }
@@ -94,9 +104,61 @@ export default function UserProfileModal({ userId }) {
     fetchUserProfile();
   }, [userId]);
 
-  // Handle send connect request
-  const handleSendConnectRequest = async () => {
-    if (!userId || sendingConnect) {
+  // Fetch industry and company names when profileData is loaded
+  useEffect(() => {
+    const fetchIndustryAndCompanies = async () => {
+      if (!profileData) return;
+
+      try {
+        const token = getCookie("authToken");
+        if (!token) return;
+
+        // Fetch industry name
+        if (profileData.industry) {
+          const industriesResponse = await fetch(`${API_BASE_URL}/api/list/industries`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+          if (industriesResponse.ok) {
+            const industriesResult = await industriesResponse.json();
+            if (industriesResult.success && industriesResult.data && industriesResult.data.industries) {
+              const industry = industriesResult.data.industries.find(ind => ind._id === profileData.industry);
+              if (industry) setIndustryName(industry.name);
+            }
+          }
+        }
+
+        // Fetch company name
+        if (profileData.company) {
+          const companiesResponse = await fetch(`${API_BASE_URL}/api/list/companies`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+          if (companiesResponse.ok) {
+            const companiesResult = await companiesResponse.json();
+            if (companiesResult.success && companiesResult.data && companiesResult.data.companies) {
+              const company = companiesResult.data.companies.find(c => c._id === profileData.company);
+              if (company) setCompanyName(company.name);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching industry/companies:", err);
+      }
+    };
+
+    fetchIndustryAndCompanies();
+  }, [profileData?.industry, profileData?.company]);
+
+  // Handle connect - send connection request
+  const handleConnect = async () => {
+    if (!userId || sendingConnect || isConnected || hasPendingRequest) {
       return;
     }
 
@@ -104,7 +166,7 @@ export default function UserProfileModal({ userId }) {
       setSendingConnect(true);
       const token = getCookie("authToken");
       if (!token) {
-        setError("Please login to send connection request");
+        setError("Please login to connect");
         return;
       }
 
@@ -123,27 +185,89 @@ export default function UserProfileModal({ userId }) {
           return;
         }
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to send connection request");
+        throw new Error(errorData.message || "Failed to connect");
       }
 
       const data = await response.json();
       
       if (data.success) {
-        setConnectStatus('pending');
-        // Navigate to home page after successful connection request
-        navigate('/');
+        // After sending request, check if it was auto-accepted or refresh profile
+        // For now, just refresh the profile to get updated status
+        const profileResponse = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          if (profileData.success && profileData.data) {
+            const profile = profileData.data.profile || profileData.data;
+            setIsConnected(profile.isConnected || profile.alreadyConnect || false);
+            setHasPendingRequest(profile.hasSentRequest || profile.sendRequest || false);
+          }
+        }
       } else {
-        throw new Error(data.message || "Failed to send connection request");
+        throw new Error(data.message || "Failed to connect");
       }
     } catch (error) {
-      console.error("Error sending connection request:", error);
-      setError(error.message || "Failed to send connection request");
+      console.error("Error connecting:", error);
+      setError(error.message || "Failed to connect");
     } finally {
       setSendingConnect(false);
     }
   };
 
-  // Handle like user
+  // Handle remove connection
+  const handleRemoveConnection = async () => {
+    if (!userId || sendingConnect || !isConnected) {
+      return;
+    }
+
+    try {
+      setSendingConnect(true);
+      const token = getCookie("authToken");
+      if (!token) {
+        setError("Please login to remove connection");
+        return;
+      }
+
+      // Call the remove connection API
+      const response = await fetch(`${API_BASE_URL}/api/connection/connection/${userId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setError("Unauthorized: Please login again");
+          return;
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to remove connection");
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setIsConnected(false);
+      } else {
+        throw new Error(data.message || "Failed to remove connection");
+      }
+    } catch (error) {
+      console.error("Error removing connection:", error);
+      setError(error.message || "Failed to remove connection");
+    } finally {
+      setSendingConnect(false);
+    }
+  };
+
+  // Handle like/unlike user (toggle)
   const handleLike = async () => {
     if (!userId || sendingLike) {
       return;
@@ -157,9 +281,10 @@ export default function UserProfileModal({ userId }) {
         return;
       }
 
-      // Call the like API
+      // If already liked, call DELETE to unlike, otherwise call POST to like
+      const method = isLiked ? "DELETE" : "POST";
       const response = await fetch(`${API_BASE_URL}/api/connection/like/${userId}`, {
-        method: "POST",
+        method: method,
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -172,21 +297,20 @@ export default function UserProfileModal({ userId }) {
           return;
         }
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to like user");
+        throw new Error(errorData.message || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
       }
 
       const data = await response.json();
       
       if (data.success) {
-        setIsLiked(true);
-        // Navigate to home page after successful like
-        navigate('/');
+        // Toggle the like status
+        setIsLiked(!isLiked);
       } else {
-        throw new Error(data.message || "Failed to like user");
+        throw new Error(data.message || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
       }
     } catch (error) {
-      console.error("Error liking user:", error);
-      setError(error.message || "Failed to like user");
+      console.error(`Error ${isLiked ? 'unliking' : 'liking'} user:`, error);
+      setError(error.message || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
     } finally {
       setSendingLike(false);
     }
@@ -303,17 +427,23 @@ export default function UserProfileModal({ userId }) {
           <button 
             className="user-profile-social-btn heartfill-btn"
             onClick={handleLike}
-            disabled={sendingLike || isLiked}
-            title={isLiked ? 'Liked' : 'Like this user'}
-            style={{ opacity: isLiked ? 0.6 : 1 }}
+            disabled={sendingLike}
+            title={isLiked ? 'Unlike this user' : 'Like this user'}
+            style={{ opacity: sendingLike ? 0.6 : 1 }}
           >
-            <img src={heartfillIcon} alt="Like"></img>
+            <img src={isLiked ? heartfillIcon : heartOutlineIcon} alt={isLiked ? "Unlike" : "Like"}></img>
           </button>
           <button 
             className="user-profile-social-btn blackc-btn"
-            onClick={handleSendConnectRequest}
-            disabled={sendingConnect || connectStatus === 'pending'}
-            title={connectStatus === 'pending' ? 'Connection request sent' : 'Send connection request'}
+            onClick={isConnected ? handleRemoveConnection : handleConnect}
+            disabled={sendingConnect || hasPendingRequest}
+            title={
+              isConnected 
+                ? 'Remove connection' 
+                : hasPendingRequest 
+                ? 'Connection request pending' 
+                : 'Connect'
+            }
           >
             <img
               src={blackcIcon}
@@ -321,9 +451,9 @@ export default function UserProfileModal({ userId }) {
                 backgroundColor: "white",
                 borderRadius: "50%",
                 padding: "5px",
-                opacity: connectStatus === 'pending' ? 0.6 : 1
+                opacity: (sendingConnect || hasPendingRequest) ? 0.6 : 1
               }}
-              alt="Connect"
+              alt={isConnected ? "Disconnect" : hasPendingRequest ? "Pending" : "Connect"}
             ></img>
           </button>
           <button 
@@ -358,14 +488,14 @@ export default function UserProfileModal({ userId }) {
             </div>
           )}
           <div className="user-profile-details-grid">
-            <div className="user-profile-detail-item">
+            {/* <div className="user-profile-detail-item">
               <label>Mobile Number</label>
               <p>{profileData.phoneNumber || "Not provided"}</p>
             </div>
             <div className="user-profile-detail-item">
               <label>Email ID</label>
               <p>{profileData.email || "Not provided"}</p>
-            </div>
+            </div> */}
             {age && (
               <div className="user-profile-detail-item">
                 <label>Age</label>
@@ -392,7 +522,20 @@ export default function UserProfileModal({ userId }) {
               <label>Languages</label>
               <p>{profileData.preferredLanguage || "Not provided"}</p>
             </div>
+            {industryName && (
+              <div className="user-profile-detail-item">
+                <label>Industry</label>
+                <p>{industryName}</p>
+              </div>
+            )}
           </div>
+
+          {companyName && (
+            <div className="user-profile-detail-item">
+              <label>Company</label>
+              <p>{companyName}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
