@@ -140,10 +140,10 @@ export default function Home() {
       queryParams.append("page", "1");
       queryParams.append("limit", "10");
       
-      if (latitude !== null && longitude !== null) {
-        queryParams.append("latitude", latitude.toString());
-        queryParams.append("longitude", longitude.toString());
-      }
+      // if (latitude !== null && longitude !== null) {
+      //   queryParams.append("latitude", latitude.toString());
+      //   queryParams.append("longitude", longitude.toString());
+      // }
 
       // Call the feed API
       const feedResponse = await fetch(`${API_BASE_URL}/api/feed/web?${queryParams.toString()}`, {
