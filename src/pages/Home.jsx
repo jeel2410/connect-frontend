@@ -136,7 +136,7 @@ export default function Home() {
 
       // Build query parameters
       const queryParams = new URLSearchParams();
-      queryParams.append("gender", oppositeGender);
+      // queryParams.append("gender", oppositeGender);
       queryParams.append("page", "1");
       queryParams.append("limit", "10");
       
