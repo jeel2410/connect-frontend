@@ -21,14 +21,18 @@ const Footer = () => {
     <div className="footer-bottom-row">
       <div className="left-section">
         <p className="copyright">
-         copyright © 2025 <span className="highlight">Connect.in Developers Pvt. Ltd.</span> All Rights Reserved
+         copyright © 2026 <span className="highlight">Connect.in</span> All Rights Reserved
         </p>
        
       </div>
       <div className="legal-links">
-          <a href="#privacy" className="legal-link">Privacy Policy</a>
+          <a href="/privacy-policy" className="legal-link">Privacy Policy</a>
           <span className="separator">•</span>
-          <a href="#terms" className="legal-link">Terms of Use</a>
+          <a href="/terms-of-use" className="legal-link">Terms of Use</a>
+          <span className="separator">•</span>
+          <a href="/about-us" className="legal-link">About Us</a>
+          <span className="separator">•</span>
+          <a href="/cookie-policy" className="legal-link">Cookie Policy</a>
         </div>
       <div className="footer-social">
         <a className="social-icon"><img src={facebookIcon}></img></a>

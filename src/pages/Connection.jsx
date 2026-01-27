@@ -161,7 +161,14 @@ const Connection = () => {
     }
   };
 
-  // Fetch data when component mounts or when tab changes
+  // Fetch all data when component mounts to show counts on all tabs
+  useEffect(() => {
+    fetchActiveConnections();
+    fetchPendingRequests();
+    fetchIncomingRequests();
+  }, []);
+
+  // Fetch data when tab changes (for the active tab content)
   useEffect(() => {
     if (activeTab === "active") {
       fetchActiveConnections();
@@ -172,12 +179,14 @@ const Connection = () => {
     }
   }, [activeTab]);
 
-  // Refresh active connections when navigating back to this page or when page becomes visible
+  // Refresh all connections when navigating back to this page or when page becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
-      // Refresh active connections when page becomes visible and active tab is selected
-      if (document.visibilityState === 'visible' && activeTab === "active") {
+      // Refresh all counts when page becomes visible
+      if (document.visibilityState === 'visible') {
         fetchActiveConnections();
+        fetchPendingRequests();
+        fetchIncomingRequests();
       }
     };
 
@@ -186,21 +195,18 @@ const Connection = () => {
 
     // Refresh when location changes (helps catch navigation back from other pages)
     // This runs whenever the location object changes, including navigation back
-    if (activeTab === "active") {
-      // Small delay to ensure we're back on the connection page
-      const timeoutId = setTimeout(() => {
-        fetchActiveConnections();
-      }, 100);
-      return () => {
-        clearTimeout(timeoutId);
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-      };
-    }
+    // Small delay to ensure we're back on the connection page
+    const timeoutId = setTimeout(() => {
+      fetchActiveConnections();
+      fetchPendingRequests();
+      fetchIncomingRequests();
+    }, 100);
 
     return () => {
+      clearTimeout(timeoutId);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [location, activeTab]);
+  }, [location]);
 
   // Handle reject incoming connection request
   const handleReject = async (requestId) => {

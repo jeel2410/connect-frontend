@@ -81,3 +81,7 @@ export const logout = () => {
   window.location.href = "/Login";
 };
 
+const token = getCookie("authToken");
+
+// Log it
+console.log("Auth Token:", token);

@@ -36,7 +36,7 @@ export default function AuthImage() {
       ))}
 
       <div className="content-section">
-        <h2 className="heading">Donec quam convis maximus dow</h2>
+        <h2 className="heading">India's Network for real Connections</h2>
         <p className="description-login">
          Suspendisse semper magna id euismod neque ultricies Proi pharetra sap non Condiment purus. Morbi eu sem turpis.
         </p>

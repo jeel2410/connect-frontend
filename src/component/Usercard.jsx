@@ -5,7 +5,7 @@ import close from "../../src/assets/image/close.png";
 import heart from "../../src/assets/image/heart.png";
 import c from "../../src/assets/image/c.png";
 
-export default function Usercard({ feedData = [], loading = false, onLike = null, onConnect = null }) {
+export default function Usercard({ feedData = [], loading = false, onLike = null, onConnect = null, onSkip = null }) {
   const navigate = useNavigate();
 
   // Map feed data to profile format
@@ -32,6 +32,13 @@ export default function Usercard({ feedData = [], loading = false, onLike = null
     e.stopPropagation(); // Prevent navigation when clicking connect button
     if (onConnect && userId) {
       onConnect(userId);
+    }
+  };
+
+  const handleSkipClick = (userId, e) => {
+    e.stopPropagation(); // Prevent navigation when clicking skip button
+    if (onSkip && userId) {
+      onSkip(userId);
     }
   };
 
@@ -95,8 +102,12 @@ export default function Usercard({ feedData = [], loading = false, onLike = null
             <p className="profile-address">{profile.address}</p>
 
             <div className="profile-actions" onClick={(e) => e.stopPropagation()}>
-              <button className="action-btn ">
-                <img src={close} alt="Close"></img>
+              <button 
+                className="action-btn"
+                onClick={(e) => handleSkipClick(profile.userId, e)}
+                title="Skip (move to end)"
+              >
+                <img src={close} alt="Skip"></img>
               </button>
               <button 
                 className={`action-btn-2 heart-btn`}

@@ -10,7 +10,7 @@ import calenderIcon from "../../src/assets/image/calender.png";
 import cityIcon from "../../src/assets/image/city.png";
 import removeIcom from "../../src/assets/image/removeIcon.png";
 import dropdownIcon from "../../src/assets/image/dropdownIcon.png";
-import { getCookie, setCookie } from "../utils/auth";
+import { getCookie, setCookie, logout } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 
 export default function EditProfile() {
@@ -43,6 +43,8 @@ export default function EditProfile() {
   const [companiesList, setCompaniesList] = useState([]);
   const [loadingIndustries, setLoadingIndustries] = useState(false);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Load current profile data
   useEffect(() => {
@@ -282,6 +284,44 @@ export default function EditProfile() {
 
   const handleCancel = () => {
     navigate("/profile");
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      setDeleting(true);
+      setError("");
+      
+      const token = getCookie("authToken");
+      if (!token) {
+        throw new Error("Authentication required. Please login again.");
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/user/account`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to delete account. Please try again.");
+      }
+
+      if (result.success) {
+        // Logout and redirect to login page
+        logout();
+      } else {
+        throw new Error(result.message || "Failed to delete account");
+      }
+    } catch (err) {
+      console.error("Error deleting account:", err);
+      setError(err.message || "Something went wrong. Please try again.");
+      setDeleting(false);
+      setShowDeleteModal(false);
+    }
   };
   if (loading) {
     return (
@@ -655,21 +695,65 @@ export default function EditProfile() {
               <button 
                 className="edit-profile-cancel-btn"
                 onClick={handleCancel}
-                disabled={saving}
+                disabled={saving || deleting}
               >
                 Cancel
               </button>
               <button 
                 className="edit-profile-save-btn"
                 onClick={handleSave}
-                disabled={saving}
+                disabled={saving || deleting}
               >
                 {saving ? "Saving..." : "Save"}
+              </button>
+            </div>
+
+            {/* Delete Account Section */}
+            <div className="delete-account-section" style={{margin:20}}>
+              <h3 className="delete-account-title">Danger Zone</h3>
+              <p className="delete-account-description">
+                Once you delete your account, there is no going back. Please be certain.
+              </p>
+              <button 
+                className="delete-account-btn"
+                onClick={() => setShowDeleteModal(true)}
+                disabled={saving || deleting}
+              >
+                Delete Account
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="delete-modal-overlay" onClick={() => !deleting && setShowDeleteModal(false)}>
+          <div className="delete-modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2 className="delete-modal-title">Delete Account</h2>
+            <p className="delete-modal-message">
+              Are you sure you want to delete your account? This action cannot be undone and will permanently delete all your data, connections, and messages.
+            </p>
+            <div className="delete-modal-actions">
+              <button 
+                className="delete-modal-cancel-btn"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button 
+                className="delete-modal-confirm-btn"
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+              >
+                {deleting ? "Deleting..." : "Yes, Delete Account"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer></Footer>
     </>
   );

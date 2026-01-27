@@ -13,7 +13,7 @@ const AdminProtectedRoute = ({ children }) => {
       try {
         // First check if user has token
         if (!hasToken()) {
-          navigate("/Login", { replace: true });
+          navigate("/", { replace: true });
           return;
         }
 

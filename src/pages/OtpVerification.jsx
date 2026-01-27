@@ -84,7 +84,6 @@ const OtpVerification = () => {
           
           // Save isProfileComplete status to cookie
           setCookie("isProfileComplete", isProfileComplete ? "true" : "false", 7);
-
           // Handle redirect based on user status
           if (!isProfileComplete) {
             // New user with incomplete profile - redirect to register/profile completion

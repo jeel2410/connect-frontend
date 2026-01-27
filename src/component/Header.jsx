@@ -139,6 +139,15 @@ const Header = () => {
             <a href="/offer" className="nav-link">
               Offers
             </a>
+            <a href="/features" className="nav-link">
+              Features
+            </a>
+            <a href="/resources" className="nav-link">
+              Resources
+            </a>
+            <a href="/download-app" className="nav-link">
+              Download App
+            </a>
           </nav>
           <button className="location-btn">
             <div className="location-round">
@@ -226,6 +235,15 @@ const Header = () => {
               </a>
               <a href="/offer" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                 Offers
+              </a>
+              <a href="/features" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                Features
+              </a>
+              <a href="/resources" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                Resources
+              </a>
+              <a href="/download-app" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                Download App
               </a>
             </nav>
 

@@ -136,14 +136,14 @@ export default function Home() {
 
       // Build query parameters
       const queryParams = new URLSearchParams();
-      // queryParams.append("gender", oppositeGender);
+      queryParams.append("gender", oppositeGender);
       queryParams.append("page", "1");
-      queryParams.append("limit", "10");
+      queryParams.append("limit", "5000");
       
-      // if (latitude !== null && longitude !== null) {
-      //   queryParams.append("latitude", latitude.toString());
-      //   queryParams.append("longitude", longitude.toString());
-      // }
+      if (latitude !== null && longitude !== null) {
+        queryParams.append("latitude", latitude.toString());
+        queryParams.append("longitude", longitude.toString());
+      }
 
       // Call the feed API
       const feedResponse = await fetch(`${API_BASE_URL}/api/feed/web?${queryParams.toString()}`, {
@@ -260,6 +260,26 @@ export default function Home() {
     }
   };
 
+  // Handle skip action - move profile to end of list
+  const handleSkip = (skippedUserId) => {
+    // Find the profile to skip
+    const profileIndex = feedData.findIndex(profile => 
+      (profile._id || profile.id) === skippedUserId
+    );
+    
+    if (profileIndex === -1) {
+      return; // Profile not found
+    }
+    
+    // Create new array: remove from current position and add to end
+    const newFeedData = [...feedData];
+    const [skippedProfile] = newFeedData.splice(profileIndex, 1);
+    newFeedData.push(skippedProfile);
+    
+    // Update state with reordered list
+    setFeedData(newFeedData);
+  };
+
   // Fetch user profile data and then feed data when component mounts
   useEffect(() => {
     const fetchUserProfileAndFeed = async () => {
@@ -341,7 +361,7 @@ export default function Home() {
     <div>
       <Header></Header>
       {/* First section */}
-      <div className="hero-container">
+      {/* <div className="hero-container">
         <div className="deco-circle deco-circle-1"></div>
         <div className="deco-circle deco-circle-2"></div>
         <div className="deco-dot deco-dot-1"></div>
@@ -350,7 +370,6 @@ export default function Home() {
 
         <div className="hero-content">
           <div className="hero-grid">
-            {/* Left Content */}
             <div className="hero-left">
               <div className="hero-badge">
                 <span>Etiam Eget Mattis</span>
@@ -417,9 +436,8 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Content - Image & Stats */}
+            
             <div className="hero-right">
-              {/* Professional Image */}
               <div className="hero-image-container">
                 <img
                   src={heroImage}
@@ -427,8 +445,6 @@ export default function Home() {
                   className="hero-image"
                 />
               </div>
-
-              {/* Floating Review Card */}
               <div className="review-card">
                 <div className="review-content">
                   <div className="avatar-stack">
@@ -447,24 +463,16 @@ export default function Home() {
                 </div>
               </div>
               <div className="stats-card">
-                {/* <div className="stats-number">50K+</div>
-                <div className="stats-chart">
-                  <div className="bar bar-1"></div>
-                  <div className="bar bar-2"></div>
-                  <div className="bar bar-3"></div>
-                  <div className="bar bar-4"></div>
-                </div>
-                <p className="stats-text">People got hired</p> */}
+              
                 <img src={floatchart}></img>
               </div>
 
-              {/* Decorative elements */}
               <div className="hero-deco hero-deco-1"></div>
               <div className="hero-deco hero-deco-2"></div>
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
       {/* second section */}
       <div className="profile-container">
         <div className="sec-header">
@@ -478,11 +486,11 @@ export default function Home() {
           </div>
           <button className="view-more-btn" onClick={() => navigate("/search")}>View More</button>
         </div>
-        <Usercard feedData={feedData} loading={loadingFeed} onLike={handleLike} onConnect={handleConnect}></Usercard>
+        <Usercard feedData={feedData} loading={loadingFeed} onLike={handleLike} onConnect={handleConnect} onSkip={handleSkip}></Usercard>
       </div>
 
       {/* third section */}
-      <div className="tech-platform-container">
+      {/* <div className="tech-platform-container">
         <div className="content-wrapper">
           <div className="image-section">
             <img
@@ -524,7 +532,7 @@ export default function Home() {
 
       
         <div className="decorative-dots top-dots"></div>
-      </div>
+      </div> */}
    
 
       <Footer></Footer>

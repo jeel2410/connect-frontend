@@ -126,7 +126,12 @@ export default function UserProfileModal({ userId }) {
             const industriesResult = await industriesResponse.json();
             if (industriesResult.success && industriesResult.data && industriesResult.data.industries) {
               const industry = industriesResult.data.industries.find(ind => ind._id === profileData.industry);
-              if (industry) setIndustryName(industry.name);
+              if (industry) {
+                setIndustryName(industry.name);
+              } else {
+                // If not found in list, use the ID as fallback or check if it's already a name
+                setIndustryName(profileData.industry);
+              }
             }
           }
         }
@@ -144,17 +149,33 @@ export default function UserProfileModal({ userId }) {
             const companiesResult = await companiesResponse.json();
             if (companiesResult.success && companiesResult.data && companiesResult.data.companies) {
               const company = companiesResult.data.companies.find(c => c._id === profileData.company);
-              if (company) setCompanyName(company.name);
+              if (company) {
+                setCompanyName(company.name);
+              } else {
+                // If not found in list, use the value as fallback (might already be a name)
+                setCompanyName(profileData.company);
+              }
             }
+          } else {
+            // If API fails, use the value directly (might already be a name)
+            setCompanyName(profileData.company);
           }
         }
       } catch (err) {
         console.error("Error fetching industry/companies:", err);
+        // Fallback: use the values directly if they exist and haven't been set yet
+        if (profileData.industry) {
+          setIndustryName(prev => prev || profileData.industry);
+        }
+        if (profileData.company) {
+          setCompanyName(prev => prev || profileData.company);
+        }
       }
     };
 
     fetchIndustryAndCompanies();
-  }, [profileData?.industry, profileData?.company]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileData]);
 
   // Handle connect - send connection request
   const handleConnect = async () => {
@@ -433,36 +454,38 @@ export default function UserProfileModal({ userId }) {
           >
             <img src={isLiked ? heartfillIcon : heartOutlineIcon} alt={isLiked ? "Unlike" : "Like"}></img>
           </button>
-          <button 
-            className="user-profile-social-btn blackc-btn"
-            onClick={isConnected ? handleRemoveConnection : handleConnect}
-            disabled={sendingConnect || hasPendingRequest}
-            title={
-              isConnected 
-                ? 'Remove connection' 
-                : hasPendingRequest 
-                ? 'Connection request pending' 
-                : 'Connect'
-            }
-          >
-            <img
-              src={blackcIcon}
-              style={{
-                backgroundColor: "white",
-                borderRadius: "50%",
-                padding: "5px",
-                opacity: (sendingConnect || hasPendingRequest) ? 0.6 : 1
-              }}
-              alt={isConnected ? "Disconnect" : hasPendingRequest ? "Pending" : "Connect"}
-            ></img>
-          </button>
-          <button 
-            className="user-profile-social-btn message-btn"
-            onClick={handleMessage}
-            title="Send message"
-          >
-            <img src={messageIcon} alt="Message"></img>
-          </button>
+          {!isConnected && (
+            <button 
+              className="user-profile-social-btn blackc-btn"
+              onClick={handleConnect}
+              disabled={sendingConnect || hasPendingRequest}
+              title={
+                hasPendingRequest 
+                  ? 'Connection request pending' 
+                  : 'Connect'
+              }
+            >
+              <img
+                src={blackcIcon}
+                style={{
+                  backgroundColor: "white",
+                  borderRadius: "50%",
+                  padding: "5px",
+                  opacity: (sendingConnect || hasPendingRequest) ? 0.6 : 1
+                }}
+                alt={hasPendingRequest ? "Pending" : "Connect"}
+              ></img>
+            </button>
+          )}
+          {isConnected && (
+            <button 
+              className="user-profile-social-btn message-btn"
+              onClick={handleMessage}
+              title="Send message"
+            >
+              <img src={messageIcon} alt="Message"></img>
+            </button>
+          )}
         </div>
       </div>
       <div className="user-profile-card">
@@ -522,20 +545,19 @@ export default function UserProfileModal({ userId }) {
               <label>Languages</label>
               <p>{profileData.preferredLanguage || "Not provided"}</p>
             </div>
-            {industryName && (
+            {/* {industryName && ( */}
               <div className="user-profile-detail-item">
                 <label>Industry</label>
                 <p>{industryName}</p>
               </div>
-            )}
+            {/* )}
+            {companyName && ( */}
+              <div className="user-profile-detail-item">
+                <label>Company</label>
+                <p>{companyName}</p>
+              </div>
+            {/* )} */}
           </div>
-
-          {companyName && (
-            <div className="user-profile-detail-item">
-              <label>Company</label>
-              <p>{companyName}</p>
-            </div>
-          )}
         </div>
       </div>
     </div>
