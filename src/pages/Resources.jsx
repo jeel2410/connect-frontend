@@ -1,9 +1,12 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "../component/Header";
 import "../styles/style.css";
 import Footer from "../component/Footer";
 
 const Resources = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="page-container">
       <Header />
@@ -60,7 +63,12 @@ const Resources = () => {
               <p className="resource-card-description">
                 Need help? Reach out to our support team for assistance with any questions or issues.
               </p>
-              <button className="resource-card-button">Contact Us</button>
+              <button 
+                className="resource-card-button"
+                onClick={() => navigate("/inquiry")}
+              >
+                Submit Inquiry
+              </button>
             </div>
           </div>
         </div>

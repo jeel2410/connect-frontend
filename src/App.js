@@ -9,6 +9,7 @@ import EditProfile from "./pages/EditProfile";
 import Connection from "./pages/Connection";
 import Like from "./pages/Like";
 import Chat from "./pages/Chat";
+import DeleteAccount from "./pages/DeleteAccount";
 import Register from "./pages/Register";
 import OtpVerification from "./pages/OtpVerification";
 import Admin from "./pages/Admin";
@@ -19,6 +20,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import AboutUs from "./pages/AboutUs";
 import CookiePolicy from "./pages/CookiePolicy";
+import Inquiry from "./pages/Inquiry";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
@@ -146,6 +148,14 @@ function App() {
           }
         />
         <Route
+          path="/delete-account"
+          element={
+            <ProtectedRoute>
+              <DeleteAccount />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/admin"
           element={
             <AdminProtectedRoute>
@@ -153,29 +163,22 @@ function App() {
             </AdminProtectedRoute>
           }
         />
+        {/* Public Routes - Accessible without authentication */}
         <Route
           path="/features"
-          element={
-            <ProtectedRoute>
-              <Features />
-            </ProtectedRoute>
-          }
+          element={<Features />}
         />
         <Route
           path="/resources"
-          element={
-            <ProtectedRoute>
-              <Resources />
-            </ProtectedRoute>
-          }
+          element={<Resources />}
         />
         <Route
           path="/download-app"
-          element={
-            <ProtectedRoute>
-              <DownloadApp />
-            </ProtectedRoute>
-          }
+          element={<DownloadApp />}
+        />
+        <Route
+          path="/inquiry"
+          element={<Inquiry />}
         />
         <Route
           path="/privacy-policy"

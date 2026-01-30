@@ -33,6 +33,8 @@ const Footer = () => {
           <a href="/about-us" className="legal-link">About Us</a>
           <span className="separator">•</span>
           <a href="/cookie-policy" className="legal-link">Cookie Policy</a>
+          <span className="separator">•</span>
+          <a href="/inquiry" className="legal-link">Inquiry</a>
         </div>
       <div className="footer-social">
         <a className="social-icon"><img src={facebookIcon}></img></a>

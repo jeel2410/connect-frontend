@@ -10,7 +10,7 @@ import calenderIcon from "../../src/assets/image/calender.png";
 import cityIcon from "../../src/assets/image/city.png";
 import removeIcom from "../../src/assets/image/removeIcon.png";
 import dropdownIcon from "../../src/assets/image/dropdownIcon.png";
-import { getCookie, setCookie, logout } from "../utils/auth";
+import { getCookie, setCookie } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 
 export default function EditProfile() {
@@ -43,8 +43,39 @@ export default function EditProfile() {
   const [companiesList, setCompaniesList] = useState([]);
   const [loadingIndustries, setLoadingIndustries] = useState(false);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  
+  // Dropdown states for interests, habits, skills
+  const [interestsList, setInterestsList] = useState([]);
+  const [habitsList, setHabitsList] = useState([]);
+  const [skillsList, setSkillsList] = useState([]);
+  const [showInterestsDropdown, setShowInterestsDropdown] = useState(false);
+  const [showHabitsDropdown, setShowHabitsDropdown] = useState(false);
+  const [showSkillsDropdown, setShowSkillsDropdown] = useState(false);
+  const [loadingInterests, setLoadingInterests] = useState(false);
+  const [loadingHabits, setLoadingHabits] = useState(false);
+  const [loadingSkills, setLoadingSkills] = useState(false);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const target = event.target;
+      // Check if click is outside all dropdown containers
+      if (!target.closest('.edit-profile-tags-row') && 
+          !target.closest('.edit-profile-dropdown-menu')) {
+        setShowInterestsDropdown(false);
+        setShowHabitsDropdown(false);
+        setShowSkillsDropdown(false);
+      }
+    };
+
+    if (showInterestsDropdown || showHabitsDropdown || showSkillsDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showInterestsDropdown, showHabitsDropdown, showSkillsDropdown]);
 
   // Load current profile data
   useEffect(() => {
@@ -79,6 +110,44 @@ export default function EditProfile() {
         if (result.success && result.data && result.data.profile) {
           const profile = result.data.profile;
           
+          // Normalize religion value (handle both lowercase and capitalized)
+          let normalizedReligion = profile.religion || "";
+          if (normalizedReligion) {
+            const lowerReligion = normalizedReligion.toLowerCase();
+            if (lowerReligion === "christianity" || lowerReligion === "christian") {
+              normalizedReligion = "Christian";
+            } else if (lowerReligion === "hindu") {
+              normalizedReligion = "Hindu";
+            } else if (lowerReligion === "muslim" || lowerReligion === "islam") {
+              normalizedReligion = "Muslim";
+            } else if (lowerReligion === "sikh") {
+              normalizedReligion = "Sikh";
+            } else {
+              // Capitalize first letter if not matching
+              normalizedReligion = normalizedReligion.charAt(0).toUpperCase() + normalizedReligion.slice(1).toLowerCase();
+            }
+          }
+          
+          // Normalize preferred language value
+          let normalizedLanguage = profile.preferredLanguage || "";
+          if (normalizedLanguage) {
+            const lowerLang = normalizedLanguage.toLowerCase();
+            if (lowerLang === "english") {
+              normalizedLanguage = "English";
+            } else if (lowerLang === "hindi") {
+              normalizedLanguage = "Hindi";
+            } else if (lowerLang === "gujarati") {
+              normalizedLanguage = "Gujarati";
+            } else if (lowerLang === "marathi") {
+              normalizedLanguage = "Marathi";
+            } else if (lowerLang === "tamil") {
+              normalizedLanguage = "Tamil";
+            } else {
+              // Capitalize first letter if not matching
+              normalizedLanguage = normalizedLanguage.charAt(0).toUpperCase() + normalizedLanguage.slice(1).toLowerCase();
+            }
+          }
+          
           // Populate form with current profile data
           setData({
             fullName: profile.fullName || "",
@@ -87,9 +156,9 @@ export default function EditProfile() {
             birthDate: profile.dateOfBirth ? new Date(profile.dateOfBirth).toISOString().split('T')[0] : "",
             city: profile.city || "",
             gender: profile.gender || "",
-            religion: profile.religion || "",
+            religion: normalizedReligion,
             status: profile.status || "",
-            preferredLanguage: profile.preferredLanguage || "",
+            preferredLanguage: normalizedLanguage,
           });
           
           setInterests(profile.interests || []);
@@ -177,6 +246,96 @@ export default function EditProfile() {
     fetchCompanies();
   }, [industry]);
 
+  // Fetch interests list
+  useEffect(() => {
+    const fetchInterestsList = async () => {
+      try {
+        setLoadingInterests(true);
+        const token = getCookie("authToken");
+        const response = await fetch(`${API_BASE_URL}/api/list/interest`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.interests) {
+            setInterestsList(result.data.interests);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching interests:", err);
+      } finally {
+        setLoadingInterests(false);
+      }
+    };
+
+    fetchInterestsList();
+  }, []);
+
+  // Fetch habits list
+  useEffect(() => {
+    const fetchHabitsList = async () => {
+      try {
+        setLoadingHabits(true);
+        const token = getCookie("authToken");
+        const response = await fetch(`${API_BASE_URL}/api/list/habits`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.habits) {
+            setHabitsList(result.data.habits);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching habits:", err);
+      } finally {
+        setLoadingHabits(false);
+      }
+    };
+
+    fetchHabitsList();
+  }, []);
+
+  // Fetch skills list
+  useEffect(() => {
+    const fetchSkillsList = async () => {
+      try {
+        setLoadingSkills(true);
+        const token = getCookie("authToken");
+        const response = await fetch(`${API_BASE_URL}/api/list/skill`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.skills) {
+            setSkillsList(result.data.skills);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching skills:", err);
+      } finally {
+        setLoadingSkills(false);
+      }
+    };
+
+    fetchSkillsList();
+  }, []);
+
   const updateData = (field, value) => {
     setData(prev => ({ ...prev, [field]: value }));
   };
@@ -191,6 +350,30 @@ export default function EditProfile() {
 
   const removeSkill = (index) => {
     setSkills(skills.filter((_, i) => i !== index));
+  };
+
+  const toggleInterest = (interestName) => {
+    if (interests.includes(interestName)) {
+      setInterests(interests.filter(i => i !== interestName));
+    } else {
+      setInterests([...interests, interestName]);
+    }
+  };
+
+  const toggleHabit = (habitName) => {
+    if (habits.includes(habitName)) {
+      setHabits(habits.filter(h => h !== habitName));
+    } else {
+      setHabits([...habits, habitName]);
+    }
+  };
+
+  const toggleSkill = (skillName) => {
+    if (skills.includes(skillName)) {
+      setSkills(skills.filter(s => s !== skillName));
+    } else {
+      setSkills([...skills, skillName]);
+    }
   };
 
   const handleImageChange = (e) => {
@@ -284,44 +467,6 @@ export default function EditProfile() {
 
   const handleCancel = () => {
     navigate("/profile");
-  };
-
-  const handleDeleteAccount = async () => {
-    try {
-      setDeleting(true);
-      setError("");
-      
-      const token = getCookie("authToken");
-      if (!token) {
-        throw new Error("Authentication required. Please login again.");
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/user/account`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || "Failed to delete account. Please try again.");
-      }
-
-      if (result.success) {
-        // Logout and redirect to login page
-        logout();
-      } else {
-        throw new Error(result.message || "Failed to delete account");
-      }
-    } catch (err) {
-      console.error("Error deleting account:", err);
-      setError(err.message || "Something went wrong. Please try again.");
-      setDeleting(false);
-      setShowDeleteModal(false);
-    }
   };
   if (loading) {
     return (
@@ -481,7 +626,7 @@ export default function EditProfile() {
               <div className="edit-profile-section">
                 <div className="edit-profile-tags-container">
                   <div className="edit-profile-label">Interest</div>
-                  <div className="edit-profile-tags-row">
+                  <div className="edit-profile-tags-row" style={{ position: "relative" }}>
                     <div className="edit-profile-tags">
                       {interests.map((interest, index) => (
                         <span key={index} className="edit-profile-tag">
@@ -495,16 +640,75 @@ export default function EditProfile() {
                         </span>
                       ))}
                     </div>
-                    <button className="edit-profile-dropdown-toggle">
+                    <button 
+                      className="edit-profile-dropdown-toggle"
+                      onClick={() => setShowInterestsDropdown(!showInterestsDropdown)}
+                    >
                       <img src={dropdownIcon} alt="Dropdown"></img>
                     </button>
+                    {showInterestsDropdown && (
+                      <div className="edit-profile-dropdown-menu" style={{
+                        position: "absolute",
+                        top: "100%",
+                        right: 0,
+                        backgroundColor: "white",
+                        border: "1px solid #E8EDF3",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        maxHeight: "300px",
+                        overflowY: "auto",
+                        zIndex: 1000,
+                        minWidth: "200px",
+                        marginTop: "8px"
+                      }}>
+                        {loadingInterests ? (
+                          <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                            Loading...
+                          </div>
+                        ) : interestsList.length === 0 ? (
+                          <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                            No interests available
+                          </div>
+                        ) : (
+                          interestsList.map((interest) => (
+                            <div
+                              key={interest._id}
+                              onClick={() => {
+                                toggleInterest(interest.name);
+                              }}
+                              style={{
+                                padding: "10px 16px",
+                                cursor: "pointer",
+                                backgroundColor: interests.includes(interest.name) ? "#F0F4F8" : "white",
+                                borderBottom: "1px solid #E8EDF3"
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!interests.includes(interest.name)) {
+                                  e.target.style.backgroundColor = "#F9FBFE";
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!interests.includes(interest.name)) {
+                                  e.target.style.backgroundColor = "white";
+                                }
+                              }}
+                            >
+                              {interest.name}
+                              {interests.includes(interest.name) && (
+                                <span style={{ marginLeft: "8px", color: "#EA650A" }}>✓</span>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
               <div className="edit-profile-section">
                 <div className="edit-profile-tags-container">
                   <div className="edit-profile-label">Habits</div>
-                  <div className="edit-profile-tags-row">
+                  <div className="edit-profile-tags-row" style={{ position: "relative" }}>
                     <div className="edit-profile-tags">
                       {habits.map((habit, index) => (
                         <span key={index} className="edit-profile-tag">
@@ -518,38 +722,154 @@ export default function EditProfile() {
                         </span>
                       ))}
                     </div>
-                    <button className="edit-profile-dropdown-toggle">
+                    <button 
+                      className="edit-profile-dropdown-toggle"
+                      onClick={() => setShowHabitsDropdown(!showHabitsDropdown)}
+                    >
                       <img src={dropdownIcon} alt="Dropdown"></img>
                     </button>
+                    {showHabitsDropdown && (
+                      <div className="edit-profile-dropdown-menu" style={{
+                        position: "absolute",
+                        top: "100%",
+                        right: 0,
+                        backgroundColor: "white",
+                        border: "1px solid #E8EDF3",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        maxHeight: "300px",
+                        overflowY: "auto",
+                        zIndex: 1000,
+                        minWidth: "200px",
+                        marginTop: "8px"
+                      }}>
+                        {loadingHabits ? (
+                          <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                            Loading...
+                          </div>
+                        ) : habitsList.length === 0 ? (
+                          <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                            No habits available
+                          </div>
+                        ) : (
+                          habitsList.map((habit) => (
+                            <div
+                              key={habit._id}
+                              onClick={() => {
+                                toggleHabit(habit.name);
+                              }}
+                              style={{
+                                padding: "10px 16px",
+                                cursor: "pointer",
+                                backgroundColor: habits.includes(habit.name) ? "#F0F4F8" : "white",
+                                borderBottom: "1px solid #E8EDF3"
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!habits.includes(habit.name)) {
+                                  e.target.style.backgroundColor = "#F9FBFE";
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!habits.includes(habit.name)) {
+                                  e.target.style.backgroundColor = "white";
+                                }
+                              }}
+                            >
+                              {habit.name}
+                              {habits.includes(habit.name) && (
+                                <span style={{ marginLeft: "8px", color: "#EA650A" }}>✓</span>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {skills.length > 0 && (
-                <div className="edit-profile-section">
-                  <div className="edit-profile-tags-container">
-                    <div className="edit-profile-label">Skills</div>
-                    <div className="edit-profile-tags-row">
-                      <div className="edit-profile-tags">
-                        {skills.map((skill, index) => (
-                          <span key={index} className="edit-profile-tag">
-                            {skill}
-                            <button
-                              className="edit-profile-tag-remove"
-                              onClick={() => removeSkill(index)}
-                            >
-                              <img src={removeIcom} alt="Remove"></img>
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                      <button className="edit-profile-dropdown-toggle">
-                        <img src={dropdownIcon} alt="Dropdown"></img>
-                      </button>
+              <div className="edit-profile-section">
+                <div className="edit-profile-tags-container">
+                  <div className="edit-profile-label">Skills</div>
+                  <div className="edit-profile-tags-row" style={{ position: "relative" }}>
+                    <div className="edit-profile-tags">
+                      {skills.map((skill, index) => (
+                        <span key={index} className="edit-profile-tag">
+                          {skill}
+                          <button
+                            className="edit-profile-tag-remove"
+                            onClick={() => removeSkill(index)}
+                          >
+                            <img src={removeIcom} alt="Remove"></img>
+                          </button>
+                        </span>
+                      ))}
                     </div>
+                    <button 
+                      className="edit-profile-dropdown-toggle"
+                      onClick={() => setShowSkillsDropdown(!showSkillsDropdown)}
+                    >
+                      <img src={dropdownIcon} alt="Dropdown"></img>
+                    </button>
+                    {showSkillsDropdown && (
+                      <div className="edit-profile-dropdown-menu" style={{
+                        position: "absolute",
+                        top: "100%",
+                        right: 0,
+                        backgroundColor: "white",
+                        border: "1px solid #E8EDF3",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        maxHeight: "300px",
+                        overflowY: "auto",
+                        zIndex: 1000,
+                        minWidth: "200px",
+                        marginTop: "8px"
+                      }}>
+                        {loadingSkills ? (
+                          <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                            Loading...
+                          </div>
+                        ) : skillsList.length === 0 ? (
+                          <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                            No skills available
+                          </div>
+                        ) : (
+                          skillsList.map((skill) => (
+                            <div
+                              key={skill._id}
+                              onClick={() => {
+                                toggleSkill(skill.name);
+                              }}
+                              style={{
+                                padding: "10px 16px",
+                                cursor: "pointer",
+                                backgroundColor: skills.includes(skill.name) ? "#F0F4F8" : "white",
+                                borderBottom: "1px solid #E8EDF3"
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!skills.includes(skill.name)) {
+                                  e.target.style.backgroundColor = "#F9FBFE";
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!skills.includes(skill.name)) {
+                                  e.target.style.backgroundColor = "white";
+                                }
+                              }}
+                            >
+                              {skill.name}
+                              {skills.includes(skill.name) && (
+                                <span style={{ marginLeft: "8px", color: "#EA650A" }}>✓</span>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Additional Info Grid */}
               <div className="edit-profile-info-grid">
@@ -578,6 +898,7 @@ export default function EditProfile() {
                     <option value="Hindu">Hindu</option>
                     <option value="Muslim">Muslim</option>
                     <option value="Christian">Christian</option>
+                    <option value="Christianity">Christianity</option>
                     <option value="Sikh">Sikh</option>
                     <option value="Other">Other</option>
                   </select>
@@ -695,64 +1016,21 @@ export default function EditProfile() {
               <button 
                 className="edit-profile-cancel-btn"
                 onClick={handleCancel}
-                disabled={saving || deleting}
+                disabled={saving}
               >
                 Cancel
               </button>
               <button 
                 className="edit-profile-save-btn"
                 onClick={handleSave}
-                disabled={saving || deleting}
+                disabled={saving}
               >
                 {saving ? "Saving..." : "Save"}
-              </button>
-            </div>
-
-            {/* Delete Account Section */}
-            <div className="delete-account-section" style={{margin:20}}>
-              <h3 className="delete-account-title">Danger Zone</h3>
-              <p className="delete-account-description">
-                Once you delete your account, there is no going back. Please be certain.
-              </p>
-              <button 
-                className="delete-account-btn"
-                onClick={() => setShowDeleteModal(true)}
-                disabled={saving || deleting}
-              >
-                Delete Account
-              </button>
+</button>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="delete-modal-overlay" onClick={() => !deleting && setShowDeleteModal(false)}>
-          <div className="delete-modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 className="delete-modal-title">Delete Account</h2>
-            <p className="delete-modal-message">
-              Are you sure you want to delete your account? This action cannot be undone and will permanently delete all your data, connections, and messages.
-            </p>
-            <div className="delete-modal-actions">
-              <button 
-                className="delete-modal-cancel-btn"
-                onClick={() => setShowDeleteModal(false)}
-                disabled={deleting}
-              >
-                Cancel
-              </button>
-              <button 
-                className="delete-modal-confirm-btn"
-                onClick={handleDeleteAccount}
-                disabled={deleting}
-              >
-                {deleting ? "Deleting..." : "Yes, Delete Account"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <Footer></Footer>
     </>

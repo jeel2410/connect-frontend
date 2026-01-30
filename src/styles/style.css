@@ -5975,6 +5975,80 @@ body {
   cursor: not-allowed;
 }
 
+/* Delete Account Page Styles */
+.delete-account-page-container {
+  padding: 40px 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.delete-account-content {
+  background: white;
+  border-radius: 16px;
+  padding: 48px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.delete-account-icon {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.delete-account-page-title {
+  font-size: 32px;
+  font-weight: 600;
+  font-family: 'Basier Square', sans-serif;
+  color: #09122E;
+  margin-bottom: 32px;
+}
+
+.delete-account-warning {
+  font-size: 16px;
+  font-weight: 500;
+  font-family: 'Basier Square', sans-serif;
+  color: #DC2626;
+  margin-top: 24px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.delete-account-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px 0;
+  text-align: left;
+}
+
+.delete-account-list li {
+  font-size: 14px;
+  font-weight: 400;
+  font-family: 'Basier Square', sans-serif;
+  color: #777E90;
+  padding: 8px 0;
+  padding-left: 24px;
+  position: relative;
+}
+
+.delete-account-list li:before {
+  content: "•";
+  color: #DC2626;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+
+.delete-account-error {
+  margin-top: 20px;
+  padding: 12px;
+  background-color: #FEE2E2;
+  color: #DC2626;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: left;
+}
+
 /* Responsive Styles for Delete Account */
 @media (max-width: 768px) {
   .delete-modal-content {
@@ -6969,5 +7043,365 @@ like page */
 
   .message-text {
     font-size: 13px;
+  }
+}
+
+/* Inquiry Form Page Styles */
+.inquiry-page {
+  min-height: calc(100vh - 80px);
+  padding: 60px 20px;
+  background-color: #F9FBFE;
+}
+
+.inquiry-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.inquiry-title {
+  font-size: 42px;
+  font-weight: 600;
+  font-family: 'Basier Square', sans-serif;
+  color: #09122E;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.inquiry-subtitle {
+  font-size: 18px;
+  font-weight: 400;
+  font-family: 'Basier Square', sans-serif;
+  color: #777E90;
+  text-align: center;
+  margin-bottom: 48px;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.inquiry-form-wrapper {
+  background: white;
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.inquiry-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.inquiry-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inquiry-label {
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Basier Square', sans-serif;
+  color: #09122E;
+}
+
+.inquiry-label .required {
+  color: #DC2626;
+}
+
+.inquiry-input,
+.inquiry-textarea {
+  padding: 12px 16px;
+  border: 1px solid #E8EDF3;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: 'Basier Square', sans-serif;
+  color: #09122E;
+  transition: border-color 0.2s ease;
+  background-color: white;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.inquiry-input:focus,
+.inquiry-textarea:focus {
+  outline: none;
+  border-color: #EA650A;
+}
+
+.inquiry-textarea {
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+}
+
+.inquiry-submit-btn {
+  padding: 14px 32px;
+  background-color: #EA650A;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: 'Basier Square', sans-serif;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  align-self: flex-start;
+  margin-top: 8px;
+}
+
+.inquiry-submit-btn:hover:not(:disabled) {
+  background-color: #D4550A;
+}
+
+.inquiry-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.inquiry-error {
+  padding: 12px 16px;
+  backgroundColor: #FEE2E2;
+  color: #DC2626;
+  borderRadius: 8px;
+  fontSize: 14px;
+  margin-bottom: 20px;
+  background-color: #FEE2E2;
+  color: #DC2626;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.inquiry-success {
+  padding: 12px 16px;
+  backgroundColor: #D1FAE5;
+  color: #065F46;
+  borderRadius: 8px;
+  fontSize: 14px;
+  margin-bottom: 20px;
+  background-color: #D1FAE5;
+  color: #065F46;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* Responsive Styles for Inquiry Form */
+@media (max-width: 768px) {
+  .inquiry-page {
+    padding: 40px 16px;
+  }
+
+  .inquiry-title {
+    font-size: 32px;
+  }
+
+  .inquiry-subtitle {
+    font-size: 16px;
+    margin-bottom: 32px;
+  }
+
+  .inquiry-form-wrapper {
+    padding: 24px;
+  }
+
+  .inquiry-submit-btn {
+    width: 100%;
+  }
+}
+
+/* Contact Us Page Styles */
+.contact-us-page {
+  min-height: calc(100vh - 80px);
+  padding: 60px 20px;
+  background-color: #F9FBFE;
+}
+
+.contact-us-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.contact-us-title {
+  font-size: 42px;
+  font-weight: 600;
+  font-family: 'Basier Square', sans-serif;
+  color: #09122E;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.contact-us-subtitle {
+  font-size: 18px;
+  font-weight: 400;
+  font-family: 'Basier Square', sans-serif;
+  color: #777E90;
+  text-align: center;
+  margin-bottom: 48px;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.contact-us-content {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 48px;
+  margin-top: 48px;
+}
+
+.contact-us-form-wrapper {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.contact-us-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.contact-us-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contact-us-label {
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Basier Square', sans-serif;
+  color: #09122E;
+}
+
+.contact-us-label .required {
+  color: #DC2626;
+}
+
+.contact-us-input,
+.contact-us-textarea {
+  padding: 12px 16px;
+  border: 1px solid #E8EDF3;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: 'Basier Square', sans-serif;
+  color: #09122E;
+  transition: border-color 0.2s ease;
+  background-color: white;
+}
+
+.contact-us-input:focus,
+.contact-us-textarea:focus {
+  outline: none;
+  border-color: #EA650A;
+}
+
+.contact-us-textarea {
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+}
+
+.contact-us-submit-btn {
+  padding: 14px 32px;
+  background-color: #EA650A;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: 'Basier Square', sans-serif;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  align-self: flex-start;
+  margin-top: 8px;
+}
+
+.contact-us-submit-btn:hover:not(:disabled) {
+  background-color: #D4550A;
+}
+
+.contact-us-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.contact-us-info {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  height: fit-content;
+}
+
+.contact-us-info-title {
+  font-size: 24px;
+  font-weight: 600;
+  font-family: 'Basier Square', sans-serif;
+  color: #09122E;
+  margin-bottom: 24px;
+}
+
+.contact-us-info-item {
+  margin-bottom: 24px;
+}
+
+.contact-us-info-item:last-child {
+  margin-bottom: 0;
+}
+
+.contact-us-info-label {
+  font-size: 16px;
+  font-weight: 600;
+  font-family: 'Basier Square', sans-serif;
+  color: #09122E;
+  margin-bottom: 8px;
+}
+
+.contact-us-info-text {
+  font-size: 14px;
+  font-weight: 400;
+  font-family: 'Basier Square', sans-serif;
+  color: #777E90;
+  line-height: 1.6;
+}
+
+/* Responsive Styles for Contact Us */
+@media (max-width: 968px) {
+  .contact-us-content {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-us-info {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .contact-us-page {
+    padding: 40px 16px;
+  }
+
+  .contact-us-title {
+    font-size: 32px;
+  }
+
+  .contact-us-subtitle {
+    font-size: 16px;
+    margin-bottom: 32px;
+  }
+
+  .contact-us-form-wrapper,
+  .contact-us-info {
+    padding: 24px;
+  }
+
+  .contact-us-submit-btn {
+    width: 100%;
   }
 }
