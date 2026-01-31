@@ -32,8 +32,9 @@ export default function ProfilepageCard({ profileData }) {
   // All hooks must be called before any conditional returns
   const [industryName, setIndustryName] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [cityName, setCityName] = useState("");
 
-  // Fetch industry and company names
+  // Fetch industry, company, and city names
   useEffect(() => {
     if (!profileData) return;
 
@@ -41,6 +42,32 @@ export default function ProfilepageCard({ profileData }) {
       try {
         const token = getCookie("authToken");
         if (!token) return;
+
+        // Fetch city name
+        if (profileData.city) {
+          // If city is an object with name, use it
+          if (typeof profileData.city === 'object' && profileData.city.name) {
+            setCityName(profileData.city.name);
+          } else if (profileData.cityName) {
+            setCityName(profileData.cityName);
+          } else if (typeof profileData.city === 'string') {
+            // Fetch city name from API
+            const citiesResponse = await fetch(`${API_BASE_URL}/api/list/city`, {
+              method: "GET",
+              headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+            if (citiesResponse.ok) {
+              const citiesResult = await citiesResponse.json();
+              if (citiesResult.success && citiesResult.data && citiesResult.data.city) {
+                const city = citiesResult.data.city.find(c => c._id === profileData.city);
+                if (city) setCityName(city.name);
+              }
+            }
+          }
+        }
 
         // Fetch industry name
         if (profileData.industry) {
@@ -83,7 +110,7 @@ export default function ProfilepageCard({ profileData }) {
     };
 
     fetchIndustryAndCompanies();
-  }, [profileData?.industry, profileData?.company]);
+  }, [profileData?.industry, profileData?.company, profileData?.city]);
 
   // Early return after hooks
   if (!profileData) {
@@ -145,7 +172,7 @@ export default function ProfilepageCard({ profileData }) {
               </span>
               <div>
                 <label>Location</label>
-                <p>{profileData.city || "Not provided"}</p>
+                <p>{cityName || profileData.cityName || "Not provided"}</p>
               </div>
             </div>
           </div>

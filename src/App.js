@@ -34,7 +34,7 @@ const RootRoute = () => {
 
   // If not authenticated, show Register
   if (!isAuthenticated) {
-    return <Register />;
+     return <Register />;
   }
 
   // If authenticated but profile not complete, show profile completion

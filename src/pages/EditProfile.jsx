@@ -43,6 +43,8 @@ export default function EditProfile() {
   const [companiesList, setCompaniesList] = useState([]);
   const [loadingIndustries, setLoadingIndustries] = useState(false);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
+  const [citiesList, setCitiesList] = useState([]);
+  const [loadingCities, setLoadingCities] = useState(false);
   
   // Dropdown states for interests, habits, skills
   const [interestsList, setInterestsList] = useState([]);
@@ -149,12 +151,21 @@ export default function EditProfile() {
           }
           
           // Populate form with current profile data
+          // Handle city - if it's an object with name, use the ID, otherwise use the value directly
+          let cityId = profile.city || "";
+          if (profile.city && typeof profile.city === 'object' && profile.city._id) {
+            cityId = profile.city._id;
+          } else if (profile.cityName && profile.city) {
+            // If we have cityName but city is ID, use the ID
+            cityId = profile.city;
+          }
+          
           setData({
             fullName: profile.fullName || "",
             phoneNumber: profile.phoneNumber || "",
             email: profile.email || "",
             birthDate: profile.dateOfBirth ? new Date(profile.dateOfBirth).toISOString().split('T')[0] : "",
-            city: profile.city || "",
+            city: cityId,
             gender: profile.gender || "",
             religion: normalizedReligion,
             status: profile.status || "",
@@ -179,6 +190,36 @@ export default function EditProfile() {
     };
 
     fetchProfile();
+  }, []);
+
+  // Fetch cities on component mount
+  useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        setLoadingCities(true);
+        const token = getCookie("authToken");
+        const response = await fetch(`${API_BASE_URL}/api/list/city`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.city) {
+            setCitiesList(result.data.city);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching cities:", err);
+      } finally {
+        setLoadingCities(false);
+      }
+    };
+
+    fetchCities();
   }, []);
 
   // Fetch industries on component mount
@@ -608,13 +649,19 @@ export default function EditProfile() {
                   </div>
                   <div className="input-content">
                     <label className="input-label">City</label>
-                    <input
-                      type="text"
+                    <select
                       value={data.city || ""}
                       onChange={(e) => updateData("city", e.target.value)}
-                      placeholder="Enter city"
                       className="form-input"
-                    />
+                      disabled={loadingCities}
+                    >
+                      <option value="">{loadingCities ? "Loading cities..." : "Select City"}</option>
+                      {citiesList.map((city) => (
+                        <option key={city._id} value={city._id}>
+                          {city.name.charAt(0).toUpperCase() + city.name.slice(1)}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>

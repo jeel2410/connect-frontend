@@ -676,3 +676,116 @@
     max-width: calc(100% - 40px);
   }
 }
+
+/* Inquiry Management Styles */
+.import-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background-color: #EA650A;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  font-family: 'Basier Square', sans-serif;
+}
+
+.import-button:hover {
+  background-color: #D4550A;
+}
+
+.import-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  padding: 10px 16px;
+  border: 1px solid #E4E6EB;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Basier Square', sans-serif;
+  background-color: white;
+  cursor: pointer;
+  min-width: 150px;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #EA650A;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+  font-family: 'Basier Square', sans-serif;
+}
+
+.status-pending {
+  background-color: #FEF3C7;
+  color: #92400E;
+}
+
+.status-in-progress {
+  background-color: #DBEAFE;
+  color: #1E40AF;
+}
+
+.status-resolved {
+  background-color: #D1FAE5;
+  color: #065F46;
+}
+
+.status-closed {
+  background-color: #E5E7EB;
+  color: #374151;
+}
+
+.email-cell,
+.phone-cell,
+.date-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.message-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Basier Square', sans-serif;
+}
+
+.alert-error {
+  background-color: #FEE2E2;
+  color: #DC2626;
+  border: 1px solid #FCA5A5;
+}
+
+.alert-success {
+  background-color: #D1FAE5;
+  color: #065F46;
+  border: 1px solid #6EE7B7;
+}

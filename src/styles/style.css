@@ -5071,7 +5071,8 @@ body {
   display: flex;
   gap: 30px;
   padding: 20px 120px 0 120px;
-  margin: 0 auto;
+  /* margin: 0 auto; */
+  margin-bottom: 30px;
 }
 
 .dating-profile-sidebar {

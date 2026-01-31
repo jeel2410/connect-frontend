@@ -42,6 +42,7 @@ export default function UserProfileModal({ userId }) {
   const [isLiked, setIsLiked] = useState(false);
   const [industryName, setIndustryName] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [cityName, setCityName] = useState("");
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -90,6 +91,10 @@ export default function UserProfileModal({ userId }) {
           setIsConnected(profile.isConnected || profile.alreadyConnect || false);
           // Check if there's a pending request
           setHasPendingRequest(profile.hasSentRequest || profile.sendRequest || false);
+          // Set city name if available from backend
+          if (profile.cityName) {
+            setCityName(profile.cityName);
+          }
         } else {
           setError("Profile data not found");
         }
@@ -104,7 +109,7 @@ export default function UserProfileModal({ userId }) {
     fetchUserProfile();
   }, [userId]);
 
-  // Fetch industry and company names when profileData is loaded
+  // Fetch industry, company, and city names when profileData is loaded
   useEffect(() => {
     const fetchIndustryAndCompanies = async () => {
       if (!profileData) return;
@@ -112,6 +117,34 @@ export default function UserProfileModal({ userId }) {
       try {
         const token = getCookie("authToken");
         if (!token) return;
+
+        // Fetch city name if not already set
+        if (profileData.city && !cityName) {
+          // If city is an object with name, use it
+          if (typeof profileData.city === 'object' && profileData.city.name) {
+            setCityName(profileData.city.name);
+          } else if (profileData.city && typeof profileData.city === 'string') {
+            // Fetch city name from API
+            const citiesResponse = await fetch(`${API_BASE_URL}/api/list/city`, {
+              method: "GET",
+              headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+            if (citiesResponse.ok) {
+              const citiesResult = await citiesResponse.json();
+              if (citiesResult.success && citiesResult.data && citiesResult.data.city) {
+                const city = citiesResult.data.city.find(c => c._id === profileData.city);
+                if (city) {
+                  setCityName(city.name);
+                } else {
+                  setCityName(profileData.city); // Fallback to ID if not found
+                }
+              }
+            }
+          }
+        }
 
         // Fetch industry name
         if (profileData.industry) {
@@ -137,8 +170,8 @@ export default function UserProfileModal({ userId }) {
         }
 
         // Fetch company name
-        if (profileData.company) {
-          const companiesResponse = await fetch(`${API_BASE_URL}/api/list/companies`, {
+        if (profileData.company && profileData.industry) {
+          const companiesResponse = await fetch(`${API_BASE_URL}/api/list/companies?industryId=${profileData.industry}`, {
             method: "GET",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -160,6 +193,9 @@ export default function UserProfileModal({ userId }) {
             // If API fails, use the value directly (might already be a name)
             setCompanyName(profileData.company);
           }
+        } else if (profileData.company) {
+          // If company exists but no industry, use the value directly
+          setCompanyName(profileData.company);
         }
       } catch (err) {
         console.error("Error fetching industry/companies:", err);
@@ -175,7 +211,7 @@ export default function UserProfileModal({ userId }) {
 
     fetchIndustryAndCompanies();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileData]);
+  }, [profileData, cityName]);
 
   // Handle connect - send connection request
   const handleConnect = async () => {
@@ -434,7 +470,7 @@ export default function UserProfileModal({ userId }) {
           />
           <div className="user-profile-name-location">
             <h2>{profileData.fullName || "User"}</h2>
-            <p>{profileData.city || "Not provided"}</p>
+            <p>{cityName || profileData.cityName || "Not provided"}</p>
           </div>
         </div>
         <div className="user-profile-social-btns">
@@ -545,18 +581,18 @@ export default function UserProfileModal({ userId }) {
               <label>Languages</label>
               <p>{profileData.preferredLanguage || "Not provided"}</p>
             </div>
-            {/* {industryName && ( */}
+            {industryName && (
               <div className="user-profile-detail-item">
                 <label>Industry</label>
                 <p>{industryName}</p>
               </div>
-            {/* )}
-            {companyName && ( */}
+            )}
+            {companyName && (
               <div className="user-profile-detail-item">
                 <label>Company</label>
                 <p>{companyName}</p>
               </div>
-            {/* )} */}
+            )}
           </div>
         </div>
       </div>

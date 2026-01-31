@@ -111,7 +111,7 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
             >
               <option value="">{loadingCities ? "Loading cities..." : "Select City"}</option>
               {cities.map((city) => (
-                <option key={city._id || city.name} value={city.name}>
+                <option key={city._id || city.name} value={city._id}>
                   {city.name.charAt(0).toUpperCase() + city.name.slice(1)}
                 </option>
               ))}

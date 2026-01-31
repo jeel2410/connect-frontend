@@ -26,11 +26,11 @@ export default function ProfilecardHeader({ showChangePassword = true, profileDa
           <button className="dating-profile-edit-btn" onClick={() => navigate('/editProfile')}>
             <img src={editIcon} alt="Edit"></img> Edit Profile
           </button>
-          {showChangePassword && (
+          {/* {showChangePassword && (
             <button className="dating-profile-password-btn">
               <img src={passwordIcon} alt="Password" /> Change Password
             </button>
-          )}
+          )} */}
         </div>
       </div>
     </div>

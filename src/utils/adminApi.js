@@ -1090,3 +1090,87 @@ export const broadcastNotification = async (notificationData) => {
     throw error;
   }
 };
+
+// Inquiries API
+export const getInquiries = async (page = 1, limit = 10, search = "", status = "") => {
+  try {
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    if (search) {
+      queryParams.append("search", search);
+    }
+    if (status) {
+      queryParams.append("status", status);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/info/inquiries?${queryParams.toString()}`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch inquiries");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching inquiries:", error);
+    throw error;
+  }
+};
+
+export const exportInquiriesToCSV = async (search = "", status = "") => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (search) {
+      queryParams.append("search", search);
+    }
+    if (status) {
+      queryParams.append("status", status);
+    }
+
+    const url = `${API_BASE_URL}/api/info/inquiries/export${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'text/csv',
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      throw new Error("Failed to export inquiries");
+    }
+
+    const blob = await response.blob();
+    const url_blob = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url_blob;
+    link.download = `inquiries_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url_blob);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error exporting inquiries:", error);
+    throw error;
+  }
+};

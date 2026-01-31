@@ -81,7 +81,7 @@ const DeleteAccount = () => {
           <div className="delete-modal-content" onClick={(e) => e.stopPropagation()}>
             <h2 className="delete-modal-title">Delete Account</h2>
             <p className="delete-modal-message">
-              Are you sure you want to delete your account? This action cannot be undone and will permanently delete all your data, connections, and messages.
+              Your account will be permanently deleted and this action cannot be undone.
             </p>
             <div className="delete-modal-actions">
               <button 

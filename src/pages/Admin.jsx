@@ -10,6 +10,7 @@ import IndustryManagement from "../component/Admin/IndustryManagement";
 import CardManagement from "../component/Admin/CardManagement";
 import CityManagement from "../component/Admin/CityManagement";
 import BroadcastNotification from "../component/Admin/BroadcastNotification";
+import InquiryManagement from "../component/Admin/InquiryManagement";
 import "../styles/admin.css";
 
 const Admin = () => {
@@ -32,6 +33,7 @@ const Admin = () => {
               {activeTab === "cards" && "Card Management"}
               {activeTab === "cities" && "City Management"}
               {activeTab === "broadcast" && "Broadcast Notification"}
+              {activeTab === "inquiries" && "Inquiry Management"}
             </h1>
             <p className="admin-subtitle">
               {activeTab === "users" && "View and manage all users"}
@@ -43,6 +45,7 @@ const Admin = () => {
               {activeTab === "cards" && "Add, edit, and delete cards"}
               {activeTab === "cities" && "Add, edit, and delete cities"}
               {activeTab === "broadcast" && "Send notifications to all users"}
+              {activeTab === "inquiries" && "View all inquiries and import from CSV"}
             </p>
           </div>
           <div className="admin-content-body">
@@ -55,6 +58,7 @@ const Admin = () => {
             {activeTab === "cards" && <CardManagement />}
             {activeTab === "cities" && <CityManagement />}
             {activeTab === "broadcast" && <BroadcastNotification />}
+            {activeTab === "inquiries" && <InquiryManagement />}
           </div>
         </div>
       </div>
