@@ -265,6 +265,47 @@ const Search = () => {
     }
   };
 
+  // Handle skip action - call API and remove profile from list
+  const handleSkip = async (skippedUserId) => {
+    try {
+      const token = getCookie("authToken");
+      if (!token) {
+        console.error("User not authenticated");
+        return;
+      }
+
+      // Call the skip API
+      const skipResponse = await fetch(`${API_BASE_URL}/api/connection/skip/${skippedUserId}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!skipResponse.ok) {
+        if (skipResponse.status === 401) {
+          console.error("Unauthorized: Please login again");
+          return;
+        }
+        const errorData = await skipResponse.json();
+        throw new Error(errorData.message || "Failed to skip user");
+      }
+
+      const skipData = await skipResponse.json();
+      
+      if (skipData.success) {
+        // Refetch feed data after successful skip
+        await fetchFeedData();
+      } else {
+        throw new Error(skipData.message || "Failed to skip user");
+      }
+    } catch (error) {
+      console.error("Error skipping user:", error);
+      // Optionally show error message to user
+    }
+  };
+
   const handlePrevPage = () => {
     if (pagination.hasPrevPage) {
       setCurrentPage(currentPage - 1);
@@ -376,7 +417,7 @@ const Search = () => {
               Filter
             </button>
           </div>
-          <Usercard feedData={feedData} loading={loadingFeed} onLike={handleLike} onConnect={handleConnect}></Usercard>
+          <Usercard feedData={feedData} loading={loadingFeed} onLike={handleLike} onConnect={handleConnect} onSkip={handleSkip}></Usercard>
 
           {pagination.totalPages > 1 && (
             <div className="pagination">

@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import mobileIcon from "../../src/assets/image/mobile.png"
 import emailIcon from "../../src/assets/image/email.png"
 import calenderIcon from "../../src/assets/image/calender.png"
 import cityIcon from "../../src/assets/image/city.png"
 import ProfilecardHeader from "./ProfilecardHeader";
-import { getCookie } from "../utils/auth";
-import API_BASE_URL from "../utils/config";
 
 // Helper function to calculate age from date of birth
 const calculateAge = (dateOfBirth) => {
@@ -29,88 +27,6 @@ const formatDate = (dateString) => {
 };
 
 export default function ProfilepageCard({ profileData }) {
-  // All hooks must be called before any conditional returns
-  const [industryName, setIndustryName] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [cityName, setCityName] = useState("");
-
-  // Fetch industry, company, and city names
-  useEffect(() => {
-    if (!profileData) return;
-
-    const fetchIndustryAndCompanies = async () => {
-      try {
-        const token = getCookie("authToken");
-        if (!token) return;
-
-        // Fetch city name
-        if (profileData.city) {
-          // If city is an object with name, use it
-          if (typeof profileData.city === 'object' && profileData.city.name) {
-            setCityName(profileData.city.name);
-          } else if (profileData.cityName) {
-            setCityName(profileData.cityName);
-          } else if (typeof profileData.city === 'string') {
-            // Fetch city name from API
-            const citiesResponse = await fetch(`${API_BASE_URL}/api/list/city`, {
-              method: "GET",
-              headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            });
-            if (citiesResponse.ok) {
-              const citiesResult = await citiesResponse.json();
-              if (citiesResult.success && citiesResult.data && citiesResult.data.city) {
-                const city = citiesResult.data.city.find(c => c._id === profileData.city);
-                if (city) setCityName(city.name);
-              }
-            }
-          }
-        }
-
-        // Fetch industry name
-        if (profileData.industry) {
-          const industriesResponse = await fetch(`${API_BASE_URL}/api/list/industries`, {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          });
-          if (industriesResponse.ok) {
-            const industriesResult = await industriesResponse.json();
-            if (industriesResult.success && industriesResult.data && industriesResult.data.industries) {
-              const industry = industriesResult.data.industries.find(ind => ind._id === profileData.industry);
-              if (industry) setIndustryName(industry.name);
-            }
-          }
-        }
-
-        // Fetch company name
-        if (profileData.company) {
-          const companiesResponse = await fetch(`${API_BASE_URL}/api/list/companies`, {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          });
-          if (companiesResponse.ok) {
-            const companiesResult = await companiesResponse.json();
-            if (companiesResult.success && companiesResult.data && companiesResult.data.companies) {
-              const company = companiesResult.data.companies.find(c => c._id === profileData.company);
-              if (company) setCompanyName(company.name);
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching industry/companies:", err);
-      }
-    };
-
-    fetchIndustryAndCompanies();
-  }, [profileData?.industry, profileData?.company, profileData?.city]);
 
   // Early return after hooks
   if (!profileData) {
@@ -172,7 +88,7 @@ export default function ProfilepageCard({ profileData }) {
               </span>
               <div>
                 <label>Location</label>
-                <p>{cityName || profileData.cityName || "Not provided"}</p>
+                <p>{profileData.city || "Not provided"}</p>
               </div>
             </div>
           </div>
@@ -243,20 +159,20 @@ export default function ProfilepageCard({ profileData }) {
               </div>
             )}
 
-            {industryName && (
+            {profileData.industry && (
               <div className="dating-profile-info-group">
                 <label>Industry</label>
                 <div className="dating-profile-tags">
-                  <span className="dating-profile-tag">{industryName}</span>
+                  <span className="dating-profile-tag">{profileData.industry}</span>
                 </div>
               </div>
             )}
 
-            {companyName && (
+            {profileData.company && (
               <div className="dating-profile-info-group">
                 <label>Company</label>
                 <div className="dating-profile-tags">
-                  <span className="dating-profile-tag">{companyName}</span>
+                  <span className="dating-profile-tag">{profileData.company}</span>
                 </div>
               </div>
             )}

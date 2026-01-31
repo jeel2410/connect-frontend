@@ -79,6 +79,12 @@ export default function EditProfile() {
     };
   }, [showInterestsDropdown, showHabitsDropdown, showSkillsDropdown]);
 
+  // Store raw profile data
+  const [rawProfileData, setRawProfileData] = useState(null);
+  const [cityMatched, setCityMatched] = useState(false);
+  const [industryMatched, setIndustryMatched] = useState(false);
+  const [companyMatched, setCompanyMatched] = useState(false);
+
   // Load current profile data
   useEffect(() => {
     const fetchProfile = async () => {
@@ -111,6 +117,9 @@ export default function EditProfile() {
 
         if (result.success && result.data && result.data.profile) {
           const profile = result.data.profile;
+          
+          // Store raw profile data for later matching
+          setRawProfileData(profile);
           
           // Normalize religion value (handle both lowercase and capitalized)
           let normalizedReligion = profile.religion || "";
@@ -150,22 +159,12 @@ export default function EditProfile() {
             }
           }
           
-          // Populate form with current profile data
-          // Handle city - if it's an object with name, use the ID, otherwise use the value directly
-          let cityId = profile.city || "";
-          if (profile.city && typeof profile.city === 'object' && profile.city._id) {
-            cityId = profile.city._id;
-          } else if (profile.cityName && profile.city) {
-            // If we have cityName but city is ID, use the ID
-            cityId = profile.city;
-          }
-          
           setData({
             fullName: profile.fullName || "",
             phoneNumber: profile.phoneNumber || "",
             email: profile.email || "",
             birthDate: profile.dateOfBirth ? new Date(profile.dateOfBirth).toISOString().split('T')[0] : "",
-            city: cityId,
+            city: "", // Will be set after cities list loads
             gender: profile.gender || "",
             religion: normalizedReligion,
             status: profile.status || "",
@@ -175,8 +174,8 @@ export default function EditProfile() {
           setInterests(profile.interests || []);
           setHabits(profile.habits || []);
           setSkills(profile.skills || []);
-          setIndustry(profile.industry || "");
-          setCompany(profile.company || "");
+          setIndustry(""); // Will be set after industries list loads
+          setCompany(""); // Will be set after companies list loads
           if (profile.profileImage) {
             setProfileImage(profile.profileImage);
           }
@@ -222,6 +221,21 @@ export default function EditProfile() {
     fetchCities();
   }, []);
 
+  // Match city name to ID after cities list loads
+  useEffect(() => {
+    if (rawProfileData && rawProfileData.city && citiesList.length > 0 && !cityMatched) {
+      const cityName = rawProfileData.city;
+      // Find city by name (case-insensitive)
+      const matchedCity = citiesList.find(
+        city => city.name.toLowerCase() === cityName.toLowerCase()
+      );
+      if (matchedCity) {
+        setData(prev => ({ ...prev, city: matchedCity._id }));
+        setCityMatched(true);
+      }
+    }
+  }, [citiesList, rawProfileData, cityMatched]);
+
   // Fetch industries on component mount
   useEffect(() => {
     const fetchIndustries = async () => {
@@ -251,6 +265,21 @@ export default function EditProfile() {
 
     fetchIndustries();
   }, []);
+
+  // Match industry name to ID after industries list loads
+  useEffect(() => {
+    if (rawProfileData && rawProfileData.industry && industriesList.length > 0 && !industryMatched) {
+      const industryName = rawProfileData.industry;
+      // Find industry by name (case-insensitive)
+      const matchedIndustry = industriesList.find(
+        ind => ind.name.toLowerCase() === industryName.toLowerCase()
+      );
+      if (matchedIndustry) {
+        setIndustry(matchedIndustry._id);
+        setIndustryMatched(true);
+      }
+    }
+  }, [industriesList, rawProfileData, industryMatched]);
 
   // Fetch companies when industry is selected
   useEffect(() => {
@@ -286,6 +315,21 @@ export default function EditProfile() {
 
     fetchCompanies();
   }, [industry]);
+
+  // Match company name to ID after companies list loads
+  useEffect(() => {
+    if (rawProfileData && rawProfileData.company && companiesList.length > 0 && industry && !companyMatched) {
+      const companyName = rawProfileData.company;
+      // Find company by name (case-insensitive)
+      const matchedCompany = companiesList.find(
+        comp => comp.name.toLowerCase() === companyName.toLowerCase()
+      );
+      if (matchedCompany) {
+        setCompany(matchedCompany._id);
+        setCompanyMatched(true);
+      }
+    }
+  }, [companiesList, rawProfileData, industry, companyMatched]);
 
   // Fetch interests list
   useEffect(() => {
@@ -489,6 +533,9 @@ export default function EditProfile() {
         if (result.data.profile.profileImage) {
           setCookie("userProfileImage", result.data.profile.profileImage, 7);
         }
+        
+        // Dispatch custom event to notify Header to refresh
+        window.dispatchEvent(new CustomEvent('profileUpdated'));
       }
 
       setSuccess("Profile updated successfully!");

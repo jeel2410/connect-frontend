@@ -115,35 +115,35 @@ export default function Home() {
       }
 
       // If no stored location, request browser geolocation
-      if (latitude === null || longitude === null) {
-        if (navigator.geolocation) {
-          try {
-            const position = await new Promise((resolve, reject) => {
-              navigator.geolocation.getCurrentPosition(resolve, reject, {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-              });
-            });
+      // if (latitude === null || longitude === null) {
+      //   if (navigator.geolocation) {
+      //     try {
+      //       const position = await new Promise((resolve, reject) => {
+      //         navigator.geolocation.getCurrentPosition(resolve, reject, {
+      //           enableHighAccuracy: true,
+      //           timeout: 10000,
+      //           maximumAge: 0
+      //         });
+      //       });
 
-            latitude = position.coords.latitude;
-            longitude = position.coords.longitude;
-          } catch (error) {
-            // Continue without location - will only pass gender
-          }
-        }
-      }
+      //       latitude = position.coords.latitude;
+      //       longitude = position.coords.longitude;
+      //     } catch (error) {
+      //       // Continue without location - will only pass gender
+      //     }
+      //   }
+      // }
 
       // Build query parameters
       const queryParams = new URLSearchParams();
-      queryParams.append("gender", oppositeGender);
+      // queryParams.append("gender", oppositeGender);
       queryParams.append("page", "1");
       queryParams.append("limit", "5000");
       
-      if (latitude !== null && longitude !== null) {
-        queryParams.append("latitude", latitude.toString());
-        queryParams.append("longitude", longitude.toString());
-      }
+      // if (latitude !== null && longitude !== null) {
+      //   queryParams.append("latitude", latitude.toString());
+      //   queryParams.append("longitude", longitude.toString());
+      // }
 
       // Call the feed API
       const feedResponse = await fetch(`${API_BASE_URL}/api/feed/web?${queryParams.toString()}`, {
@@ -260,24 +260,48 @@ export default function Home() {
     }
   };
 
-  // Handle skip action - move profile to end of list
-  const handleSkip = (skippedUserId) => {
-    // Find the profile to skip
-    const profileIndex = feedData.findIndex(profile => 
-      (profile._id || profile.id) === skippedUserId
-    );
-    
-    if (profileIndex === -1) {
-      return; // Profile not found
+  // Handle skip action - call API and remove profile from list
+  const handleSkip = async (skippedUserId) => {
+    try {
+      const token = getCookie("authToken");
+      if (!token) {
+        console.error("User not authenticated");
+        return;
+      }
+
+      // Call the skip API
+      const skipResponse = await fetch(`${API_BASE_URL}/api/connection/skip/${skippedUserId}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!skipResponse.ok) {
+        if (skipResponse.status === 401) {
+          console.error("Unauthorized: Please login again");
+          return;
+        }
+        const errorData = await skipResponse.json();
+        throw new Error(errorData.message || "Failed to skip user");
+      }
+
+      const skipData = await skipResponse.json();
+      
+      if (skipData.success) {
+        // Remove the skipped profile from the list
+        const newFeedData = feedData.filter(profile => 
+          (profile._id || profile.id) !== skippedUserId
+        );
+        setFeedData(newFeedData);
+      } else {
+        throw new Error(skipData.message || "Failed to skip user");
+      }
+    } catch (error) {
+      console.error("Error skipping user:", error);
+      // Optionally show error message to user
     }
-    
-    // Create new array: remove from current position and add to end
-    const newFeedData = [...feedData];
-    const [skippedProfile] = newFeedData.splice(profileIndex, 1);
-    newFeedData.push(skippedProfile);
-    
-    // Update state with reordered list
-    setFeedData(newFeedData);
   };
 
   // Fetch user profile data and then feed data when component mounts

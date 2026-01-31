@@ -6,7 +6,7 @@ import location from "../assets/image/location.png";
 import notification from "../assets/image/Notification.png";
 import userIcon from "../assets/image/user_icon.png"
 import NotificationModal from "./NotificationModal";
-import { getCookie, logout, isAdmin } from "../utils/auth";
+import { getCookie, logout, isAdmin, getUserProfile } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 import "../styles/style.css"
 
@@ -17,6 +17,7 @@ const Header = () => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [userIsAdmin, setUserIsAdmin] = useState(false);
+  const [userCity, setUserCity] = useState("");
   const profileMenuRef = useRef(null);
 
   const handleProfileClick = () => {
@@ -103,9 +104,94 @@ const Header = () => {
     }
   };
 
-  // Check if user is admin
+  // Check if user is admin and fetch user city
   useEffect(() => {
     setUserIsAdmin(isAdmin());
+    
+    // Fetch user city from profile
+    const fetchUserCity = async () => {
+      try {
+        const token = getCookie("authToken");
+        if (!token) {
+          return;
+        }
+
+        // Always fetch from API to get the latest city name
+        // (Backend returns city as a name string, not ID)
+        const profileResponse = await fetch(`${API_BASE_URL}/api/user/profile`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          if (profileData.success && profileData.data && profileData.data.profile) {
+            const city = profileData.data.profile.city;
+            if (city) {
+              // Check if city is an ID (ObjectId format) or a name
+              // ObjectIds are 24 character hex strings
+              const isObjectId = /^[0-9a-fA-F]{24}$/.test(city);
+              if (isObjectId) {
+                // If it's an ID, try to get from cookie as fallback, or show loading
+                const userProfile = getUserProfile();
+                if (userProfile && userProfile.city && !/^[0-9a-fA-F]{24}$/.test(userProfile.city)) {
+                  setUserCity(userProfile.city);
+                } else {
+                  setUserCity("Loading...");
+                }
+              } else {
+                // It's a name, use it directly
+                setUserCity(city);
+              }
+            }
+          }
+        } else {
+          // If API fails, try cookie as fallback
+          const userProfile = getUserProfile();
+          if (userProfile && userProfile.city) {
+            const isObjectId = /^[0-9a-fA-F]{24}$/.test(userProfile.city);
+            if (!isObjectId) {
+              setUserCity(userProfile.city);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching user city:", err);
+        // Fallback to cookie if API fails
+        const userProfile = getUserProfile();
+        if (userProfile && userProfile.city) {
+          const isObjectId = /^[0-9a-fA-F]{24}$/.test(userProfile.city);
+          if (!isObjectId) {
+            setUserCity(userProfile.city);
+          }
+        }
+      }
+    };
+
+    fetchUserCity();
+    
+    // Refresh city when page becomes visible (user navigates back)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchUserCity();
+      }
+    };
+    
+    // Listen for profile update events
+    const handleProfileUpdate = () => {
+      fetchUserCity();
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
   }, []);
 
   // Fetch unread count on mount and when notification modal closes
@@ -149,20 +235,12 @@ const Header = () => {
               Download App
             </a>
           </nav>
-          <button className="location-btn">
+          <div className="location-btn" style={{ cursor: "default" }}>
             <div className="location-round">
                <img src={location} alt="Location"></img>
             </div>
-            <span>Ahmedabad, Gujarat</span>
-            <svg className="chevron" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M6 9L12 15L18 9"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
+            <span>{userCity || "Loading..."}</span>
+          </div>
           <div className="notification-wrapper">
             <button className="icon-btn notification-btn" onClick={handleNotificationClick}>
               <img src={notification} alt="Notifications"></img>
@@ -248,12 +326,12 @@ const Header = () => {
             </nav>
 
             <div className="mobile-menu-actions">
-              <button className="mobile-location-btn">
+              <div className="mobile-location-btn" style={{ cursor: "default" }}>
                 <div className="location-round">
                   <img src={location} alt="Location"></img>
                 </div>
-                <span>Ahmedabad, Gujarat</span>
-              </button>
+                <span>{userCity || "Loading..."}</span>
+              </div>
               <div className="mobile-action-buttons">
                 <div className="notification-wrapper">
                   <button className="mobile-icon-btn notification-btn" onClick={handleNotificationClick}>
