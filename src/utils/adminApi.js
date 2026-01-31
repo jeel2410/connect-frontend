@@ -1142,10 +1142,7 @@ export const exportInquiriesToCSV = async (search = "", status = "") => {
     const url = `${API_BASE_URL}/api/info/inquiries/export${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     const response = await fetch(url, {
       method: "GET",
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'text/csv',
-      },
+      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
@@ -1162,7 +1159,7 @@ export const exportInquiriesToCSV = async (search = "", status = "") => {
     const url_blob = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url_blob;
-    link.download = `inquiries_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `inquiries_${new Date().toISOString().split('T')[0]}.xlsx`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

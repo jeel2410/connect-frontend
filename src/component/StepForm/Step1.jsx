@@ -141,8 +141,14 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
               className={touched?.religion && errors?.religion ? "input-error" : ""}
             >
               <option value="">Select Religion</option>
-              <option value="christianity">Christianity</option>
+             
               <option value="hindu">Hindu</option>
+               <option value="Muslim">Muslim</option>
+              <option value="christian">Christian</option>
+               <option value="christianity">Christianity</option>
+               <option value="Sikh">Sikh</option>
+                <option value="Other">Other</option>
+                
             </select>
             {touched?.religion && errors?.religion && (
               <div className="field-error-message">{errors.religion}</div>

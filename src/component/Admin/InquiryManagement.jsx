@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, Mail, Phone, ChevronLeft, ChevronRight, Download, FileText, Calendar } from "lucide-react";
+import { Search, Mail, Phone, ChevronLeft, ChevronRight, Download, FileText, Calendar, Eye, X } from "lucide-react";
 import { getInquiries, exportInquiriesToCSV } from "../../utils/adminApi";
 
 const InquiryManagement = () => {
@@ -7,7 +7,6 @@ const InquiryManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -16,6 +15,8 @@ const InquiryManagement = () => {
     limit: 10,
   });
   const [exporting, setExporting] = useState(false);
+  const [selectedInquiry, setSelectedInquiry] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const itemsPerPage = 10;
 
   // Fetch inquiries from API
@@ -24,7 +25,7 @@ const InquiryManagement = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await getInquiries(currentPage, itemsPerPage, searchTerm, statusFilter);
+        const response = await getInquiries(currentPage, itemsPerPage, searchTerm, "");
         
         if (response.success && response.data) {
           setInquiries(response.data.inquiries || []);
@@ -48,18 +49,13 @@ const InquiryManagement = () => {
     }, searchTerm ? 500 : 0);
 
     return () => clearTimeout(timer);
-  }, [currentPage, searchTerm, statusFilter]);
+  }, [currentPage, searchTerm]);
 
   const totalPages = pagination.totalPages;
   const totalInquiries = pagination.totalCount;
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
-
-  const handleStatusFilter = (e) => {
-    setStatusFilter(e.target.value);
     setCurrentPage(1);
   };
 
@@ -73,13 +69,23 @@ const InquiryManagement = () => {
     try {
       setExporting(true);
       setError(null);
-      await exportInquiriesToCSV(searchTerm, statusFilter);
+      await exportInquiriesToCSV(searchTerm, "");
     } catch (err) {
       setError(err.message || "Failed to export CSV file");
       console.error("Error exporting CSV:", err);
     } finally {
       setExporting(false);
     }
+  };
+
+  const handleViewInquiry = (inquiry) => {
+    setSelectedInquiry(inquiry);
+    setIsViewModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsViewModalOpen(false);
+    setSelectedInquiry(null);
   };
 
   const formatDate = (dateString) => {
@@ -92,21 +98,6 @@ const InquiryManagement = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
-
-  const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case 'pending':
-        return 'status-badge status-pending';
-      case 'in_progress':
-        return 'status-badge status-in-progress';
-      case 'resolved':
-        return 'status-badge status-resolved';
-      case 'closed':
-        return 'status-badge status-closed';
-      default:
-        return 'status-badge';
-    }
   };
 
   return (
@@ -132,17 +123,6 @@ const InquiryManagement = () => {
               onChange={handleSearch}
             />
           </div>
-          <select
-            className="filter-select"
-            value={statusFilter}
-            onChange={handleStatusFilter}
-          >
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="in_progress">In Progress</option>
-            <option value="resolved">Resolved</option>
-            <option value="closed">Closed</option>
-          </select>
         </div>
       </div>
 
@@ -156,8 +136,8 @@ const InquiryManagement = () => {
               <th>Phone</th>
               <th>Subject</th>
               <th>Message</th>
-              <th>Status</th>
               <th>Date</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -208,15 +188,20 @@ const InquiryManagement = () => {
                     ) : "N/A"}
                   </td>
                   <td>
-                    <span className={getStatusBadgeClass(inquiry.status)}>
-                      {inquiry.status || "pending"}
-                    </span>
-                  </td>
-                  <td>
                     <div className="date-cell">
                       <Calendar size={14} />
                       {formatDate(inquiry.createdAt)}
                     </div>
+                  </td>
+                  <td>
+                    <button
+                      className="admin-button primary-button"
+                      onClick={() => handleViewInquiry(inquiry)}
+                      style={{ padding: "6px 12px", fontSize: "12px" }}
+                    >
+                      <Eye size={14} style={{ marginRight: "4px" }} />
+                      View
+                    </button>
                   </td>
                 </tr>
               ))
@@ -246,6 +231,78 @@ const InquiryManagement = () => {
             Next
             <ChevronRight size={18} />
           </button>
+        </div>
+      )}
+
+      {/* View Inquiry Modal */}
+      {isViewModalOpen && selectedInquiry && (
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "700px" }}>
+            <div className="modal-header">
+              <h3>Inquiry Details</h3>
+              <button
+                className="modal-close-btn"
+                onClick={handleCloseModal}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: "24px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#777E90", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px", display: "block" }}>Name</label>
+                  <div style={{ fontSize: "16px", color: "#09122E", fontWeight: "500" }}>{selectedInquiry.name || "N/A"}</div>
+                </div>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#777E90", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px", display: "block" }}>Email</label>
+                  <div style={{ fontSize: "16px", color: "#09122E", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Mail size={16} color="#777E90" />
+                    {selectedInquiry.email || "N/A"}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#777E90", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px", display: "block" }}>Phone</label>
+                  <div style={{ fontSize: "16px", color: "#09122E", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Phone size={16} color="#777E90" />
+                    {selectedInquiry.phone || "N/A"}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#777E90", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px", display: "block" }}>Subject</label>
+                  <div style={{ fontSize: "16px", color: "#09122E", fontWeight: "500" }}>{selectedInquiry.subject || "N/A"}</div>
+                </div>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#777E90", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px", display: "block" }}>Message</label>
+                  <div style={{ fontSize: "16px", color: "#09122E", lineHeight: "1.6", padding: "16px", backgroundColor: "#F4F5F6", borderRadius: "8px", whiteSpace: "pre-wrap" }}>
+                    {selectedInquiry.message || "N/A"}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#777E90", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px", display: "block" }}>Submitted Date</label>
+                  <div style={{ fontSize: "16px", color: "#09122E", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Calendar size={16} color="#777E90" />
+                    {formatDate(selectedInquiry.createdAt)}
+                  </div>
+                </div>
+                {selectedInquiry.userId && (
+                  <div>
+                    <label style={{ fontSize: "12px", fontWeight: "600", color: "#777E90", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px", display: "block" }}>User ID</label>
+                    <div style={{ fontSize: "16px", color: "#09122E" }}>
+                      {selectedInquiry.userId.phoneNumber || selectedInquiry.userId._id || "N/A"}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="modal-actions" style={{ padding: "0 24px 24px" }}>
+              <button
+                className="btn-secondary"
+                onClick={handleCloseModal}
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

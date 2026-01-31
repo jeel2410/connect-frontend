@@ -68,7 +68,7 @@ const DeleteAccount = () => {
                   onClick={() => setShowDeleteModal(true)}
                   disabled={deleting}
                 >
-                  Delete Account
+                  Your account will be permanently deleted and this action cannot be undone.
                 </button>         
             </div>
           </div>
