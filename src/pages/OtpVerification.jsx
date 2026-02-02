@@ -6,6 +6,8 @@ import logo from "../../src/assets/image/connect_logo.png"
 import { useNavigate, useLocation } from "react-router-dom";
 import { setCookie } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
+import Header from "../component/Header";
+import Footer from "../component/Footer";
 
 const OtpVerification = () => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -251,14 +253,16 @@ const OtpVerification = () => {
   }, [location.state]);
 
   return (
-    <div className="login-page">
-      <AuthImage />
-      <div className="login-container">
-        <div className="login-header">
-          <img src={logo} alt="Connect Logo"></img>
-        </div>
+    <div>
+      <Header></Header>
+      <div className="login-page">
+        <AuthImage />
+        <div className="login-container">
+          <div className="login-header">
+            <img src={logo} alt="Connect Logo"></img>
+          </div>
 
-        <div className="login-content">
+          <div className="login-content">
           <button 
             type="button" 
             className="otp-back-button"
@@ -341,8 +345,10 @@ const OtpVerification = () => {
               </button>
             </div>
           </form>
+          </div>
         </div>
       </div>
+      <Footer></Footer>
     </div>
   );
 };

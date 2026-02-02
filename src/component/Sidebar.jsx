@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import profileImage from "../../src/assets/image/profile.png";
 import profileIconActive from "../../src/assets/image/profileicon/profile.png";
 import profileIcon from "../../src/assets/image/profileicon/profile_black.png";
@@ -9,17 +9,59 @@ import chatIcon from "../../src/assets/image/profileicon/chat.png";
 import likeActiveIcon from "../../src/assets/image/profileicon/like_white.png";
 import likeIcon from "../../src/assets/image/profileicon/like.png";
 import { useNavigate, useLocation } from "react-router-dom";
-import { getUserProfile } from "../utils/auth";
+import { getUserProfile, logout } from "../utils/auth";
+import { getCookie } from "../utils/auth";
+import API_BASE_URL from "../utils/config";
 
 export default function Sidebar({ profileData = null }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState("");
 
   // Get profile data from prop or from cookies
   const cachedProfile = profileData || getUserProfile();
   
   const displayName = cachedProfile?.fullName || "User";
   const displayImage = cachedProfile?.profileImage || profileImage;
+
+  const handleDeleteAccount = async () => {
+    try {
+      setDeleting(true);
+      setError("");
+      
+      const token = getCookie("authToken");
+      if (!token) {
+        throw new Error("Authentication required. Please login again.");
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/user/account`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to delete account. Please try again.");
+      }
+
+      if (result.success) {
+        // Logout and redirect to login page
+        logout();
+      } else {
+        throw new Error(result.message || "Failed to delete account");
+      }
+    } catch (err) {
+      console.error("Error deleting account:", err);
+      setError(err.message || "Something went wrong. Please try again.");
+      setDeleting(false);
+    }
+  };
 
   return (
     <div>
@@ -120,7 +162,7 @@ export default function Sidebar({ profileData = null }) {
             className={`dating-profile-nav-item ${
               location.pathname === "/delete-account" ? "active" : ""
             }`}
-            onClick={() => navigate("/delete-account")}
+            onClick={() => setShowDeleteModal(true)}
           >
             <span className="dating-profile-nav-icon">
               <svg
@@ -142,6 +184,148 @@ export default function Sidebar({ profileData = null }) {
           </button>
         </nav>
       </div>
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteModal && (
+        <div 
+          className="delete-modal-overlay" 
+          onClick={() => !deleting && setShowDeleteModal(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000
+          }}
+        >
+          <div 
+            className="delete-modal-content" 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "white",
+              borderRadius: "12px",
+              padding: "32px",
+              maxWidth: "480px",
+              width: "90%",
+              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)"
+            }}
+          >
+            <h2 
+              className="delete-modal-title"
+              style={{
+                fontSize: "24px",
+                fontWeight: "600",
+                color: "#16171B",
+                marginBottom: "16px",
+                marginTop: 0
+              }}
+            >
+              Delete Account
+            </h2>
+            <p 
+              className="delete-modal-message"
+              style={{
+                fontSize: "16px",
+                color: "#666",
+                lineHeight: "1.5",
+                marginBottom: "32px",
+                marginTop: 0
+              }}
+            >
+              Your account will be permanently deleted and this action cannot be undone.
+            </p>
+            {error && (
+              <div 
+                style={{
+                  backgroundColor: "#FEE2E2",
+                  color: "#DC2626",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  marginBottom: "24px",
+                  fontSize: "14px"
+                }}
+              >
+                {error}
+              </div>
+            )}
+            <div 
+              className="delete-modal-actions"
+              style={{
+                display: "flex",
+                gap: "12px",
+                justifyContent: "flex-end"
+              }}
+            >
+              <button 
+                className="delete-modal-cancel-btn"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setError("");
+                }}
+                disabled={deleting}
+                style={{
+                  padding: "12px 24px",
+                  borderRadius: "8px",
+                  border: "1px solid #E8EDF3",
+                  backgroundColor: "white",
+                  color: "#16171B",
+                  fontSize: "16px",
+                  fontWeight: "500",
+                  cursor: deleting ? "not-allowed" : "pointer",
+                  opacity: deleting ? 0.6 : 1,
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => {
+                  if (!deleting) {
+                    e.target.style.backgroundColor = "#F9FBFE";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!deleting) {
+                    e.target.style.backgroundColor = "white";
+                  }
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="delete-modal-confirm-btn"
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                style={{
+                  padding: "12px 24px",
+                  borderRadius: "8px",
+                  border: "none",
+                  backgroundColor: "#DC2626",
+                  color: "white",
+                  fontSize: "16px",
+                  fontWeight: "500",
+                  cursor: deleting ? "not-allowed" : "pointer",
+                  opacity: deleting ? 0.6 : 1,
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => {
+                  if (!deleting) {
+                    e.target.style.backgroundColor = "#B91C1C";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!deleting) {
+                    e.target.style.backgroundColor = "#DC2626";
+                  }
+                }}
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

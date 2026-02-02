@@ -164,7 +164,7 @@ const Register = () => {
 
   return (
     <div>
-      {/* <Header></Header> */}
+      <Header></Header>
       <div className="login-page">
         <AuthImage />
         <div className="login-container">
@@ -284,7 +284,7 @@ const Register = () => {
           </div>
         </div>
       </div>
-      {/* <Footer></Footer> */}
+      <Footer></Footer>
     </div>
 
   );

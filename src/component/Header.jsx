@@ -6,7 +6,7 @@ import location from "../assets/image/location.png";
 import notification from "../assets/image/Notification.png";
 import userIcon from "../assets/image/user_icon.png"
 import NotificationModal from "./NotificationModal";
-import { getCookie, logout, isAdmin, getUserProfile } from "../utils/auth";
+import { getCookie, logout, isAdmin, getUserProfile, hasToken } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 import "../styles/style.css"
 
@@ -18,6 +18,7 @@ const Header = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [userIsAdmin, setUserIsAdmin] = useState(false);
   const [userCity, setUserCity] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const profileMenuRef = useRef(null);
 
   const handleProfileClick = () => {
@@ -104,8 +105,36 @@ const Header = () => {
     }
   };
 
+  // Check if user is logged in
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      setIsLoggedIn(hasToken());
+    };
+    
+    checkLoginStatus();
+    
+    // Listen for storage changes (when user logs in/out in another tab)
+    const handleStorageChange = () => {
+      checkLoginStatus();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check periodically in case of same-tab login/logout
+    const interval = setInterval(checkLoginStatus, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
   // Check if user is admin and fetch user city
   useEffect(() => {
+    if (!isLoggedIn) {
+      return; // Don't fetch if user is not logged in
+    }
+    
     setUserIsAdmin(isAdmin());
     
     // Fetch user city from profile
@@ -192,15 +221,18 @@ const Header = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('profileUpdated', handleProfileUpdate);
     };
-  }, []);
+  }, [isLoggedIn]);
 
   // Fetch unread count on mount and when notification modal closes
   useEffect(() => {
+    if (!isLoggedIn) {
+      return; // Don't fetch if user is not logged in
+    }
     fetchUnreadCount();
     // Refresh count every 30 seconds
     const interval = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isLoggedIn]);
 
   useEffect(() => {
     if (!notificationModalOpen) {
@@ -219,67 +251,78 @@ const Header = () => {
         {/* Desktop Navigation */}
         <div className="header-right">
           <nav className="nav">
-            <a href="/" className="nav-link active">
-              Home
-            </a>
-            <a href="/offer" className="nav-link">
-              Offers
-            </a>
-            <a href="/features" className="nav-link">
-              Features
-            </a>
-            <a href="/resources" className="nav-link">
-              Resources
-            </a>
-            <a href="/download-app" className="nav-link">
-              Download App
-            </a>
-          </nav>
-          <div className="location-btn" style={{ cursor: "default" }}>
-            <div className="location-round">
-               <img src={location} alt="Location"></img>
-            </div>
-            <span>{userCity || "Loading..."}</span>
-          </div>
-          <div className="notification-wrapper">
-            <button className="icon-btn notification-btn" onClick={handleNotificationClick}>
-              <img src={notification} alt="Notifications"></img>
-              {unreadCount > 0 && (
-                <span className="notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
-              )}
-            </button>
-            <NotificationModal 
-              isOpen={notificationModalOpen} 
-              onClose={() => setNotificationModalOpen(false)}
-              onNotificationRead={fetchUnreadCount}
-            />
-          </div>
-          <div className="profile-wrapper" ref={profileMenuRef}>
-            <button className="profile-section" onClick={handleProfileMenuToggle}>
-              <Menu size={20} color="#777E90"/>
-              <button className="profile-btn">
-               <img src={userIcon} alt="User"></img>
-            </button>
-            </button>
-            {profileMenuOpen && (
-              <div className="profile-dropdown">
-                <button className="profile-dropdown-item" onClick={handleProfileClick}>
-                  <User size={18} color="#09122E" />
-                  <span>My Profile</span>
-                </button>
-                {userIsAdmin && (
-                  <button className="profile-dropdown-item" onClick={handleAdminClick}>
-                    <LayoutDashboard size={18} color="#09122E" />
-                    <span>Admin</span>
-                  </button>
-                )}
-                <button className="profile-dropdown-item" onClick={handleSignOut}>
-                  <LogOut size={18} color="#DC2626" />
-                  <span>Sign Out</span>
-                </button>
-              </div>
+            {isLoggedIn ? (
+              <>
+                <a href="/" className="nav-link active">
+                  Home
+                </a>
+                <a href="/offer" className="nav-link">
+                  Offers
+                </a>
+              </>
+            ) : (
+              <>
+                <a href="/features" className="nav-link">
+                  Features
+                </a>
+                <a href="/resources" className="nav-link">
+                  Resources
+                </a>
+                <a href="/download-app" className="nav-link">
+                  Download App
+                </a>
+              </>
             )}
-          </div>
+          </nav>
+          {isLoggedIn && (
+            <>
+              <div className="location-btn" style={{ cursor: "default" }}>
+                <div className="location-round">
+                   <img src={location} alt="Location"></img>
+                </div>
+                <span>{userCity || "Loading..."}</span>
+              </div>
+              <div className="notification-wrapper">
+                <button className="icon-btn notification-btn" onClick={handleNotificationClick}>
+                  <img src={notification} alt="Notifications"></img>
+                  {unreadCount > 0 && (
+                    <span className="notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
+                  )}
+                </button>
+                <NotificationModal 
+                  isOpen={notificationModalOpen} 
+                  onClose={() => setNotificationModalOpen(false)}
+                  onNotificationRead={fetchUnreadCount}
+                />
+              </div>
+              <div className="profile-wrapper" ref={profileMenuRef}>
+                <button className="profile-section" onClick={handleProfileMenuToggle}>
+                  <Menu size={20} color="#777E90"/>
+                  <button className="profile-btn">
+                   <img src={userIcon} alt="User"></img>
+                </button>
+                </button>
+                {profileMenuOpen && (
+                  <div className="profile-dropdown">
+                    <button className="profile-dropdown-item" onClick={handleProfileClick}>
+                      <User size={18} color="#09122E" />
+                      <span>My Profile</span>
+                    </button>
+                    {userIsAdmin && (
+                      <button className="profile-dropdown-item" onClick={handleAdminClick}>
+                        <LayoutDashboard size={18} color="#09122E" />
+                        <span>Admin</span>
+                      </button>
+                    )}
+                    <button className="profile-dropdown-item" onClick={handleSignOut}>
+                      <LogOut size={18} color="#DC2626" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -308,61 +351,70 @@ const Header = () => {
             </div>
             
             <nav className="mobile-nav">
-              <a href="/" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                Home
-              </a>
-              <a href="/offer" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                Offers
-              </a>
-              <a href="/features" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                Features
-              </a>
-              <a href="/resources" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                Resources
-              </a>
-              <a href="/download-app" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                Download App
-              </a>
+              {isLoggedIn ? (
+                <>
+                  <a href="/" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                    Home
+                  </a>
+                  <a href="/offer" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                    Offers
+                  </a>
+                </>
+              ) : (
+                <>
+                  <a href="/features" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                    Features
+                  </a>
+                  <a href="/resources" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                    Resources
+                  </a>
+                  <a href="/download-app" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                    Download App
+                  </a>
+                </>
+              )}
             </nav>
 
-            <div className="mobile-menu-actions">
-              <div className="mobile-location-btn" style={{ cursor: "default" }}>
-                <div className="location-round">
-                  <img src={location} alt="Location"></img>
+            {isLoggedIn && (
+              <div className="mobile-menu-actions">
+                <div className="mobile-location-btn" style={{ cursor: "default" }}>
+                  <div className="location-round">
+                    <img src={location} alt="Location"></img>
+                  </div>
+                  <span>{userCity || "Loading..."}</span>
                 </div>
-                <span>{userCity || "Loading..."}</span>
-              </div>
-              <div className="mobile-action-buttons">
-                <div className="notification-wrapper">
-                  <button className="mobile-icon-btn notification-btn" onClick={handleNotificationClick}>
-                    <img src={notification} alt="Notifications"></img>
-                    {unreadCount > 0 && (
-                      <span className="notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
-                    )}
-                  </button>
-                  <NotificationModal 
-                    isOpen={notificationModalOpen} 
-                    onClose={() => setNotificationModalOpen(false)}
-                    onNotificationRead={fetchUnreadCount}
-                  />
-                </div>
-                <div className="mobile-profile-menu">
-                  <button className="mobile-profile-btn" onClick={handleProfileClick}>
-                    <img src={userIcon} alt="User"></img>
-                  </button>
-                  {userIsAdmin && (
-                    <button className="mobile-admin-btn" onClick={handleAdminClick}>
-                      <LayoutDashboard size={18} color="#09122E" />
-                      <span>Admin</span>
+                <div className="mobile-action-buttons">
+                  <div className="notification-wrapper">
+                    <button className="mobile-icon-btn notification-btn" onClick={handleNotificationClick}>
+                      <img src={notification} alt="Notifications"></img>
+                      {unreadCount > 0 && (
+                        <span className="notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
+                      )}
                     </button>
-                  )}
-                  <button className="mobile-signout-btn" onClick={handleSignOut}>
-                    <LogOut size={18} color="#DC2626" />
-                    <span>Sign Out</span>
-                  </button>
+                    <NotificationModal 
+                      isOpen={notificationModalOpen} 
+                      onClose={() => setNotificationModalOpen(false)}
+                      onNotificationRead={fetchUnreadCount}
+                    />
+                  </div>
+                  <div className="mobile-profile-menu">
+                    <button className="mobile-profile-btn" onClick={handleProfileClick}>
+                      <img src={userIcon} alt="User"></img>
+                    </button>
+                    {userIsAdmin && (
+                      <button className="mobile-admin-btn" onClick={handleAdminClick}>
+                        <LayoutDashboard size={18} color="#09122E" />
+                        <span>Admin</span>
+                      </button>
+                    )}
+                    <button className="mobile-signout-btn" onClick={handleSignOut}>
+                      <LogOut size={18} color="#DC2626" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
