@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { MapPin, Bell, Menu, User, X, LogOut, LayoutDashboard } from "lucide-react";
 import logo from "../assets/image/connect_logo.png"
-import location from "../assets/image/location.png";
+import locationIcon from "../assets/image/location.png";
 import notification from "../assets/image/Notification.png";
 import userIcon from "../assets/image/user_icon.png"
 import NotificationModal from "./NotificationModal";
@@ -12,12 +12,14 @@ import "../styles/style.css"
 
 const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationModalOpen, setNotificationModalOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [userIsAdmin, setUserIsAdmin] = useState(false);
   const [userCity, setUserCity] = useState("");
+  const [userName, setUserName] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const profileMenuRef = useRef(null);
 
@@ -94,10 +96,10 @@ const Header = () => {
 
       if (data.success && data.data !== undefined) {
         // Handle different possible response structures
-        const count = typeof data.data === "number" 
-          ? data.data 
+        const count = typeof data.data === "number"
+          ? data.data
           : (data.data.count || data.data.unreadCount || 0);
-        
+
         setUnreadCount(count);
       }
     } catch (err) {
@@ -110,19 +112,19 @@ const Header = () => {
     const checkLoginStatus = () => {
       setIsLoggedIn(hasToken());
     };
-    
+
     checkLoginStatus();
-    
+
     // Listen for storage changes (when user logs in/out in another tab)
     const handleStorageChange = () => {
       checkLoginStatus();
     };
-    
+
     window.addEventListener('storage', handleStorageChange);
-    
+
     // Also check periodically in case of same-tab login/logout
     const interval = setInterval(checkLoginStatus, 1000);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       clearInterval(interval);
@@ -134,9 +136,9 @@ const Header = () => {
     if (!isLoggedIn) {
       return; // Don't fetch if user is not logged in
     }
-    
+
     setUserIsAdmin(isAdmin());
-    
+
     // Fetch user city from profile
     const fetchUserCity = async () => {
       try {
@@ -158,7 +160,23 @@ const Header = () => {
         if (profileResponse.ok) {
           const profileData = await profileResponse.json();
           if (profileData.success && profileData.data && profileData.data.profile) {
-            const city = profileData.data.profile.city;
+            const profile = profileData.data.profile;
+
+            // Set user name
+            if (profile.fullName) {
+              setUserName(profile.fullName);
+            } else {
+              // Fallback to cookie if fullName not in API response
+              const userProfile = getUserProfile();
+              if (userProfile && userProfile.fullName) {
+                setUserName(userProfile.fullName);
+              } else {
+                setUserName("User");
+              }
+            }
+
+            // Keep city logic for potential future use
+            const city = profile.city;
             if (city) {
               // Check if city is an ID (ObjectId format) or a name
               // ObjectIds are 24 character hex strings
@@ -180,43 +198,57 @@ const Header = () => {
         } else {
           // If API fails, try cookie as fallback
           const userProfile = getUserProfile();
-          if (userProfile && userProfile.city) {
+          if (userProfile) {
+            if (userProfile.fullName) {
+              setUserName(userProfile.fullName);
+            } else {
+              setUserName("User");
+            }
+            if (userProfile.city) {
+              const isObjectId = /^[0-9a-fA-F]{24}$/.test(userProfile.city);
+              if (!isObjectId) {
+                setUserCity(userProfile.city);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching user profile:", err);
+        // Fallback to cookie if API fails
+        const userProfile = getUserProfile();
+        if (userProfile) {
+          if (userProfile.fullName) {
+            setUserName(userProfile.fullName);
+          } else {
+            setUserName("User");
+          }
+          if (userProfile.city) {
             const isObjectId = /^[0-9a-fA-F]{24}$/.test(userProfile.city);
             if (!isObjectId) {
               setUserCity(userProfile.city);
             }
           }
         }
-      } catch (err) {
-        console.error("Error fetching user city:", err);
-        // Fallback to cookie if API fails
-        const userProfile = getUserProfile();
-        if (userProfile && userProfile.city) {
-          const isObjectId = /^[0-9a-fA-F]{24}$/.test(userProfile.city);
-          if (!isObjectId) {
-            setUserCity(userProfile.city);
-          }
-        }
       }
     };
 
     fetchUserCity();
-    
+
     // Refresh city when page becomes visible (user navigates back)
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         fetchUserCity();
       }
     };
-    
+
     // Listen for profile update events
     const handleProfileUpdate = () => {
       fetchUserCity();
     };
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('profileUpdated', handleProfileUpdate);
-    
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('profileUpdated', handleProfileUpdate);
@@ -247,16 +279,25 @@ const Header = () => {
         <div className="logo">
           <img src={logo} alt="Connect Logo"></img>
         </div>
-        
+
         {/* Desktop Navigation */}
         <div className="header-right">
           <nav className="nav">
             {isLoggedIn ? (
               <>
-                <a href="/" className="nav-link active">
+                <a href="/" className={`nav-link ${location.pathname === "/" ? "active" : ""}`}>
                   Home
                 </a>
-                <a href="/offer" className="nav-link">
+                <a href="/connection" className={`nav-link ${location.pathname === "/connection" ? "active" : ""}`}>
+                  Connections
+                </a>
+                <a href="/like" className={`nav-link ${location.pathname === "/like" ? "active" : ""}`}>
+                  Likes
+                </a>
+                <a href="/chat" className={`nav-link ${location.pathname === "/chat" ? "active" : ""}`}>
+                  Chat
+                </a>
+                <a href="/offer" className={`nav-link ${location.pathname === "/offer" ? "active" : ""}`}>
                   Offers
                 </a>
               </>
@@ -277,10 +318,13 @@ const Header = () => {
           {isLoggedIn && (
             <>
               <div className="location-btn" style={{ cursor: "default" }}>
-                <div className="location-round">
-                   <img src={location} alt="Location"></img>
-                </div>
-                <span>{userCity || "Loading..."}</span>
+                {/* <div className="location-round">
+                   <img src={locationIcon} alt="Location"></img>
+                </div> */}
+                <button className="profile-btn">
+                  <img src={userIcon} alt="User"></img>
+                </button>
+                <span>{userName || "Loading..."}</span>
               </div>
               <div className="notification-wrapper">
                 <button className="icon-btn notification-btn" onClick={handleNotificationClick}>
@@ -289,18 +333,18 @@ const Header = () => {
                     <span className="notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
                   )}
                 </button>
-                <NotificationModal 
-                  isOpen={notificationModalOpen} 
+                <NotificationModal
+                  isOpen={notificationModalOpen}
                   onClose={() => setNotificationModalOpen(false)}
                   onNotificationRead={fetchUnreadCount}
                 />
               </div>
               <div className="profile-wrapper" ref={profileMenuRef}>
                 <button className="profile-section" onClick={handleProfileMenuToggle}>
-                  <Menu size={20} color="#777E90"/>
-                  <button className="profile-btn">
+                  <Menu size={20} color="#777E90" />
+                  {/* <button className="profile-btn">
                    <img src={userIcon} alt="User"></img>
-                </button>
+                </button> */}
                 </button>
                 {profileMenuOpen && (
                   <div className="profile-dropdown">
@@ -326,7 +370,7 @@ const Header = () => {
         </div>
 
         {/* Mobile Menu Button */}
-        <button 
+        <button
           className="mobile-menu-btn"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle menu"
@@ -341,7 +385,7 @@ const Header = () => {
           <div className="mobile-menu" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-menu-header">
               <img src={logo} alt="Connect Logo" className="mobile-logo"></img>
-              <button 
+              <button
                 className="mobile-menu-close"
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label="Close menu"
@@ -349,12 +393,21 @@ const Header = () => {
                 <X size={24} color="#16171B" />
               </button>
             </div>
-            
+
             <nav className="mobile-nav">
               {isLoggedIn ? (
                 <>
                   <a href="/" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     Home
+                  </a>
+                  <a href="/connection" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                    Connections
+                  </a>
+                  <a href="/like" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                    Likes
+                  </a>
+                  <a href="/chat" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                    Chat
                   </a>
                   <a href="/offer" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     Offers
@@ -378,10 +431,13 @@ const Header = () => {
             {isLoggedIn && (
               <div className="mobile-menu-actions">
                 <div className="mobile-location-btn" style={{ cursor: "default" }}>
-                  <div className="location-round">
-                    <img src={location} alt="Location"></img>
-                  </div>
-                  <span>{userCity || "Loading..."}</span>
+                  {/* <div className="location-round">
+                    <img src={locationIcon} alt="Location"></img>
+                  </div> */}
+                  {/* <button className="mobile-profile-btn" onClick={handleProfileClick}> */}
+                    <img src={userIcon} alt="User"></img>
+                  {/* </button> */}
+                  <span>{userName || "Loading..."}</span>
                 </div>
                 <div className="mobile-action-buttons">
                   <div className="notification-wrapper">
@@ -391,8 +447,8 @@ const Header = () => {
                         <span className="notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
                       )}
                     </button>
-                    <NotificationModal 
-                      isOpen={notificationModalOpen} 
+                    <NotificationModal
+                      isOpen={notificationModalOpen}
                       onClose={() => setNotificationModalOpen(false)}
                       onNotificationRead={fetchUnreadCount}
                     />

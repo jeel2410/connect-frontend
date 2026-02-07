@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Heart, MessageCircle } from "lucide-react";
+import { toast } from "react-toastify";
 import Header from "../component/Header";
 import heroImage from "../../src/assets/image/hero_man.png";
 import "../../src/styles/style.css";
@@ -21,11 +22,26 @@ import { useNavigate } from "react-router-dom";
 import Usercard from "../component/Usercard";
 import { getCookie, setCookie, getUserProfile } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
+import FilterModal from "../component/FilterModal";
+import filterIcon from "../../src/assets/image/filter.png";
 
 export default function Home() {
   const navigate = useNavigate();
   const [feedData, setFeedData] = useState([]);
   const [loadingFeed, setLoadingFeed] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    ageMin: null,
+    ageMax: null,
+    gender: null,
+    language: null,
+    habits: null,
+    interests: null,
+    relationship: null,
+    religion: null,
+    company: null,
+    industry: null
+  });
   
   const technologies = [
     { icon: htmlIcom },
@@ -88,62 +104,85 @@ export default function Home() {
         return;
       }
 
-      // Determine opposite gender
-      const userGender = userProfile.gender;
-      const oppositeGender = userGender === "Male" ? "Female" : userGender === "Female" ? "Male" : null;
+      // Determine gender - use filter if set, otherwise use opposite gender
+      let genderFilter = filters.gender;
+      if (!genderFilter || genderFilter === "Any") {
+        const userGender = userProfile.gender;
+        genderFilter = userGender === "Male" ? "Female" : userGender === "Female" ? "Male" : null;
+      }
       
-      if (!oppositeGender) {
-        console.warn("Unable to determine opposite gender");
+      if (!genderFilter) {
+        console.warn("Unable to determine gender");
         return;
       }
 
       setLoadingFeed(true);
 
-      // Get location coordinates - prioritize stored location from profile
+      // Check if any filters are applied
+      const hasFilters = filters.ageMin !== null || filters.ageMax !== null || 
+                        filters.language !== null || filters.habits !== null || 
+                        filters.interests !== null || filters.relationship !== null ||
+                        filters.religion !== null || filters.company !== null ||
+                        filters.industry !== null ||
+                        (filters.gender !== null && filters.gender !== "Any");
+
+      // Get location coordinates only if no filters are applied
       let latitude = null;
       let longitude = null;
 
-      // First, check if user profile has currentLocation stored
-      if (userProfile.currentLocation && userProfile.currentLocation.coordinates) {
-        const coordinates = userProfile.currentLocation.coordinates;
-        // Check if coordinates are valid (not [0, 0])
-        if (coordinates.length >= 2 && (coordinates[0] !== 0 || coordinates[1] !== 0)) {
-          // Note: coordinates array is typically [longitude, latitude] in GeoJSON format
-          longitude = coordinates[0];
-          latitude = coordinates[1];
+      if (!hasFilters) {
+        // First, check if user profile has currentLocation stored
+        if (userProfile.currentLocation && userProfile.currentLocation.coordinates) {
+          const coordinates = userProfile.currentLocation.coordinates;
+          // Check if coordinates are valid (not [0, 0])
+          if (coordinates.length >= 2 && (coordinates[0] !== 0 || coordinates[1] !== 0)) {
+            // Note: coordinates array is typically [longitude, latitude] in GeoJSON format
+            longitude = coordinates[0];
+            latitude = coordinates[1];
+          }
         }
       }
 
-      // If no stored location, request browser geolocation
-      // if (latitude === null || longitude === null) {
-      //   if (navigator.geolocation) {
-      //     try {
-      //       const position = await new Promise((resolve, reject) => {
-      //         navigator.geolocation.getCurrentPosition(resolve, reject, {
-      //           enableHighAccuracy: true,
-      //           timeout: 10000,
-      //           maximumAge: 0
-      //         });
-      //       });
-
-      //       latitude = position.coords.latitude;
-      //       longitude = position.coords.longitude;
-      //     } catch (error) {
-      //       // Continue without location - will only pass gender
-      //     }
-      //   }
-      // }
-
       // Build query parameters
       const queryParams = new URLSearchParams();
-      // queryParams.append("gender", oppositeGender);
+      queryParams.append("gender", genderFilter);
       queryParams.append("page", "1");
       queryParams.append("limit", "5000");
       
-      // if (latitude !== null && longitude !== null) {
-      //   queryParams.append("latitude", latitude.toString());
-      //   queryParams.append("longitude", longitude.toString());
-      // }
+      // Only add location if no filters are applied
+      if (!hasFilters && latitude !== null && longitude !== null) {
+        queryParams.append("latitude", latitude.toString());
+        queryParams.append("longitude", longitude.toString());
+      }
+
+      // Add filter parameters if they exist
+      if (filters.ageMin !== null && filters.ageMin !== undefined) {
+        queryParams.append("ageMin", filters.ageMin.toString());
+      }
+      if (filters.ageMax !== null && filters.ageMax !== undefined) {
+        queryParams.append("ageMax", filters.ageMax.toString());
+      }
+      if (filters.language) {
+        queryParams.append("language", filters.language);
+      }
+      if (filters.habits) {
+        queryParams.append("habits", filters.habits);
+      }
+      if (filters.relationship) {
+        queryParams.append("relationship", filters.relationship);
+      }
+      if (filters.company) {
+        queryParams.append("company", filters.company);
+      }
+      if (filters.industry) {
+        queryParams.append("industry", filters.industry);
+      }
+      if (filters.interests && Array.isArray(filters.interests) && filters.interests.length > 0) {
+        queryParams.append("interests", filters.interests.join(","));
+      }
+      if (filters.religion) {
+        queryParams.append("religion", filters.religion);
+      }
 
       // Call the feed API
       const feedResponse = await fetch(`${API_BASE_URL}/api/feed/web?${queryParams.toString()}`, {
@@ -249,6 +288,8 @@ export default function Home() {
       const connectData = await connectResponse.json();
       
       if (connectData.success) {
+        // Show success toast notification
+        toast.success("Connection request sent successfully!");
         // Refetch all feeds after successful connection request
         await fetchFeedData();
       } else {
@@ -256,7 +297,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Error sending connection request:", error);
-      // Optionally show error message to user
+      toast.error(error.message || "Failed to send connection request");
     }
   };
 
@@ -379,11 +420,52 @@ export default function Home() {
     };
 
     fetchUserProfileAndFeed();
-  }, []); // Empty dependency array - run only once on mount
+  }, [filters]); // Re-fetch when filters change
+
+  const handleApplyFilters = (appliedFilters) => {
+    // Convert ageRange to ageMin and ageMax
+    const newFilters = {
+      ageMin: appliedFilters.ageRange ? appliedFilters.ageRange[0] : null,
+      ageMax: appliedFilters.ageRange ? appliedFilters.ageRange[1] : null,
+      gender: appliedFilters.gender && appliedFilters.gender !== "Any" ? appliedFilters.gender : null,
+      language: appliedFilters.language || null,
+      habits: appliedFilters.habits || null,
+      interests: appliedFilters.interests && appliedFilters.interests.length > 0 ? appliedFilters.interests : null,
+      relationship: appliedFilters.relationship || null,
+      religion: appliedFilters.religion || null,
+      company: appliedFilters.company || null,
+      industry: appliedFilters.industry || null
+    };
+    
+    setFilters(newFilters);
+    setIsFilterOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      ageMin: null,
+      ageMax: null,
+      gender: null,
+      language: null,
+      habits: null,
+      interests: null,
+      relationship: null,
+      religion: null,
+      company: null,
+      industry: null
+    });
+    setIsFilterOpen(false);
+  };
 
   return (
     <div>
       <Header></Header>
+      <FilterModal
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+      />
       {/* First section */}
       {/* <div className="hero-container">
         <div className="deco-circle deco-circle-1"></div>
@@ -501,14 +583,36 @@ export default function Home() {
       <div className="profile-container">
         <div className="sec-header">
           <div className="sec-header-left">
-            <div className="byerul-badge">
+            {/* <div className="byerul-badge">
               <span className="byerul-text">Byerul Nedsori</span>
-            </div>
+            </div> */}
             <h1 className="title">
               Latest <span className="title-highlight">Profile</span>
             </h1>
           </div>
-          <button className="view-more-btn" onClick={() => navigate("/search")}>View More</button>
+          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+            <button
+              className="filter-btn"
+              onClick={() => setIsFilterOpen(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "10px 20px",
+                backgroundColor: "#fff",
+                border: "1px solid #EA650A",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#EA650A"
+              }}
+            >
+              <img src={filterIcon} alt="filter" className="filter-icon" style={{ width: "18px", height: "18px" }} />
+              Filter
+            </button>
+            {/* <button className="view-more-btn" onClick={() => navigate("/search")}>View More</button> */}
+          </div>
         </div>
         <Usercard feedData={feedData} loading={loadingFeed} onLike={handleLike} onConnect={handleConnect} onSkip={handleSkip}></Usercard>
       </div>

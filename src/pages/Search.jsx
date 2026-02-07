@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 
 import "../../src/styles/style.css";
 import Header from "../component/Header"
@@ -254,6 +255,8 @@ const Search = () => {
       const connectData = await connectResponse.json();
       
       if (connectData.success) {
+        // Show success toast notification
+        toast.success("Connection request sent successfully!");
         // Refetch all feeds after successful connection request
         await fetchFeedData();
       } else {
@@ -261,7 +264,7 @@ const Search = () => {
       }
     } catch (error) {
       console.error("Error sending connection request:", error);
-      // Optionally show error message to user
+      toast.error(error.message || "Failed to send connection request");
     }
   };
 

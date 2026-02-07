@@ -22,9 +22,10 @@ const Connection = () => {
   const [loadingActive, setLoadingActive] = useState(false);
   const [loadingPending, setLoadingPending] = useState(false);
   const [loadingIncoming, setLoadingIncoming] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch active connections from API
-  const fetchActiveConnections = async () => {
+  const fetchActiveConnections = async (search = "") => {
     try {
       setLoadingActive(true);
       const token = getCookie("authToken");
@@ -33,7 +34,12 @@ const Connection = () => {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/connection/connections`, {
+      // Build URL with search parameter if provided
+      const url = search.trim() 
+        ? `${API_BASE_URL}/api/connection/connections?search=${encodeURIComponent(search.trim())}`
+        : `${API_BASE_URL}/api/connection/connections`;
+
+      const response = await fetch(url, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -70,7 +76,7 @@ const Connection = () => {
   };
 
   // Fetch incoming connection requests from API
-  const fetchIncomingRequests = async () => {
+  const fetchIncomingRequests = async (search = "") => {
     try {
       setLoadingIncoming(true);
       const token = getCookie("authToken");
@@ -79,7 +85,12 @@ const Connection = () => {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/connection/requests/received`, {
+      // Build URL with search parameter if provided
+      const url = search.trim() 
+        ? `${API_BASE_URL}/api/connection/requests/received?search=${encodeURIComponent(search.trim())}`
+        : `${API_BASE_URL}/api/connection/requests/received`;
+
+      const response = await fetch(url, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -116,7 +127,7 @@ const Connection = () => {
   };
 
   // Fetch pending (sent) connection requests from API
-  const fetchPendingRequests = async () => {
+  const fetchPendingRequests = async (search = "") => {
     try {
       setLoadingPending(true);
       const token = getCookie("authToken");
@@ -125,7 +136,12 @@ const Connection = () => {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/connection/requests/sent`, {
+      // Build URL with search parameter if provided
+      const url = search.trim() 
+        ? `${API_BASE_URL}/api/connection/requests/sent?search=${encodeURIComponent(search.trim())}`
+        : `${API_BASE_URL}/api/connection/requests/sent`;
+
+      const response = await fetch(url, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -163,30 +179,50 @@ const Connection = () => {
 
   // Fetch all data when component mounts to show counts on all tabs
   useEffect(() => {
-    fetchActiveConnections();
-    fetchPendingRequests();
-    fetchIncomingRequests();
+    fetchActiveConnections("");
+    fetchPendingRequests("");
+    fetchIncomingRequests("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch data when tab changes (for the active tab content)
+  // Fetch data when tab changes (immediate fetch, no debounce)
   useEffect(() => {
     if (activeTab === "active") {
-      fetchActiveConnections();
+      fetchActiveConnections(searchTerm);
     } else if (activeTab === "pending") {
-      fetchPendingRequests();
+      fetchPendingRequests(searchTerm);
     } else if (activeTab === "incoming") {
-      fetchIncomingRequests();
+      fetchIncomingRequests(searchTerm);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
-  // Refresh all connections when navigating back to this page or when page becomes visible
+  // Debounce search - fetch data when search term changes (only for search, not tab changes)
+  useEffect(() => {
+    // Skip if searchTerm is empty and we just mounted (handled by initial useEffect)
+    const timeoutId = setTimeout(() => {
+      if (activeTab === "active") {
+        fetchActiveConnections(searchTerm);
+      } else if (activeTab === "pending") {
+        fetchPendingRequests(searchTerm);
+      } else if (activeTab === "incoming") {
+        fetchIncomingRequests(searchTerm);
+      }
+    }, 500); // 500ms debounce delay
+
+    return () => clearTimeout(timeoutId);
+    // Only trigger on searchTerm change, not activeTab change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
+
+      // Refresh all connections when navigating back to this page or when page becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
       // Refresh all counts when page becomes visible
       if (document.visibilityState === 'visible') {
-        fetchActiveConnections();
-        fetchPendingRequests();
-        fetchIncomingRequests();
+        fetchActiveConnections(searchTerm);
+        fetchPendingRequests(searchTerm);
+        fetchIncomingRequests(searchTerm);
       }
     };
 
@@ -197,16 +233,16 @@ const Connection = () => {
     // This runs whenever the location object changes, including navigation back
     // Small delay to ensure we're back on the connection page
     const timeoutId = setTimeout(() => {
-      fetchActiveConnections();
-      fetchPendingRequests();
-      fetchIncomingRequests();
+      fetchActiveConnections(searchTerm);
+      fetchPendingRequests(searchTerm);
+      fetchIncomingRequests(searchTerm);
     }, 100);
 
     return () => {
       clearTimeout(timeoutId);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [location]);
+  }, [location, searchTerm]);
 
   // Handle reject incoming connection request
   const handleReject = async (requestId) => {
@@ -239,7 +275,7 @@ const Connection = () => {
       
       if (rejectData.success) {
         // Refetch incoming requests after successful reject
-        await fetchIncomingRequests();
+        await fetchIncomingRequests(searchTerm);
       } else {
         throw new Error(rejectData.message || "Failed to reject connection request");
       }
@@ -281,7 +317,7 @@ const Connection = () => {
       
       if (cancelData.success) {
         // Refetch pending requests after successful cancel
-        await fetchPendingRequests();
+        await fetchPendingRequests(searchTerm);
       } else {
         throw new Error(cancelData.message || "Failed to cancel connection request");
       }
@@ -322,7 +358,7 @@ const Connection = () => {
       
       if (acceptData.success) {
         // Refetch incoming requests after successful accept
-        await fetchIncomingRequests();
+        await fetchIncomingRequests(searchTerm);
       } else {
         throw new Error(acceptData.message || "Failed to accept connection request");
       }
@@ -395,14 +431,19 @@ const Connection = () => {
                   <span className="connections-page-search-icon">
                     <img src={searchIcon} alt="search" />
                   </span>
-                  <input type="text" placeholder="Search here" />
+                  <input 
+                    type="text" 
+                    placeholder="Search here" 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
                 </div>
-                <button className="connections-page-filter-btn">
+                {/* <button className="connections-page-filter-btn">
                   Filter
                   <span>
                     <img src={filterIcon} alt="filter" />
                   </span>
-                </button>
+                </button> */}
               </div>
             </div>
             <div className="connections-page-tabs">
@@ -411,17 +452,17 @@ const Connection = () => {
                 onClick={() => {
                   setActiveTab("active");
                   // Always refresh when clicking active tab, even if already active
-                  fetchActiveConnections();
+                  fetchActiveConnections(searchTerm);
                 }}
               >
-                Active({activeConnections.length})
+                Active ({activeConnections.length})
               </button>
               <button
                 className={`connections-page-tab ${activeTab === "incoming" ? "active" : ""}`}
                 onClick={() => {
                   setActiveTab("incoming");
                   // Always refresh when clicking incoming tab, even if already active
-                  fetchIncomingRequests();
+                  fetchIncomingRequests(searchTerm);
                 }}
               >
                 Incoming ({incomingRequests.length})
@@ -431,10 +472,10 @@ const Connection = () => {
                 onClick={() => {
                   setActiveTab("pending");
                   // Always refresh when clicking pending tab, even if already active
-                  fetchPendingRequests();
+                  fetchPendingRequests(searchTerm);
                 }}
               >
-                Pending({pendingRequests.length})
+                Pending ({pendingRequests.length})
               </button>
             </div>
             {activeTab === "active" && (

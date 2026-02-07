@@ -142,7 +142,7 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
             >
               <option value="">Select Religion</option>
              
-              <option value="hindu">Hindu</option>
+              <option value="Hindu">Hindu</option>
                <option value="Muslim">Muslim</option>
               <option value="christian">Christian</option>
                <option value="christianity">Christianity</option>

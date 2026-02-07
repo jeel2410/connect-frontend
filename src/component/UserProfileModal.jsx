@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import userProfile from "../assets/image/userProfile.png"
 import closeIcon from "../assets/image/close.png"
 import heartfillIcon from "../assets/image/fill_heart.png"
@@ -43,6 +44,7 @@ export default function UserProfileModal({ userId }) {
   const [industryName, setIndustryName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [cityName, setCityName] = useState("");
+  const [isImagePopupOpen, setIsImagePopupOpen] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -248,6 +250,9 @@ export default function UserProfileModal({ userId }) {
       const data = await response.json();
       
       if (data.success) {
+        // Show success toast notification
+        toast.success("Connection request sent successfully!");
+        
         // After sending request, check if it was auto-accepted or refresh profile
         // For now, just refresh the profile to get updated status
         const profileResponse = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`, {
@@ -272,6 +277,7 @@ export default function UserProfileModal({ userId }) {
     } catch (error) {
       console.error("Error connecting:", error);
       setError(error.message || "Failed to connect");
+      toast.error(error.message || "Failed to send connection request");
     } finally {
       setSendingConnect(false);
     }
@@ -313,6 +319,23 @@ export default function UserProfileModal({ userId }) {
       
       if (data.success) {
         setIsConnected(false);
+        // Refresh profile to get updated connection status
+        const profileResponse = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          if (profileData.success && profileData.data) {
+            const profile = profileData.data.profile || profileData.data;
+            setIsConnected(profile.isConnected || profile.alreadyConnect || false);
+            setHasPendingRequest(profile.hasSentRequest || profile.sendRequest || false);
+          }
+        }
       } else {
         throw new Error(data.message || "Failed to remove connection");
       }
@@ -467,6 +490,8 @@ export default function UserProfileModal({ userId }) {
             src={profileData.profileImage || userProfile}
             alt={profileData.fullName || "Profile"}
             className="user-profile-avatar"
+            onClick={() => setIsImagePopupOpen(true)}
+            style={{ cursor: 'pointer' }}
           />
           <div className="user-profile-name-location">
             <h2>{profileData.fullName || "User"}</h2>
@@ -514,13 +539,33 @@ export default function UserProfileModal({ userId }) {
             </button>
           )}
           {isConnected && (
-            <button 
-              className="user-profile-social-btn message-btn"
-              onClick={handleMessage}
-              title="Send message"
-            >
-              <img src={messageIcon} alt="Message"></img>
-            </button>
+            <>
+              <button 
+                className="user-profile-social-btn message-btn"
+                onClick={handleMessage}
+                title="Send message"
+              >
+                <img src={messageIcon} alt="Message"></img>
+              </button>
+              <button 
+                className="user-profile-social-btn remove-connection-btn"
+                onClick={handleRemoveConnection}
+                disabled={sendingConnect}
+                title="Remove connection"
+                style={{ opacity: sendingConnect ? 0.6 : 1 }}
+              >
+                <img 
+                  src={blackcIcon}
+                  style={{
+                    backgroundColor: "white",
+                    borderRadius: "50%",
+                    padding: "5px",
+                    transform: "rotate(45deg)"
+                  }}
+                  alt="Remove Connection"
+                />
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -596,6 +641,26 @@ export default function UserProfileModal({ userId }) {
           </div>
         </div>
       </div>
+
+      {/* Image Popup Modal */}
+      {isImagePopupOpen && (
+        <div className="image-popup-overlay" onClick={() => setIsImagePopupOpen(false)}>
+          <div className="image-popup-content" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="image-popup-close-btn"
+              onClick={() => setIsImagePopupOpen(false)}
+              title="Close"
+            >
+              <img src={closeIcon} alt="Close" />
+            </button>
+            <img
+              src={profileData.profileImage || userProfile}
+              alt={profileData.fullName || "Profile"}
+              className="image-popup-img"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

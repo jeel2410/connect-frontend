@@ -1,14 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import closeICon from "../../src/assets/image/close_icon.png";
 import { X } from "lucide-react";
+import API_BASE_URL from "../utils/config";
+import { getCookie } from "../utils/auth";
+
 const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
   const [ageRange, setAgeRange] = useState([0, 100]);
   const [gender, setGender] = useState("Male");
-  const [habits, setHabits] = useState("Get Serious");
+  const [habits, setHabits] = useState("");
   const [interests, setInterests] = useState([]);
   const [language, setLanguage] = useState("");
   const [relationship, setRelationship] = useState("");
   const [religion, setReligion] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [company, setCompany] = useState("");
+  const [selectedIndustryId, setSelectedIndustryId] = useState("");
+  const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  
+  // State for API data
+  const [habitsList, setHabitsList] = useState([]);
+  const [interestsList, setInterestsList] = useState([]);
+  const [industriesList, setIndustriesList] = useState([]);
+  const [companiesList, setCompaniesList] = useState([]);
+  const [loadingHabits, setLoadingHabits] = useState(false);
+  const [loadingInterests, setLoadingInterests] = useState(false);
+  const [loadingIndustries, setLoadingIndustries] = useState(false);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
   const handleAgeChange = (e, index) => {
     const newRange = [...ageRange];
     newRange[index] = parseInt(e.target.value);
@@ -22,6 +39,173 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
         : [...prev, interest]
     );
   };
+
+  // Fetch interests from API
+  useEffect(() => {
+    const fetchInterests = async () => {
+      if (!isOpen) return; // Only fetch when modal is open
+      
+      try {
+        setLoadingInterests(true);
+        const token = getCookie("authToken");
+        if (!token) {
+          console.error("No auth token found");
+          return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/list/interest`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.interests) {
+            setInterestsList(result.data.interests);
+          }
+        } else {
+          console.error("Failed to fetch interests");
+        }
+      } catch (err) {
+        console.error("Error fetching interests:", err);
+      } finally {
+        setLoadingInterests(false);
+      }
+    };
+
+    fetchInterests();
+  }, [isOpen]);
+
+  // Fetch habits from API
+  useEffect(() => {
+    const fetchHabits = async () => {
+      if (!isOpen) return; // Only fetch when modal is open
+      
+      try {
+        setLoadingHabits(true);
+        const token = getCookie("authToken");
+        if (!token) {
+          console.error("No auth token found");
+          return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/list/habits`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.habits) {
+            setHabitsList(result.data.habits);
+          }
+        } else {
+          console.error("Failed to fetch habits");
+        }
+      } catch (err) {
+        console.error("Error fetching habits:", err);
+      } finally {
+        setLoadingHabits(false);
+      }
+    };
+
+    fetchHabits();
+  }, [isOpen]);
+
+  // Fetch industries from API
+  useEffect(() => {
+    const fetchIndustries = async () => {
+      if (!isOpen) return; // Only fetch when modal is open
+      
+      try {
+        setLoadingIndustries(true);
+        const token = getCookie("authToken");
+        if (!token) {
+          console.error("No auth token found");
+          return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/list/industries`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.industries) {
+            setIndustriesList(result.data.industries);
+          }
+        } else {
+          console.error("Failed to fetch industries");
+        }
+      } catch (err) {
+        console.error("Error fetching industries:", err);
+      } finally {
+        setLoadingIndustries(false);
+      }
+    };
+
+    fetchIndustries();
+  }, [isOpen]);
+
+  // Fetch companies from API when industry is selected
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      if (!isOpen || !industry) {
+        setCompaniesList([]);
+        setCompany(""); // Reset company when industry changes
+        return;
+      }
+      
+      try {
+        setLoadingCompanies(true);
+        const token = getCookie("authToken");
+        if (!token) {
+          console.error("No auth token found");
+          return;
+        }
+
+        // Find the industry ID from the name
+        const selectedIndustry = industriesList.find(ind => ind.name === industry);
+        if (!selectedIndustry) {
+          setCompaniesList([]);
+          return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/list/companies?industryId=${selectedIndustry._id}`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.companies) {
+            setCompaniesList(result.data.companies);
+          }
+        } else {
+          console.error("Failed to fetch companies");
+        }
+      } catch (err) {
+        console.error("Error fetching companies:", err);
+      } finally {
+        setLoadingCompanies(false);
+      }
+    };
+
+    fetchCompanies();
+  }, [isOpen, industry, industriesList]);
 
   if (!isOpen) return null;
 
@@ -129,21 +313,25 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
           <div className="filter-section">
             <label className="filter-label">Habits</label>
             <div className="chip-group">
-              {[
-                "Night Out",
-                "Regular Smooker",
-                "Get Serious",
-                "Drinking",
-                "Regular Drinke",
-              ].map((habit) => (
-                <button
-                  key={habit}
-                  className={`chip ${habits === habit ? "chip-active" : ""}`}
-                  onClick={() => setHabits(habit)}
-                >
-                  {habit}
-                </button>
-              ))}
+              {loadingHabits ? (
+                <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                  Loading habits...
+                </div>
+              ) : habitsList.length === 0 ? (
+                <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                  No habits available
+                </div>
+              ) : (
+                habitsList.map((habit) => (
+                  <button
+                    key={habit._id}
+                    className={`chip ${habits === habit.name ? "chip-active" : ""}`}
+                    onClick={() => setHabits(habit.name)}
+                  >
+                    {habit.name}
+                  </button>
+                ))
+              )}
             </div>
           </div>
 
@@ -151,18 +339,26 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
           <div className="filter-section">
             <label className="filter-label">Interests</label>
             <div className="chip-group">
-              {["Travel", "Music", "Books", "Coffee", "Football"].map(
-                (interest) => (
+              {loadingInterests ? (
+                <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                  Loading interests...
+                </div>
+              ) : interestsList.length === 0 ? (
+                <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                  No interests available
+                </div>
+              ) : (
+                interestsList.map((interest) => (
                   <button
-                    key={interest}
+                    key={interest._id}
                     className={`chip ${
-                      interests.includes(interest) ? "chip-active" : ""
+                      interests.includes(interest.name) ? "chip-active" : ""
                     }`}
-                    onClick={() => handleInterestToggle(interest)}
+                    onClick={() => handleInterestToggle(interest.name)}
                   >
-                    {interest}
+                    {interest.name}
                   </button>
-                )
+                ))
               )}
             </div>
           </div>
@@ -171,7 +367,7 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
           <div className="filter-section">
             <label className="filter-label">Language</label>
             <div className="chip-group">
-              {["English", "Spanish"].map((lang) => (
+              {["english", "spanish"].map((lang) => (
                 <button
                   key={lang}
                   className={`chip ${language === lang ? "chip-active" : ""}`}
@@ -187,7 +383,7 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
           <div className="filter-section">
             <label className="filter-label">Relationship</label>
             <div className="chip-group">
-              {["Married", "Single"].map((status) => (
+              {["Married", "Unmarried"].map((status) => (
                 <button
                   key={status}
                   className={`chip ${
@@ -205,7 +401,7 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
           <div className="filter-section">
             <label className="filter-label">Religion</label>
             <div className="chip-group">
-              {["Hindu", "Christian", "Muslim", "Chirstian"].map((rel) => (
+              {["Hindu", "Christian", "Muslim", "Chirstian","Sikh"].map((rel) => (
                 <button
                   key={rel}
                   className={`chip ${religion === rel ? "chip-active" : ""}`}
@@ -214,6 +410,70 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
                   {rel}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Industry */}
+          <div className="filter-section">
+            <label className="filter-label">Industry</label>
+            <div className="chip-group">
+              {loadingIndustries ? (
+                <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                  Loading industries...
+                </div>
+              ) : industriesList.length === 0 ? (
+                <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                  No industries available
+                </div>
+              ) : (
+                industriesList.map((ind) => (
+                  <button
+                    key={ind._id}
+                    className={`chip ${industry === ind.name ? "chip-active" : ""}`}
+                    onClick={() => {
+                      setIndustry(ind.name);
+                      setSelectedIndustryId(ind._id);
+                      setCompany(""); // Reset company when industry changes
+                      setSelectedCompanyId(""); // Reset company ID
+                    }}
+                  >
+                    {ind.name}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Company */}
+          <div className="filter-section">
+            <label className="filter-label">Company</label>
+            <div className="chip-group">
+              {!industry ? (
+                <div style={{ padding: "12px", textAlign: "center", color: "#999", fontSize: "14px" }}>
+                  Please select an industry first
+                </div>
+              ) : loadingCompanies ? (
+                <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                  Loading companies...
+                </div>
+              ) : companiesList.length === 0 ? (
+                <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                  No companies available for this industry
+                </div>
+              ) : (
+                companiesList.map((comp) => (
+                  <button
+                    key={comp._id}
+                    className={`chip ${company === comp.name ? "chip-active" : ""}`}
+                    onClick={() => {
+                      setCompany(comp.name);
+                      setSelectedCompanyId(comp._id);
+                    }}
+                  >
+                    {comp.name}
+                  </button>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -228,6 +488,10 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
             setLanguage("");
             setRelationship("");
             setReligion("");
+            setIndustry("");
+            setCompany("");
+            setSelectedIndustryId("");
+            setSelectedCompanyId("");
             if (onClear) {
               onClear();
             } else {
@@ -245,7 +509,9 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
                 interests,
                 language,
                 relationship,
-                religion
+                religion,
+                industry: selectedIndustryId || null,
+                company: selectedCompanyId || null
               });
             } else {
               onClose();

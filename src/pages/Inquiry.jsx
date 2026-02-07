@@ -28,6 +28,19 @@ const Inquiry = () => {
     if (success) setSuccess("");
   };
 
+  const handlePhoneChange = (e) => {
+    const value = e.target.value;
+    // Only allow numbers and limit to 10 digits
+    const numericValue = value.replace(/\D/g, '').slice(0, 10);
+    setFormData((prev) => ({
+      ...prev,
+      phone: numericValue,
+    }));
+    // Clear errors when user starts typing
+    if (error) setError("");
+    if (success) setSuccess("");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -70,6 +83,19 @@ const Inquiry = () => {
         setError("Message must be at least 10 characters");
         setLoading(false);
         return;
+      }
+      // Validate phone number if provided
+      if (formData.phone && formData.phone.trim()) {
+        if (formData.phone.length !== 10) {
+          setError("Phone number must be exactly 10 digits");
+          setLoading(false);
+          return;
+        }
+        if (!/^\d+$/.test(formData.phone)) {
+          setError("Phone number must contain only numbers");
+          setLoading(false);
+          return;
+        }
       }
 
       // Get token if available (optional authentication)
@@ -173,9 +199,18 @@ const Inquiry = () => {
                   type="tel"
                   name="phone"
                   value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="Enter your phone number (optional)"
+                  onChange={handlePhoneChange}
+                  onKeyPress={(e) => {
+                    // Prevent non-numeric characters
+                    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab') {
+                      e.preventDefault();
+                    }
+                  }}
+                  placeholder="Enter your phone number (10 digits, optional)"
                   className="inquiry-input"
+                  maxLength={10}
+                  inputMode="numeric"
+                  pattern="[0-9]{10}"
                 />
               </div>
 

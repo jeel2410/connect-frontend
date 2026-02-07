@@ -26,6 +26,8 @@ import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { hasToken, getProfileStatus } from "./utils/auth";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // Root route component - shows Register if not authenticated, Home if authenticated
 const RootRoute = () => {
@@ -213,6 +215,18 @@ function App() {
           }
         />
       </Routes>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </Router>
     </GoogleOAuthProvider>
   );

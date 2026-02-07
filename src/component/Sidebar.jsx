@@ -134,7 +134,7 @@ export default function Sidebar({ profileData = null }) {
             </span>
             Likes
           </button>
-          <button
+          {/* <button
             className={`dating-profile-nav-item ${
               location.pathname === "/inquiry" ? "active" : ""
             }`}
@@ -157,7 +157,7 @@ export default function Sidebar({ profileData = null }) {
               </svg>
             </span>
             Inquiry
-          </button>
+          </button> */}
           <button
             className={`dating-profile-nav-item ${
               location.pathname === "/delete-account" ? "active" : ""

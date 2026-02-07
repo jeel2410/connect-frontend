@@ -12,8 +12,9 @@
     "lucide-react": "^0.555.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
-  "react-router-dom": "^7.10.0",
+    "react-router-dom": "^7.10.0",
     "react-scripts": "5.0.1",
+    "react-toastify": "^11.0.5",
     "web-vitals": "^2.1.4",
     "yup": "^1.7.1"
   },
