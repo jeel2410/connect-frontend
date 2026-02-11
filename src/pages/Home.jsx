@@ -145,14 +145,14 @@ export default function Home() {
 
       // Build query parameters
       const queryParams = new URLSearchParams();
-      queryParams.append("gender", genderFilter);
+      // queryParams.append("gender", genderFilter);
       queryParams.append("page", "1");
       queryParams.append("limit", "5000");
       
       // Only add location if no filters are applied
       if (!hasFilters && latitude !== null && longitude !== null) {
-        queryParams.append("latitude", latitude.toString());
-        queryParams.append("longitude", longitude.toString());
+        // queryParams.append("latitude", latitude.toString());
+        // queryParams.append("longitude", longitude.toString());
       }
 
       // Add filter parameters if they exist
