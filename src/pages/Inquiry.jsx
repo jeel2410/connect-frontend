@@ -239,7 +239,7 @@ const Inquiry = () => {
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
-                  placeholder="Tell us more about your inquiry..."
+                  placeholder="Tell us more about your enquiry..."
                   className="inquiry-textarea"
                   rows={6}
                   required
@@ -253,7 +253,7 @@ const Inquiry = () => {
                 className="inquiry-submit-btn"
                 disabled={loading}
               >
-                {loading ? "Submitting..." : "Submit Inquiry"}
+                {loading ? "Submitting..." : "Submit Enquiry"}
               </button>
             </form>
           </div>

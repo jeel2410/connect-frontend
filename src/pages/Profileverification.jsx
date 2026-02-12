@@ -97,11 +97,48 @@ const Profileverification = () => {
           
           // If profile exists, populate form with ALL saved data
           if (profile) {
+            // Fetch cities to match city name to ID
+            let cityId = "";
+            if (profile.city) {
+              try {
+                const citiesResponse = await fetch(`${API_BASE_URL}/api/list/city`, {
+                  method: "GET",
+                  headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+                
+                if (citiesResponse.ok) {
+                  const citiesResult = await citiesResponse.json();
+                  if (citiesResult.success && citiesResult.data && citiesResult.data.city) {
+                    const cities = citiesResult.data.city;
+                    // Check if profile.city is already an ID (24 char hex string)
+                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.city);
+                    if (isObjectId) {
+                      // It's already an ID, use it directly
+                      cityId = profile.city;
+                    } else {
+                      // It's a city name, find matching ID
+                      const matchedCity = cities.find(
+                        city => city.name.toLowerCase().trim() === profile.city.toLowerCase().trim()
+                      );
+                      if (matchedCity) {
+                        cityId = matchedCity._id;
+                      }
+                    }
+                  }
+                }
+              } catch (err) {
+                console.error("Error fetching cities for matching:", err);
+              }
+            }
+            
             // Ensure we populate ALL fields from saved profile, not just empty ones
             formik.setValues({
               mobileNumber: phoneNumber || "",
               fullName: profile.fullName || "",
-              city: profile.city || "",
+              city: cityId, // Use matched city ID instead of name
               religion: profile.religion || "",
               maritalStatus: profile.status || "",
               email: profile.email || "",
@@ -215,7 +252,10 @@ const Profileverification = () => {
         
         // Add text fields
         formData.append("fullName", values.fullName);
-        formData.append("city", values.city);
+        // Only append city if it has a valid value (not empty string and is a valid ObjectId)
+        if (values.city && values.city.trim() !== "" && /^[0-9a-fA-F]{24}$/.test(values.city)) {
+          formData.append("city", values.city);
+        }
         formData.append("religion", values.religion);
         formData.append("status", values.maritalStatus);
         formData.append("gender", values.gender);
@@ -378,7 +418,12 @@ const Profileverification = () => {
       // Add step-specific fields
       Object.keys(stepData).forEach(key => {
         if (stepData[key] !== null && stepData[key] !== undefined) {
-          if (Array.isArray(stepData[key])) {
+          // For city field, only append if it's a valid ObjectId
+          if (key === 'city') {
+            if (stepData[key] && stepData[key].trim() !== "" && /^[0-9a-fA-F]{24}$/.test(stepData[key])) {
+              formData.append(key, stepData[key]);
+            }
+          } else if (Array.isArray(stepData[key])) {
             formData.append(key, stepData[key].join(","));
           } else {
             formData.append(key, stepData[key]);
@@ -490,12 +535,50 @@ const Profileverification = () => {
             const profile = data.data.profile;
             const currentValues = formik.values;
             
+            // Fetch cities to match city name to ID
+            let cityId = currentValues.city || "";
+            if (profile.city) {
+              try {
+                const token = getCookie("authToken");
+                const citiesResponse = await fetch(`${API_BASE_URL}/api/list/city`, {
+                  method: "GET",
+                  headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+                
+                if (citiesResponse.ok) {
+                  const citiesResult = await citiesResponse.json();
+                  if (citiesResult.success && citiesResult.data && citiesResult.data.city) {
+                    const cities = citiesResult.data.city;
+                    // Check if profile.city is already an ID (24 char hex string)
+                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.city);
+                    if (isObjectId) {
+                      // It's already an ID, use it directly
+                      cityId = profile.city;
+                    } else {
+                      // It's a city name, find matching ID
+                      const matchedCity = cities.find(
+                        city => city.name.toLowerCase().trim() === profile.city.toLowerCase().trim()
+                      );
+                      if (matchedCity) {
+                        cityId = matchedCity._id;
+                      }
+                    }
+                  }
+                }
+              } catch (err) {
+                console.error("Error fetching cities for matching:", err);
+              }
+            }
+            
             // When going back, always reload saved data for that step to ensure it's displayed
             // Merge saved data with current formik values (saved data takes precedence for fields in previous steps)
             const updates = {
               // Always use saved data if it exists (for backward navigation)
               fullName: profile.fullName || currentValues.fullName || "",
-              city: profile.city || currentValues.city || "",
+              city: cityId, // Use matched city ID instead of name
               religion: profile.religion || currentValues.religion || "",
               maritalStatus: profile.status || currentValues.maritalStatus || "",
               email: profile.email || currentValues.email || "",
