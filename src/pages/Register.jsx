@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import AuthImage from "../component/AuthImage"
 import logo from "../../src/assets/image/connect_logo.png"
 import mobileIcon from "../../src/assets/image/mobile.png";
 import { useNavigate } from "react-router-dom";
 import API_BASE_URL from "../utils/config";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
+import sideImage from "../../src/assets/image/sideImage.png"
 
 const Register = () => {
   const [loading, setLoading] = useState(false);
@@ -166,7 +166,9 @@ const Register = () => {
     <div>
       <Header></Header>
       <div className="login-page">
-        <AuthImage />
+        <div className="side-image-container">
+          <img src={sideImage} alt="Side Image" className="side-image" />
+        </div>
         <div className="login-container">
           <div className="login-header">
             <img src={logo} alt="Connect Logo"></img>
