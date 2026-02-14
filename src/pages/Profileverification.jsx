@@ -89,7 +89,7 @@ const Profileverification = () => {
         if (data.success && data.data) {
           const { lastCompletedStep, profile, isProfileComplete } = data.data;
           
-          // If profile is complete, redirect
+          // If profile is complete, redirect immediately
           if (isProfileComplete) {
             navigate("/", { replace: true });
             return;
@@ -156,7 +156,19 @@ const Profileverification = () => {
             });
             
             // Set current step to next incomplete step
-            const nextStep = Math.min((lastCompletedStep || 0) + 1, totalSteps);
+            // If lastCompletedStep is 8 but profile is not complete, stay on step 8
+            // Otherwise, go to next step after lastCompletedStep
+            let nextStep;
+            if (lastCompletedStep === 8 && !isProfileComplete) {
+              // Step 8 was saved but profile not marked complete, stay on step 8
+              nextStep = 8;
+            } else if (lastCompletedStep >= totalSteps) {
+              // All steps completed, should have been redirected above, but just in case
+              nextStep = totalSteps;
+            } else {
+              // Go to next incomplete step
+              nextStep = Math.min((lastCompletedStep || 0) + 1, totalSteps);
+            }
             setCurrentStep(nextStep);
             setPreviousStep(nextStep); // Initialize previousStep to current step
           }
