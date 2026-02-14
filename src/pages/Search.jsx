@@ -214,6 +214,8 @@ const Search = () => {
       const likeData = await likeResponse.json();
       
       if (likeData.success) {
+        // Show success toast notification
+        toast.success("Profile liked successfully!");
         // Refetch all feeds after successful like
         await fetchFeedData();
       } else {
@@ -221,7 +223,7 @@ const Search = () => {
       }
     } catch (error) {
       console.error("Error liking user:", error);
-      // Optionally show error message to user
+      toast.error(error.message || "Failed to like user");
     }
   };
 

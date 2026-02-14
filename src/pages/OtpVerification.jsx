@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import AuthImage from "../component/AuthImage"
+import sideImage from "../../src/assets/image/side-image.svg"
 import logo from "../../src/assets/image/connect_logo.png"
 import { useNavigate, useLocation } from "react-router-dom";
 import { setCookie } from "../utils/auth";
@@ -256,7 +256,9 @@ const OtpVerification = () => {
     <div>
       <Header></Header>
       <div className="login-page">
-        <AuthImage />
+        <div className="side-image-container">
+          <img src={sideImage} alt="Connect illustration" className="side-image" />
+        </div>
         <div className="login-container">
           <div className="login-header">
             <img src={logo} alt="Connect Logo"></img>

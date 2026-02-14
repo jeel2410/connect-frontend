@@ -276,7 +276,7 @@ const Header = () => {
   return (
     <header className="header">
       <div className="header-container">
-        <div className="logo">
+        <div className="logo" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
           <img src={logo} alt="Connect Logo"></img>
         </div>
 
@@ -384,7 +384,16 @@ const Header = () => {
         <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)}>
           <div className="mobile-menu" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-menu-header">
-              <img src={logo} alt="Connect Logo" className="mobile-logo"></img>
+              <img 
+                src={logo} 
+                alt="Connect Logo" 
+                className="mobile-logo" 
+                onClick={() => {
+                  navigate("/");
+                  setMobileMenuOpen(false);
+                }} 
+                style={{ cursor: "pointer" }}
+              ></img>
               <button
                 className="mobile-menu-close"
                 onClick={() => setMobileMenuOpen(false)}

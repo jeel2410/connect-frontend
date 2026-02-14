@@ -385,12 +385,19 @@ export default function UserProfileModal({ userId }) {
       if (data.success) {
         // Toggle the like status
         setIsLiked(!isLiked);
+        // Show success toast notification
+        if (isLiked) {
+          toast.success("Profile unliked successfully");
+        } else {
+          toast.success("Profile liked successfully!");
+        }
       } else {
         throw new Error(data.message || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
       }
     } catch (error) {
       console.error(`Error ${isLiked ? 'unliking' : 'liking'} user:`, error);
       setError(error.message || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
+      toast.error(error.message || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
     } finally {
       setSendingLike(false);
     }

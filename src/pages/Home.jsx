@@ -104,16 +104,10 @@ export default function Home() {
         return;
       }
 
-      // Determine gender - use filter if set, otherwise use opposite gender
+      // Determine gender - use filter if set
       let genderFilter = filters.gender;
-      if (!genderFilter || genderFilter === "Any") {
-        const userGender = userProfile.gender;
-        genderFilter = userGender === "Male" ? "Female" : userGender === "Female" ? "Male" : null;
-      }
-      
-      if (!genderFilter) {
-        console.warn("Unable to determine gender");
-        return;
+      if (genderFilter === "Any") {
+        genderFilter = null; // Show all genders
       }
 
       setLoadingFeed(true);
@@ -145,9 +139,13 @@ export default function Home() {
 
       // Build query parameters
       const queryParams = new URLSearchParams();
-      // queryParams.append("gender", genderFilter);
       queryParams.append("page", "1");
       queryParams.append("limit", "5000");
+      
+      // Add gender filter if it's set and not "Any"
+      if (genderFilter && genderFilter !== "Any" && genderFilter !== "any") {
+        queryParams.append("gender", genderFilter);
+      }
       
       // Only add location if no filters are applied
       if (!hasFilters && latitude !== null && longitude !== null) {
@@ -247,6 +245,8 @@ export default function Home() {
       const likeData = await likeResponse.json();
       
       if (likeData.success) {
+        // Show success toast notification
+        toast.success("Profile liked successfully!");
         // Refetch all feeds after successful like
         await fetchFeedData();
       } else {
@@ -254,7 +254,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Error liking user:", error);
-      // Optionally show error message to user
+      toast.error(error.message || "Failed to like user");
     }
   };
 
