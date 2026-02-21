@@ -317,15 +317,13 @@ const Header = () => {
           </nav>
           {isLoggedIn && (
             <>
-              <div className="location-btn" style={{ cursor: "default" }}>
-                {/* <div className="location-round">
-                   <img src={locationIcon} alt="Location"></img>
-                </div> */}
+              {/* <div className="location-btn" style={{ cursor: "default" }}>
+
                 <button className="profile-btn">
                   <img src={userIcon} alt="User"></img>
                 </button>
                 <span>{userName || "Loading..."}</span>
-              </div>
+              </div> */}
               <div className="notification-wrapper">
                 <button className="icon-btn notification-btn" onClick={handleNotificationClick}>
                   <img src={notification} alt="Notifications"></img>
@@ -384,14 +382,14 @@ const Header = () => {
         <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)}>
           <div className="mobile-menu" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-menu-header">
-              <img 
-                src={logo} 
-                alt="Connect Logo" 
-                className="mobile-logo" 
+              <img
+                src={logo}
+                alt="Connect Logo"
+                className="mobile-logo"
                 onClick={() => {
                   navigate("/");
                   setMobileMenuOpen(false);
-                }} 
+                }}
                 style={{ cursor: "pointer" }}
               ></img>
               <button
@@ -444,7 +442,7 @@ const Header = () => {
                     <img src={locationIcon} alt="Location"></img>
                   </div> */}
                   {/* <button className="mobile-profile-btn" onClick={handleProfileClick}> */}
-                    <img src={userIcon} alt="User"></img>
+                  <img src={userIcon} alt="User"></img>
                   {/* </button> */}
                   <span>{userName || "Loading..."}</span>
                 </div>

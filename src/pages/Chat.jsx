@@ -381,9 +381,10 @@ export default function Chat() {
   return (
     <>
       <Header />
-      <div className="chat-page-wrapper">
+      <div className="dating-profile-wrapper">
         <Sidebar />
-        <div className="chat-container">
+        <div className="chat-page-wrapper">
+          <div className="chat-container">
           <div className="chat-sidebar">
             <div className="chat-header">
               <h1>Chat</h1>
@@ -557,6 +558,7 @@ export default function Chat() {
               </div>
             )}
           </div>
+        </div>
         </div>
       </div>
       <Footer />

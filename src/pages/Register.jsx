@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import API_BASE_URL from "../utils/config";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
-import sideImage from "../../src/assets/image/side-image.svg"
+import sideImage from "../../src/assets/image/sideImage.png"
 
 const Register = () => {
   const [loading, setLoading] = useState(false);
@@ -167,15 +167,15 @@ const Register = () => {
       <Header></Header>
       <div className="login-page">
         <div className="side-image-container">
-          <img src={sideImage} alt="Connect illustration" className="side-image" />
+          <img src={sideImage} alt="Side Image" className="side-image" />
         </div>
         <div className="login-container">
-          <div className="login-header">
+          {/* <div className="login-header">
             <img src={logo} alt="Connect Logo"></img>
-          </div>
-
+          </div> */}
+    
           <div className="login-content">
-            <h1 className="login-title">Register</h1>
+            <h1 className="login-title">Register / Login</h1>
             <form className="login-form" onSubmit={formik.handleSubmit}>
               <div className="form-group">
                 <div className="input-wrapper">
@@ -268,7 +268,7 @@ const Register = () => {
                     Sending OTP...
                   </>
                 ) : (
-                  "Login / Register"
+                  "Submit"
                 )}
               </button>
             </form>

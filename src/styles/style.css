@@ -4940,22 +4940,34 @@ body {
   background-color: white;
 }
 
+.offers-page-wrapper {
+  flex: 1;
+  padding: 20px;
+  background-color: #fafafa;
+}
+
+.offers-page-card {
+  background: white;
+  border-radius: 15px;
+  border: 1px solid #DDE2EE;
+  padding: 30px;
+  max-width: 1200px;
+  width: 100%;
+}
+
 .offers-page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #F9FBFE;
-  border-radius: 28px;
-  padding: 50px 61px;
-  margin-bottom: 35px;
-  border: none;
+  margin-bottom: 30px;
 }
 
 .offers-page-header h1 {
-  font-size: 38px;
+  font-size: 30px;
   font-weight: 700;
-  font-family: 'Inter';
-  color: #142144;
+  font-family: 'Inter', sans-serif;
+  color: #081332;
+  margin: 0;
 }
 
 .offers-page-search {
@@ -5160,9 +5172,6 @@ body {
 }
 
 @media (max-width: 768px) {
-   .offers-page-container {
-    padding: 20px 25px;
-  }
   .offers-page-header {
     flex-direction: column;
     gap: 20px;
@@ -5185,16 +5194,8 @@ body {
 }
 
 @media (max-width: 480px) {
-  .offers-page-container {
-    padding: 20px 15px;
-  }
-
   .offers-page-header h1 {
-    font-size: 26px;
-  }
-
-  .offers-page-card {
-    padding: 18px;
+    font-size: 24px;
   }
 }
 
@@ -5211,14 +5212,19 @@ body {
   width: 270px;
   background: white;
   border-radius: 15px;
-  padding: 15px;
+  padding: 0;
   border: 1px solid #DDE2EE;
   height: fit-content;
+  display: flex;
+  flex-direction: column;
+  margin-top: 17px;
 }
 .dating-profile-image-container{
   background-image: linear-gradient(180deg,#FFF8F3 0%,#FFF0E9 100%);
-  border-radius: 18px;
+  border-radius: 15px;
   padding: 30px 25px 26px 25px;
+  width: 100%;
+  box-sizing: border-box;
 }
 .dating-profile-sidebar-avatar {
   width: 93px;
@@ -5234,6 +5240,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 50%;
 }
 
 .dating-profile-sidebar-name {
@@ -5242,6 +5249,8 @@ body {
   font-weight: 700;
   color: #081332;
   font-family: 'Inter',sans-serif;
+  margin: 0;
+  word-wrap: break-word;
 }
 
 .dating-profile-sidebar-nav {
@@ -5405,7 +5414,7 @@ body {
 
 /* More Information Section */
 .dating-profile-section {
-  padding: 0px 30px 0 30px;
+  padding: 0px 30px 10px 30px;
 }
 
 .dating-profile-section > *:last-child {
@@ -6222,11 +6231,19 @@ body {
   flex: 1;
 }
 
+.connections-page-wrapper {
+  flex: 1;
+  padding: 20px;
+  background-color: #fafafa;
+}
+
 .connections-page-card {
   background: white;
   border-radius: 15px;
   border: 1px solid #DDE2EE;
   padding: 30px;
+  max-width: 1200px;
+  width: 100%;
 }
 
 /* Header */
@@ -6413,10 +6430,6 @@ body {
     padding: 15px;
   }
 
-  .connections-page-card {
-    padding: 20px;
-  }
-
   .connections-page-header {
     flex-direction: column;
     gap: 15px;
@@ -6448,7 +6461,10 @@ body {
 }
 
 @media (max-width: 480px) {
-  .connections-page-header h1 {
+  .likes-page-header h1,
+  .connections-page-header h1,
+  .offers-page-header h1,
+  .chat-header h1 {
     font-size: 24px;
   }
 
@@ -6499,10 +6515,11 @@ like page */
 
 .likes-page-card {
   background: #ffffff;
-  border-radius: 8px;
-  padding: 24px;
+  border-radius: 15px;
+  border: 1px solid #DDE2EE;
+  padding: 30px;
   max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 /* Header Section */
@@ -6683,21 +6700,13 @@ like page */
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .likes-page-wrapper {
-    padding: 12px;
-  }
-
-  .likes-page-card {
-    padding: 16px;
-  }
-
   .likes-page-header {
     flex-direction: column;
     align-items: flex-start;
   }
 
   .likes-page-header h1 {
-    font-size: 20px;
+    font-size: 24px;
   }
 
   .likes-page-search {
@@ -6769,11 +6778,9 @@ like page */
 
 /* Chat Page */
 .chat-page-wrapper {
-  display: flex;
-  gap: 30px;
-  padding: 20px 120px;
-  min-height: calc(100vh - 160px);
-  background-color: #ffffff;
+  flex: 1;
+  padding: 20px;
+  background-color: #fafafa;
 }
 
 .chat-container {
@@ -6785,6 +6792,8 @@ like page */
   border-radius: 15px;
   border: 1px solid #DDE2EE;
   overflow: hidden;
+  max-width: 1200px;
+  width: 100%;
 }
 
 .chat-sidebar {
@@ -6801,7 +6810,7 @@ like page */
 }
 
 .chat-header h1 {
-  font-size: 36px;
+  font-size: 30px;
   font-weight: 700;
   color: #081332;
   font-family: 'Inter', sans-serif;
@@ -7105,16 +7114,9 @@ like page */
 }
 
 /* Responsive Design */
-@media (max-width: 1200px) {
-  .chat-page-wrapper {
-    padding: 20px 60px;
-  }
-}
-
 @media (max-width: 992px) {
   .chat-page-wrapper {
-    flex-direction: column;
-    padding: 20px 40px;
+    padding: 12px;
   }
 
   .chat-container {
@@ -7123,8 +7125,17 @@ like page */
 }
 
 @media (max-width: 768px) {
-  .chat-page-wrapper {
-    padding: 20px 20px;
+  .likes-page-wrapper,
+  .connections-page-wrapper,
+  .chat-page-wrapper,
+  .offers-page-wrapper {
+    padding: 12px;
+  }
+
+  .likes-page-card,
+  .connections-page-card,
+  .offers-page-card {
+    padding: 20px;
   }
 
   .chat-container {
@@ -7149,8 +7160,17 @@ like page */
 }
 
 @media (max-width: 480px) {
-  .chat-page-wrapper {
-    padding: 15px 10px;
+  .likes-page-wrapper,
+  .connections-page-wrapper,
+  .chat-page-wrapper,
+  .offers-page-wrapper {
+    padding: 12px;
+  }
+
+  .likes-page-card,
+  .connections-page-card,
+  .offers-page-card {
+    padding: 20px;
   }
 
   .chat-container {

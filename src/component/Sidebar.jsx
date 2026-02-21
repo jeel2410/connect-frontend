@@ -22,7 +22,7 @@ export default function Sidebar({ profileData = null }) {
 
   // Get profile data from prop or from cookies
   const cachedProfile = profileData || getUserProfile();
-  
+
   const displayName = cachedProfile?.fullName || "User";
   const displayImage = cachedProfile?.profileImage || profileImage;
 
@@ -30,7 +30,7 @@ export default function Sidebar({ profileData = null }) {
     try {
       setDeleting(true);
       setError("");
-      
+
       const token = getCookie("authToken");
       if (!token) {
         throw new Error("Authentication required. Please login again.");
@@ -73,11 +73,10 @@ export default function Sidebar({ profileData = null }) {
           <h3 className="dating-profile-sidebar-name">{displayName}</h3>
         </div>
 
-        <nav className="dating-profile-sidebar-nav">
+        {/* <nav className="dating-profile-sidebar-nav">
           <button
-            className={`dating-profile-nav-item ${
-              location.pathname === "/profile" ? "active" : ""
-            }`}
+            className={`dating-profile-nav-item ${location.pathname === "/profile" ? "active" : ""
+              }`}
             onClick={() => navigate("/profile")}
           >
             <span className="dating-profile-nav-icon">
@@ -87,14 +86,14 @@ export default function Sidebar({ profileData = null }) {
                     ? profileIconActive
                     : profileIcon
                 }
+                alt="Profile"
               ></img>
             </span>
             My Profile
           </button>
           <button
-            className={`dating-profile-nav-item ${
-              location.pathname === "/connection" ? "active" : ""
-            }`}
+            className={`dating-profile-nav-item ${location.pathname === "/connection" ? "active" : ""
+              }`}
             onClick={() => navigate("/connection")}
           >
             <span className="dating-profile-nav-icon">
@@ -104,64 +103,41 @@ export default function Sidebar({ profileData = null }) {
                     ? connectionIconActive
                     : connectionIcon
                 }
+                alt="Connections"
               ></img>
             </span>
             Connections
           </button>
           <button
-            className={`dating-profile-nav-item ${
-              location.pathname === "/chat" ? "active" : ""
-            }`}
+            className={`dating-profile-nav-item ${location.pathname === "/chat" ? "active" : ""
+              }`}
             onClick={() => navigate("/chat")}
           >
             <span className="dating-profile-nav-icon">
               <img
                 src={location.pathname === "/chat" ? chatActiveIcon : chatIcon}
+                alt="Chat"
               ></img>
             </span>
             Chat
           </button>
           <button
-            className={`dating-profile-nav-item ${
-              location.pathname === "/like" ? "active" : ""
-            }`}
+            className={`dating-profile-nav-item ${location.pathname === "/like" ? "active" : ""
+              }`}
             onClick={() => navigate("/like")}
           >
             <span className="dating-profile-nav-icon">
               <img
                 src={location.pathname === "/like" ? likeActiveIcon : likeIcon}
+                alt="Likes"
               ></img>
             </span>
             Likes
           </button>
-          {/* <button
-            className={`dating-profile-nav-item ${
-              location.pathname === "/inquiry" ? "active" : ""
-            }`}
-            onClick={() => navigate("/inquiry")}
-          >
-            <span className="dating-profile-nav-icon">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke={location.pathname === "/inquiry" ? "#FFFFFF" : "#16171B"}
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                <line x1="9" y1="10" x2="15" y2="10" />
-                <line x1="9" y1="14" x2="13" y2="14" />
-              </svg>
-            </span>
-            Inquiry
-          </button> */}
+
           <button
-            className={`dating-profile-nav-item ${
-              location.pathname === "/delete-account" ? "active" : ""
-            }`}
+            className={`dating-profile-nav-item ${location.pathname === "/delete-account" ? "active" : ""
+              }`}
             onClick={() => setShowDeleteModal(true)}
           >
             <span className="dating-profile-nav-icon">
@@ -182,13 +158,96 @@ export default function Sidebar({ profileData = null }) {
             </span>
             Delete Account
           </button>
-        </nav>
+        </nav> */}
+
+        {/* <nav className="dating-profile-sidebar-nav">
+          <button
+            className={`dating-profile-nav-item ${location.pathname === "/profile" ? "active" : ""
+              }`}
+            onClick={() => navigate("/profile")}
+          >
+            <span className="dating-profile-nav-icon">
+              <img
+                src={
+                  location.pathname === "/profile"
+                    ? profileIconActive
+                    : profileIcon
+                }
+              ></img>
+            </span>
+            My Profile
+          </button>
+          <button
+            className={`dating-profile-nav-item ${location.pathname === "/connection" ? "active" : ""
+              }`}
+            onClick={() => navigate("/connection")}
+          >
+            <span className="dating-profile-nav-icon">
+              <img
+                src={
+                  location.pathname === "/connection"
+                    ? connectionIconActive
+                    : connectionIcon
+                }
+              ></img>
+            </span>
+            Connections
+          </button>
+          <button
+            className={`dating-profile-nav-item ${location.pathname === "/chat" ? "active" : ""
+              }`}
+            onClick={() => navigate("/chat")}
+          >
+            <span className="dating-profile-nav-icon">
+              <img
+                src={location.pathname === "/chat" ? chatActiveIcon : chatIcon}
+              ></img>
+            </span>
+            Chat
+          </button>
+          <button
+            className={`dating-profile-nav-item ${location.pathname === "/like" ? "active" : ""
+              }`}
+            onClick={() => navigate("/like")}
+          >
+            <span className="dating-profile-nav-icon">
+              <img
+                src={location.pathname === "/like" ? likeActiveIcon : likeIcon}
+              ></img>
+            </span>
+            Likes
+          </button>
+
+          <button
+            className={`dating-profile-nav-item ${location.pathname === "/delete-account" ? "active" : ""
+              }`}
+            onClick={() => setShowDeleteModal(true)}
+          >
+            <span className="dating-profile-nav-icon">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={location.pathname === "/delete-account" ? "#FFFFFF" : "#16171B"}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                <line x1="10" y1="11" x2="10" y2="17" />
+                <line x1="14" y1="11" x2="14" y2="17" />
+              </svg>
+            </span>
+            Delete Account
+          </button>
+        </nav> */}
       </div>
 
       {/* Delete Account Confirmation Modal */}
       {showDeleteModal && (
-        <div 
-          className="delete-modal-overlay" 
+        <div
+          className="delete-modal-overlay"
           onClick={() => !deleting && setShowDeleteModal(false)}
           style={{
             position: "fixed",
@@ -203,8 +262,8 @@ export default function Sidebar({ profileData = null }) {
             zIndex: 1000
           }}
         >
-          <div 
-            className="delete-modal-content" 
+          <div
+            className="delete-modal-content"
             onClick={(e) => e.stopPropagation()}
             style={{
               backgroundColor: "white",
@@ -215,7 +274,7 @@ export default function Sidebar({ profileData = null }) {
               boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)"
             }}
           >
-            <h2 
+            <h2
               className="delete-modal-title"
               style={{
                 fontSize: "24px",
@@ -227,7 +286,7 @@ export default function Sidebar({ profileData = null }) {
             >
               Delete Account
             </h2>
-            <p 
+            <p
               className="delete-modal-message"
               style={{
                 fontSize: "16px",
@@ -240,7 +299,7 @@ export default function Sidebar({ profileData = null }) {
               Your account will be permanently deleted and this action cannot be undone.
             </p>
             {error && (
-              <div 
+              <div
                 style={{
                   backgroundColor: "#FEE2E2",
                   color: "#DC2626",
@@ -253,7 +312,7 @@ export default function Sidebar({ profileData = null }) {
                 {error}
               </div>
             )}
-            <div 
+            <div
               className="delete-modal-actions"
               style={{
                 display: "flex",
@@ -261,7 +320,7 @@ export default function Sidebar({ profileData = null }) {
                 justifyContent: "flex-end"
               }}
             >
-              <button 
+              <button
                 className="delete-modal-cancel-btn"
                 onClick={() => {
                   setShowDeleteModal(false);
@@ -293,7 +352,7 @@ export default function Sidebar({ profileData = null }) {
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className="delete-modal-confirm-btn"
                 onClick={handleDeleteAccount}
                 disabled={deleting}
