@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import mobileIcon from "../../src/assets/image/mobile.png"
 import emailIcon from "../../src/assets/image/email.png"
 import calenderIcon from "../../src/assets/image/calender.png"
 import cityIcon from "../../src/assets/image/city.png"
 import ProfilecardHeader from "./ProfilecardHeader";
+import { getCookie, logout } from "../utils/auth";
+import API_BASE_URL from "../utils/config";
 
 // Helper function to calculate age from date of birth
 const calculateAge = (dateOfBirth) => {
@@ -27,6 +29,46 @@ const formatDate = (dateString) => {
 };
 
 export default function ProfilepageCard({ profileData }) {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleDeleteAccount = async () => {
+    try {
+      setDeleting(true);
+      setError("");
+
+      const token = getCookie("authToken");
+      if (!token) {
+        throw new Error("Authentication required. Please login again.");
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/user/account`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to delete account. Please try again.");
+      }
+
+      if (result.success) {
+        // Logout and redirect to login page
+        logout();
+      } else {
+        throw new Error(result.message || "Failed to delete account");
+      }
+    } catch (err) {
+      console.error("Error deleting account:", err);
+      setError(err.message || "Something went wrong. Please try again.");
+      setDeleting(false);
+    }
+  };
 
   // Early return after hooks
   if (!profileData) {
@@ -46,12 +88,13 @@ export default function ProfilepageCard({ profileData }) {
   const habits = profileData.habits || [];
 
   return (
+    <>
       <div className="dating-profile-main">
         <div className="dating-profile-card">
-         <ProfilecardHeader 
-           showChangePassword={true}
-           profileData={profileData}
-         ></ProfilecardHeader>
+          <ProfilecardHeader
+            showChangePassword={true}
+            profileData={profileData}
+          ></ProfilecardHeader>
 
           {/* Contact Info Row */}
           <div className="dating-profile-contact-row">
@@ -176,9 +219,181 @@ export default function ProfilepageCard({ profileData }) {
                 </div>
               </div>
             )}
+
+            {/* Delete Account Section */}
+            <div className="dating-profile-info-group" style={{ marginTop: "30px", paddingTop: "30px", }}>
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(true)}
+                style={{
+                  padding: "12px 24px",
+                  backgroundColor: "#DC2626",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontSize: "16px",
+                  fontWeight: "500",
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = "#B91C1C";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = "#DC2626";
+                }}
+              >
+                Delete Account
+              </button>
+              <p style={{ fontSize: "14px", color: "#666", marginTop: "8px", marginBottom: "0" }}>
+                This action cannot be undone. All your data will be permanently deleted.
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteModal && (
+        <div
+          className="delete-modal-overlay"
+          onClick={() => !deleting && setShowDeleteModal(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000
+          }}
+        >
+          <div
+            className="delete-modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "white",
+              borderRadius: "12px",
+              padding: "32px",
+              maxWidth: "480px",
+              width: "90%",
+              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)"
+            }}
+          >
+            <h2
+              className="delete-modal-title"
+              style={{
+                fontSize: "24px",
+                fontWeight: "600",
+                color: "#16171B",
+                marginBottom: "16px",
+                marginTop: 0
+              }}
+            >
+              Delete Account
+            </h2>
+            <p
+              className="delete-modal-message"
+              style={{
+                fontSize: "16px",
+                color: "#666",
+                lineHeight: "1.5",
+                marginBottom: "32px",
+                marginTop: 0
+              }}
+            >
+              Your account will be permanently deleted and this action cannot be undone.
+            </p>
+            {error && (
+              <div
+                style={{
+                  backgroundColor: "#FEE2E2",
+                  color: "#DC2626",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  marginBottom: "24px",
+                  fontSize: "14px"
+                }}
+              >
+                {error}
+              </div>
+            )}
+            <div
+              className="delete-modal-actions"
+              style={{
+                display: "flex",
+                gap: "12px",
+                justifyContent: "flex-end"
+              }}
+            >
+              <button
+                className="delete-modal-cancel-btn"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setError("");
+                }}
+                disabled={deleting}
+                style={{
+                  padding: "12px 24px",
+                  borderRadius: "8px",
+                  border: "1px solid #E8EDF3",
+                  backgroundColor: "white",
+                  color: "#16171B",
+                  fontSize: "16px",
+                  fontWeight: "500",
+                  cursor: deleting ? "not-allowed" : "pointer",
+                  opacity: deleting ? 0.6 : 1,
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => {
+                  if (!deleting) {
+                    e.target.style.backgroundColor = "#F9FBFE";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!deleting) {
+                    e.target.style.backgroundColor = "white";
+                  }
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="delete-modal-confirm-btn"
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                style={{
+                  padding: "12px 24px",
+                  borderRadius: "8px",
+                  border: "none",
+                  backgroundColor: "#DC2626",
+                  color: "white",
+                  fontSize: "16px",
+                  fontWeight: "500",
+                  cursor: deleting ? "not-allowed" : "pointer",
+                  opacity: deleting ? 0.6 : 1,
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => {
+                  if (!deleting) {
+                    e.target.style.backgroundColor = "#B91C1C";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!deleting) {
+                    e.target.style.backgroundColor = "#DC2626";
+                  }
+                }}
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
