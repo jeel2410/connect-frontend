@@ -16,7 +16,7 @@ const Offer = () => {
     <>
     <Header></Header>
       <div className="dating-profile-wrapper">
-        <Sidebar />
+        {/* <Sidebar /> */}
         <div className="offers-page-wrapper">
           <div className="offers-page-card">
             <div className="offers-page-header">
