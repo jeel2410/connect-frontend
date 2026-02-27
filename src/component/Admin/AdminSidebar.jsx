@@ -9,7 +9,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
     { id: "interests", label: "Interests", icon: Heart },
     { id: "companies", label: "Companies", icon: Building2 },
     { id: "industries", label: "Industries", icon: Factory },
-    { id: "cards", label: "Cards", icon: CreditCard },
+    { id: "cards", label: "Offers", icon: CreditCard },
     { id: "cities", label: "Cities", icon: MapPin },
     { id: "broadcast", label: "Broadcast Notification", icon: Bell },
     { id: "inquiries", label: "Inquiries", icon: MessageSquare },

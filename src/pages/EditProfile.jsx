@@ -561,7 +561,7 @@ export default function EditProfile() {
       <>
         <Header></Header>
         <div className="dating-profile-wrapper">
-          <Sidebar></Sidebar>
+          {/* <Sidebar></Sidebar> */}
           <div className="edit-profile-container">
             <div style={{ textAlign: "center", padding: "60px 20px", color: "#666" }}>
               Loading profile...
@@ -577,7 +577,7 @@ export default function EditProfile() {
     <>
       <Header></Header>
       <div className="dating-profile-wrapper">
-        <Sidebar profileData={data.fullName ? { fullName: data.fullName, profileImage } : null}></Sidebar>
+        {/* <Sidebar profileData={data.fullName ? { fullName: data.fullName, profileImage } : null}></Sidebar> */}
 
         <div className="edit-profile-container">
           <div className="edit-profile-card">

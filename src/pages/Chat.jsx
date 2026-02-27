@@ -382,7 +382,7 @@ export default function Chat() {
     <>
       <Header />
       <div className="dating-profile-wrapper">
-        <Sidebar />
+        {/* <Sidebar /> */}
         <div className="chat-page-wrapper">
           <div className="chat-container">
           <div className="chat-sidebar">

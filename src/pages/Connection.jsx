@@ -421,7 +421,7 @@ const Connection = () => {
     <>
       <Header />
       <div className="dating-profile-wrapper">
-        <Sidebar />
+        {/* <Sidebar /> */}
         <div className="connections-page-wrapper">
           <div className="connections-page-card">
             <div className="connections-page-header">

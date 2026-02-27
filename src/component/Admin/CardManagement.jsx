@@ -242,13 +242,13 @@ const CardManagement = () => {
   return (
     <div className="admin-section">
       <div className="admin-section-header">
-        <h2 className="section-title">Card Management</h2>
+        <h2 className="section-title">Offer Management</h2>
         <div className="admin-actions">
           <div className="search-container">
             <Search size={20} className="search-icon" />
             <input
               type="text"
-              placeholder="Search cards..."
+              placeholder="Search offers..."
               className="search-input"
               value={searchTerm}
               onChange={handleSearch}
@@ -256,7 +256,7 @@ const CardManagement = () => {
           </div>
           <button className="add-btn" onClick={handleAdd}>
             <Plus size={20} />
-            Add Card
+            Add Offer
           </button>
         </div>
       </div>

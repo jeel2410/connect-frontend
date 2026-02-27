@@ -147,7 +147,7 @@ const Likes = () => {
     <>
       <Header />
       <div className="dating-profile-wrapper">
-        <Sidebar />
+        {/* <Sidebar /> */}
         <div className="likes-page-wrapper">
           <div className="likes-page-card">
             <div className="likes-page-header">

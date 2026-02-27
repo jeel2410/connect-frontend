@@ -15,66 +15,22 @@ const Register = () => {
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
 
-  // Common country codes
-  const countryCodes = [
-    { code: "+91", name: "India", flag: "🇮🇳" },
-    { code: "+1", name: "USA/Canada", flag: "🇺🇸" },
-    { code: "+44", name: "UK", flag: "🇬🇧" },
-    { code: "+61", name: "Australia", flag: "🇦🇺" },
-    { code: "+971", name: "UAE", flag: "🇦🇪" },
-    { code: "+65", name: "Singapore", flag: "🇸🇬" },
-    { code: "+86", name: "China", flag: "🇨🇳" },
-    { code: "+81", name: "Japan", flag: "🇯🇵" },
-    { code: "+82", name: "South Korea", flag: "🇰🇷" },
-    { code: "+49", name: "Germany", flag: "🇩🇪" },
-    { code: "+33", name: "France", flag: "🇫🇷" },
-    { code: "+39", name: "Italy", flag: "🇮🇹" },
-    { code: "+34", name: "Spain", flag: "🇪🇸" },
-    { code: "+31", name: "Netherlands", flag: "🇳🇱" },
-    { code: "+46", name: "Sweden", flag: "🇸🇪" },
-    { code: "+47", name: "Norway", flag: "🇳🇴" },
-    { code: "+41", name: "Switzerland", flag: "🇨🇭" },
-    { code: "+32", name: "Belgium", flag: "🇧🇪" },
-    { code: "+351", name: "Portugal", flag: "🇵🇹" },
-    { code: "+353", name: "Ireland", flag: "🇮🇪" },
-    { code: "+27", name: "South Africa", flag: "🇿🇦" },
-    { code: "+55", name: "Brazil", flag: "🇧🇷" },
-    { code: "+52", name: "Mexico", flag: "🇲🇽" },
-    { code: "+90", name: "Turkey", flag: "🇹🇷" },
-    { code: "+966", name: "Saudi Arabia", flag: "🇸🇦" },
-    { code: "+974", name: "Qatar", flag: "🇶🇦" },
-    { code: "+60", name: "Malaysia", flag: "🇲🇾" },
-    { code: "+62", name: "Indonesia", flag: "🇮🇩" },
-    { code: "+63", name: "Philippines", flag: "🇵🇭" },
-    { code: "+66", name: "Thailand", flag: "🇹🇭" },
-  ];
+  // Fixed country code for India
+  const FIXED_COUNTRY_CODE = "+91";
 
   // Validation schema using Yup
   const validationSchema = Yup.object().shape({
-    countryCode: Yup.string().required("Country code is required"),
     phoneNumber: Yup.string()
       .required("Mobile number is required")
-      .test("phone-format", "Please enter a valid mobile number", function (value) {
-        const { countryCode } = this.parent;
-        if (!value || !countryCode) return false;
+      .test("phone-format", "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9", function (value) {
+        if (!value) return false;
 
         // Remove all non-digit characters
         const digits = value.replace(/\D/g, "");
 
-        // Basic validation: should have at least 7 digits and at most 15 digits (international standard)
-        if (digits.length < 7 || digits.length > 15) {
-          return false;
-        }
-
-        // Country-specific validation for India (+91)
-        if (countryCode === "+91") {
-          // Should be exactly 10 digits and start with 6, 7, 8, or 9
-          if (digits.length !== 10) return false;
-          return /^[6-9]\d{9}$/.test(digits);
-        }
-
-        // For other countries, just check it's numeric and has reasonable length
-        return /^\d+$/.test(digits) && digits.length >= 7;
+        // India-specific validation: should be exactly 10 digits and start with 6, 7, 8, or 9
+        if (digits.length !== 10) return false;
+        return /^[6-9]\d{9}$/.test(digits);
       }),
   });
 
@@ -87,7 +43,6 @@ const Register = () => {
 
   const formik = useFormik({
     initialValues: {
-      countryCode: "+91",
       phoneNumber: "",
     },
     validationSchema: validationSchema,
@@ -98,12 +53,12 @@ const Register = () => {
       setSubmitting(true);
 
       try {
-        // Combine country code and phone number
-        const fullPhoneNumber = `${values.countryCode}${values.phoneNumber}`;
+        // Combine fixed country code and phone number
+        const fullPhoneNumber = `${FIXED_COUNTRY_CODE}${values.phoneNumber}`;
 
-        // Validate that we have both country code and phone number
-        if (!values.countryCode || !values.phoneNumber) {
-          throw new Error("Please select country code and enter phone number");
+        // Validate that we have phone number
+        if (!values.phoneNumber) {
+          throw new Error("Please enter phone number");
         }
 
         console.log("Sending OTP to:", fullPhoneNumber); // Debug log
@@ -186,31 +141,24 @@ const Register = () => {
                     <label className="input-label">
                       Mobile Number
                     </label>
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      <select
-                        name="countryCode"
-                        value={formik.values.countryCode}
-                        onChange={(e) => {
-                          formik.setFieldValue("countryCode", e.target.value);
-                          setApiError("");
-                          setSuccess("");
-                        }}
-                        onBlur={formik.handleBlur}
-                        className={`form-input ${formik.touched.countryCode && formik.errors.countryCode ? "input-error" : ""}`}
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <div
                         style={{
-                          width: "120px",
+                          padding: "12px 16px",
+                          fontSize: "14px",
+                          fontWeight: "500",
+                          color: "#081332",
+                          backgroundColor: "#f5f5f5",
+                          // border: "1px solid #DDE2EE",
+                          // borderRadius: "8px",
                           flexShrink: 0,
-                          padding: "12px 8px",
-                          fontSize: "14px"
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px"
                         }}
-                        disabled={loading || formik.isSubmitting}
                       >
-                        {countryCodes.map((country) => (
-                          <option key={country.code} value={country.code}>
-                            {country.flag} {country.code}
-                          </option>
-                        ))}
-                      </select>
+                        🇮🇳 {FIXED_COUNTRY_CODE}
+                      </div>
                       <input
                         type="text"
                         name="phoneNumber"
@@ -223,17 +171,12 @@ const Register = () => {
                           setSuccess("");
                         }}
                         onBlur={formik.handleBlur}
-                        maxLength={15}
+                        maxLength={10}
                         disabled={loading || formik.isSubmitting}
-                        placeholder="Enter phone number"
+                        placeholder="Enter 10-digit mobile number"
                         style={{ flex: 1 }}
                       />
                     </div>
-                    {formik.touched.countryCode && formik.errors.countryCode && (
-                      <div className="field-error-message">
-                        {formik.errors.countryCode}
-                      </div>
-                    )}
                     {formik.touched.phoneNumber && formik.errors.phoneNumber && (
                       <div className="field-error-message">
                         {formik.errors.phoneNumber}

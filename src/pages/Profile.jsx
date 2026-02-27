@@ -65,7 +65,7 @@ const Profile = () => {
       <>
         <Header></Header>
         <div className="dating-profile-wrapper">
-          <Sidebar profileData={null}></Sidebar>
+          {/* <Sidebar profileData={null}></Sidebar> */}
           <div className="dating-profile-main">
             <div style={{ textAlign: "center", padding: "60px 20px", color: "#666" }}>
               Loading profile...
@@ -82,7 +82,7 @@ const Profile = () => {
       <>
         <Header></Header>
         <div className="dating-profile-wrapper">
-          <Sidebar profileData={null}></Sidebar>
+          {/* <Sidebar profileData={null}></Sidebar> */}
           <div className="dating-profile-main">
             <div style={{ textAlign: "center", padding: "60px 20px", color: "#DC2626" }}>
               <div style={{ fontSize: "20px", fontWeight: "600", marginBottom: "12px" }}>
@@ -100,7 +100,7 @@ const Profile = () => {
     <>
       <Header></Header>
       <div className="dating-profile-wrapper">
-        <Sidebar profileData={profileData}></Sidebar>
+        {/* <Sidebar profileData={profileData}></Sidebar> */}
         <ProfilepageCard profileData={profileData}></ProfilepageCard>
       </div>
       <Footer></Footer>
