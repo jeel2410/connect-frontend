@@ -478,8 +478,9 @@ const Connection = () => {
                 Pending ({pendingRequests.length})
               </button>
             </div>
+            <div className="connections-page-content-wrapper">
             {activeTab === "active" && (
-              <>
+              <div className={`connections-tab-content ${loadingActive ? 'loading' : ''}`}>
                 {loadingActive ? (
                   <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
                     Loading active connections...
@@ -536,10 +537,10 @@ const Connection = () => {
                     ))}
                   </div>
                 )}
-              </>
+              </div>
             )}
             {activeTab === "incoming" && (
-              <>
+              <div className={`connections-tab-content ${loadingIncoming ? 'loading' : ''}`}>
                 {loadingIncoming ? (
                   <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
                     Loading incoming requests...
@@ -605,10 +606,10 @@ const Connection = () => {
                     ))}
                   </div>
                 )}
-              </>
+              </div>
             )}
             {activeTab === "pending" && (
-              <>
+              <div className={`connections-tab-content ${loadingPending ? 'loading' : ''}`}>
                 {loadingPending ? (
                   <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
                     Loading pending requests...
@@ -681,8 +682,9 @@ const Connection = () => {
                     ))}
                   </div>
                 )}
-              </>
+              </div>
             )}
+            </div>
           </div>
         </div>
       </div>

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import closeIcon from "../../src/assets/image/close_icon.png";
 import { getCookie } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 
 const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -61,18 +63,14 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
     }
   };
 
-  // Mark notification as read
+  // Handle notification click - delete notification and navigate if it's a like/message notification
   const handleNotificationClick = async (notification) => {
-    // If already read, don't do anything
-    if (notification.isRead) {
-      return;
-    }
-
     const notificationId = notification._id || notification.id;
     if (!notificationId) {
       return;
     }
 
+    // Delete notification when clicked/viewed
     try {
       const token = getCookie("authToken");
       if (!token) {
@@ -93,18 +91,16 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
           console.error("Unauthorized: Please login again");
           return;
         }
-        throw new Error("Failed to mark notification as read");
+        throw new Error("Failed to delete notification");
       }
 
       const data = await response.json();
 
       if (data.success) {
-        // Update local state to mark notification as read
+        // Remove notification from local state
         setNotifications(prevNotifications =>
-          prevNotifications.map(notif =>
-            (notif._id || notif.id) === notificationId
-              ? { ...notif, isRead: true }
-              : notif
+          prevNotifications.filter(notif =>
+            (notif._id || notif.id) !== notificationId
           )
         );
 
@@ -114,8 +110,124 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
         }
       }
     } catch (err) {
-      console.error("Error marking notification as read:", err);
+      console.error("Error deleting notification:", err);
     }
+
+    // Navigate based on notification type
+    if (notification.type === 'like') {
+      // Close the modal
+      onClose();
+      // Navigate to likes page and auto-select "likes" tab
+      navigate('/like', { state: { activeTab: 'likes' } });
+    } else if (notification.type === 'message') {
+      // Get sender ID from notification
+      let senderId = null;
+      
+      // Check data.senderId first (from notification service)
+      if (notification.data?.senderId) {
+        senderId = notification.data.senderId;
+      }
+      // Check fromUser._id (returned by getNotifications service)
+      else if (notification.fromUser?._id) {
+        senderId = notification.fromUser._id;
+      }
+      // Check fromUserId._id (if populated directly)
+      else if (notification.fromUserId?._id) {
+        senderId = notification.fromUserId._id;
+      }
+      // Check fromUserId as string
+      else if (notification.fromUserId) {
+        senderId = notification.fromUserId.toString();
+      }
+
+      if (senderId) {
+        // Close the modal
+        onClose();
+        
+        // Try to fetch chat history, then navigate
+        try {
+          const token = getCookie("authToken");
+          if (token) {
+            const response = await fetch(`${API_BASE_URL}/api/chat/history/${senderId}`, {
+              method: "GET",
+              headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              // Navigate to chat page with userId and chat history
+              navigate("/chat", {
+                state: {
+                  userId: senderId,
+                  chatHistory: data.data || data
+                }
+              });
+            } else {
+              // Still navigate even if API fails
+              navigate("/chat", {
+                state: {
+                  userId: senderId
+                }
+              });
+            }
+          } else {
+            // Navigate without fetching history if no token
+            navigate("/chat", {
+              state: {
+                userId: senderId
+              }
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching chat history:", error);
+          // Still navigate to chat page even if API fails
+          navigate("/chat", {
+            state: {
+              userId: senderId
+            }
+          });
+        }
+      }
+    }
+  };
+
+  // Get sender name from notification
+  const getSenderName = (notification) => {
+    // Check data.senderName first (from notification service)
+    if (notification.data?.senderName) {
+      return notification.data.senderName;
+    }
+    // Check fromUser.fullName (returned by getNotifications service)
+    if (notification.fromUser?.fullName) {
+      return notification.fromUser.fullName;
+    }
+    // Check fromUserId.fullName (if populated directly)
+    if (notification.fromUserId?.fullName) {
+      return notification.fromUserId.fullName;
+    }
+    // Fallback: try to parse from body message (e.g., "John Doe liked your profile")
+    if (notification.body) {
+      const match = notification.body.match(/^(.+?)\s+liked your profile$/);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    return null;
+  };
+
+  // Format notification message with sender name for like notifications
+  const formatNotificationMessage = (notification) => {
+    if (notification.type === 'like') {
+      const senderName = getSenderName(notification);
+      if (senderName) {
+        return `${senderName} liked your profile`;
+      }
+    }
+    // Return original message or body
+    return notification.message || notification.body || notification.title || "Notification";
   };
 
   // Format date/time for display
@@ -182,30 +294,40 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
             </div>
           ) : (
             <div className="notification-list">
-              {notifications.map((notification) => (
-                <div 
-                  key={notification._id || notification.id} 
-                  className={`notification-item ${!notification.isRead ? "unread" : ""}`}
-                  onClick={() => handleNotificationClick(notification)}
-                >
-                  <div className="notification-content">
-                    <div className="notification-title">
-                      {notification.title || notification.message || "Notification"}
-                    </div>
-                    {notification.message && notification.title && (
-                      <div className="notification-message">
-                        {notification.message}
+              {notifications.map((notification) => {
+                const isLikeNotification = notification.type === 'like';
+                const isMessageNotification = notification.type === 'message';
+                const isClickable = isLikeNotification || isMessageNotification;
+                
+                // Only format message for like notifications, keep original for others
+                const notificationMessage = isLikeNotification 
+                  ? formatNotificationMessage(notification)
+                  : (notification.message || notification.body || notification.title || "Notification");
+                
+                return (
+                  <div 
+                    key={notification._id || notification.id} 
+                    className={`notification-item ${!notification.isRead ? "unread" : ""} ${isClickable ? "clickable" : ""}`}
+                    onClick={() => handleNotificationClick(notification)}
+                    style={isClickable ? { cursor: 'pointer' } : {}}
+                  >
+                    <div className="notification-content">
+                      <div className="notification-title">
+                        {notification.title || "Notification"}
                       </div>
-                    )}
-                    <div className="notification-time">
-                      {formatDate(notification.createdAt || notification.created_at || notification.timestamp)}
+                      <div className="notification-message">
+                        {notificationMessage}
+                      </div>
+                      <div className="notification-time">
+                        {formatDate(notification.createdAt || notification.created_at || notification.timestamp)}
+                      </div>
                     </div>
+                    {!notification.isRead && (
+                      <div className="notification-dot"></div>
+                    )}
                   </div>
-                  {!notification.isRead && (
-                    <div className="notification-dot"></div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

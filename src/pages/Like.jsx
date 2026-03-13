@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
 import Sidebar from "../component/Sidebar";
@@ -13,6 +13,7 @@ import API_BASE_URL from "../utils/config";
 
 const Likes = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("myFavorite");
   const [likedProfiles, setLikedProfiles] = useState([]);
   const [whoLikedMe, setWhoLikedMe] = useState([]);
@@ -123,6 +124,15 @@ const Likes = () => {
       setLoadingWhoLikedMe(false);
     }
   }, []);
+
+  // Handle navigation state from notification click
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+      // Clear the state to prevent re-triggering on re-render
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Fetch liked profiles on component mount, when search changes, or when tab changes
   useEffect(() => {

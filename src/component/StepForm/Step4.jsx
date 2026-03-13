@@ -57,14 +57,14 @@ const Step4 = ({ data, updateData, errors, touched }) => {
 
   return ( 
     <div className="step-content active"> 
-      <h2 className="step-title">What's your habits?</h2> 
-      <p className="step-description">Let others know about your habits</p> 
+      <h2 className="step-title">What's your Hobbies?</h2> 
+      <p className="step-description">Let others know about your Hobbies</p> 
        
       <div className="form-group">
         <div className="habits-container">
           {loadingHabits ? (
             <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-              Loading habits...
+              Loading Hobbies...
             </div>
           ) : habitsError ? (
             <div style={{ padding: "20px", textAlign: "center", color: "#dc2626" }}>
@@ -72,7 +72,7 @@ const Step4 = ({ data, updateData, errors, touched }) => {
             </div>
           ) : habits.length === 0 ? (
             <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-              No habits available
+              No Hobbies available
             </div>
           ) : (
             habits.map((habit) => (

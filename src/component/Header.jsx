@@ -17,6 +17,7 @@ const Header = () => {
   const [notificationModalOpen, setNotificationModalOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [userIsAdmin, setUserIsAdmin] = useState(false);
   const [userCity, setUserCity] = useState("");
   const [userName, setUserName] = useState("");
@@ -255,14 +256,64 @@ const Header = () => {
     };
   }, [isLoggedIn]);
 
+  // Fetch unread chat messages count
+  const fetchUnreadChatCount = async () => {
+    try {
+      const token = getCookie("authToken");
+      if (!token) {
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/chat/list`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          return;
+        }
+        throw new Error("Failed to fetch chat list");
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        // Handle different possible response structures
+        const chats = Array.isArray(data.data) 
+          ? data.data 
+          : (data.data.chats || data.data.list || []);
+        
+        // Sum up all unseenCount values
+        const totalUnread = chats.reduce((sum, chat) => {
+          return sum + (chat.unseenCount || 0);
+        }, 0);
+
+        setUnreadChatCount(totalUnread);
+      } else {
+        setUnreadChatCount(0);
+      }
+    } catch (err) {
+      console.error("Error fetching unread chat count:", err);
+      setUnreadChatCount(0);
+    }
+  };
+
   // Fetch unread count on mount and when notification modal closes
   useEffect(() => {
     if (!isLoggedIn) {
       return; // Don't fetch if user is not logged in
     }
     fetchUnreadCount();
+    fetchUnreadChatCount();
     // Refresh count every 30 seconds
-    const interval = setInterval(fetchUnreadCount, 30000);
+    const interval = setInterval(() => {
+      fetchUnreadCount();
+      fetchUnreadChatCount();
+    }, 30000);
     return () => clearInterval(interval);
   }, [isLoggedIn]);
 
@@ -272,6 +323,23 @@ const Header = () => {
       fetchUnreadCount();
     }
   }, [notificationModalOpen]);
+
+  // Refresh chat count when navigating to/from chat page
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchUnreadChatCount();
+      // Refresh when page becomes visible (user navigates back)
+      const handleVisibilityChange = () => {
+        if (!document.hidden) {
+          fetchUnreadChatCount();
+        }
+      };
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
+    }
+  }, [isLoggedIn, location.pathname]);
 
   return (
     <header className="header">
@@ -294,8 +362,11 @@ const Header = () => {
                 <a href="/like" className={`nav-link ${location.pathname === "/like" ? "active" : ""}`}>
                   Likes
                 </a>
-                <a href="/chat" className={`nav-link ${location.pathname === "/chat" ? "active" : ""}`}>
+                <a href="/chat" className={`nav-link ${location.pathname === "/chat" ? "active" : ""}`} style={{ position: "relative" }}>
                   Chat
+                  {unreadChatCount > 0 && (
+                    <span className="chat-badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>
+                  )}
                 </a>
                 <a href="/offer" className={`nav-link ${location.pathname === "/offer" ? "active" : ""}`}>
                   Offers
@@ -413,8 +484,11 @@ const Header = () => {
                   <a href="/like" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     Likes
                   </a>
-                  <a href="/chat" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                  <a href="/chat" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)} style={{ position: "relative" }}>
                     Chat
+                    {unreadChatCount > 0 && (
+                      <span className="chat-badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>
+                    )}
                   </a>
                   <a href="/offer" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     Offers

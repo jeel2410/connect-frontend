@@ -7,7 +7,7 @@ import { getCookie } from "../utils/auth";
 const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
   const [ageRange, setAgeRange] = useState([0, 100]);
   const [gender, setGender] = useState("Male");
-  const [habits, setHabits] = useState("");
+  const [habits, setHabits] = useState([]);
   const [interests, setInterests] = useState([]);
   const [language, setLanguage] = useState("");
   const [relationship, setRelationship] = useState("");
@@ -28,7 +28,26 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
   const [loadingCompanies, setLoadingCompanies] = useState(false);
   const handleAgeChange = (e, index) => {
     const newRange = [...ageRange];
-    newRange[index] = parseInt(e.target.value);
+    const newValue = parseInt(e.target.value);
+    
+    if (index === 0) {
+      // Minimum slider - ensure it doesn't exceed maximum
+      if (newValue <= newRange[1]) {
+        newRange[0] = newValue;
+      } else {
+        // If trying to go past max, set to max value
+        newRange[0] = newRange[1];
+      }
+    } else {
+      // Maximum slider - ensure it doesn't go below minimum
+      if (newValue >= newRange[0]) {
+        newRange[1] = newValue;
+      } else {
+        // If trying to go below min, set to min value
+        newRange[1] = newRange[0];
+      }
+    }
+    
     setAgeRange(newRange);
   };
 
@@ -235,7 +254,7 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
               <input
                 type="range"
                 min="18"
-                max="65"
+                max={ageRange[1]}
                 value={ageRange[0]}
                 onChange={(e) => handleAgeChange(e, 0)}
                 className="filter-sidebar-range-input filter-sidebar-range-min"
@@ -249,7 +268,7 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
               />
               <input
                 type="range"
-                min="18"
+                min={ageRange[0]}
                 max="65"
                 value={ageRange[1]}
                 onChange={(e) => handleAgeChange(e, 1)}
@@ -325,8 +344,14 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
                 habitsList.map((habit) => (
                   <button
                     key={habit._id}
-                    className={`chip ${habits === habit.name ? "chip-active" : ""}`}
-                    onClick={() => setHabits(habit.name)}
+                    className={`chip ${habits.includes(habit.name) ? "chip-active" : ""}`}
+                    onClick={() => {
+                      setHabits((prev) =>
+                        prev.includes(habit.name)
+                          ? prev.filter((h) => h !== habit.name)
+                          : [...prev, habit.name]
+                      );
+                    }}
                   >
                     {habit.name}
                   </button>
@@ -483,7 +508,7 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
             // Reset all filters
             setAgeRange([0, 100]);
             setGender("Any");
-            setHabits("");
+            setHabits([]);
             setInterests([]);
             setLanguage("");
             setRelationship("");

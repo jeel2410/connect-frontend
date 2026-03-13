@@ -24,12 +24,15 @@ import { getCookie, setCookie, getUserProfile } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 import FilterModal from "../component/FilterModal";
 import filterIcon from "../../src/assets/image/filter.png";
+import searchIcon from "../../src/assets/image/serachIcon.png";
 
 export default function Home() {
   const navigate = useNavigate();
   const [feedData, setFeedData] = useState([]);
   const [loadingFeed, setLoadingFeed] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchActive, setIsSearchActive] = useState(false);
   const [filters, setFilters] = useState({
     ageMin: null,
     ageMax: null,
@@ -112,13 +115,14 @@ export default function Home() {
 
       setLoadingFeed(true);
 
-      // Check if any filters are applied
+      // Check if any filters are applied or search is active
       const hasFilters = filters.ageMin !== null || filters.ageMax !== null || 
-                        filters.language !== null || filters.habits !== null || 
-                        filters.interests !== null || filters.relationship !== null ||
+                        filters.language !== null || (filters.habits && filters.habits.length > 0) || 
+                        (filters.interests && filters.interests.length > 0) || filters.relationship !== null ||
                         filters.religion !== null || filters.company !== null ||
                         filters.industry !== null ||
-                        (filters.gender !== null && filters.gender !== "Any");
+                        (filters.gender !== null && filters.gender !== "Any") ||
+                        (isSearchActive && searchQuery.trim() !== "");
 
       // Get location coordinates only if no filters are applied
       let latitude = null;
@@ -163,8 +167,8 @@ export default function Home() {
       if (filters.language) {
         queryParams.append("language", filters.language);
       }
-      if (filters.habits) {
-        queryParams.append("habits", filters.habits);
+      if (filters.habits && Array.isArray(filters.habits) && filters.habits.length > 0) {
+        queryParams.append("habits", filters.habits.join(","));
       }
       if (filters.relationship) {
         queryParams.append("relationship", filters.relationship);
@@ -180,6 +184,13 @@ export default function Home() {
       }
       if (filters.religion) {
         queryParams.append("religion", filters.religion);
+      }
+
+      // Add search parameter if search is active
+      if (isSearchActive && searchQuery.trim() !== "") {
+        queryParams.append("search", searchQuery.trim());
+        // When searching, don't apply city filter - search across all cities
+        // This is handled by not passing userCityId to the backend when search is active
       }
 
       // Call the feed API
@@ -247,8 +258,11 @@ export default function Home() {
       if (likeData.success) {
         // Show success toast notification
         toast.success("Profile liked successfully!");
-        // Refetch all feeds after successful like
-        await fetchFeedData();
+        // Remove the liked profile from the feed
+        setFeedData(prev => prev.filter(profile => {
+          const profileId = profile._id || profile.id;
+          return String(profileId) !== String(likedUserId);
+        }));
       } else {
         throw new Error(likeData.message || "Failed to like user");
       }
@@ -290,8 +304,11 @@ export default function Home() {
       if (connectData.success) {
         // Show success toast notification
         toast.success("Connection request sent successfully!");
-        // Refetch all feeds after successful connection request
-        await fetchFeedData();
+        // Remove the connected profile from the feed
+        setFeedData(prev => prev.filter(profile => {
+          const profileId = profile._id || profile.id;
+          return String(profileId) !== String(receiverId);
+        }));
       } else {
         throw new Error(connectData.message || "Failed to send connection request");
       }
@@ -420,7 +437,27 @@ export default function Home() {
     };
 
     fetchUserProfileAndFeed();
-  }, [filters]); // Re-fetch when filters change
+  }, [filters, isSearchActive, searchQuery]); // Re-fetch when filters or search change
+
+  // Debounced search effect
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      if (isSearchActive) {
+        setIsSearchActive(false);
+        // Clear search and refetch
+        setFilters(prev => ({ ...prev }));
+      }
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      setIsSearchActive(true);
+      // Trigger fetch by updating filters
+      setFilters(prev => ({ ...prev }));
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
   const handleApplyFilters = (appliedFilters) => {
     // Convert ageRange to ageMin and ageMax
@@ -429,7 +466,7 @@ export default function Home() {
       ageMax: appliedFilters.ageRange ? appliedFilters.ageRange[1] : null,
       gender: appliedFilters.gender && appliedFilters.gender !== "Any" ? appliedFilters.gender : null,
       language: appliedFilters.language || null,
-      habits: appliedFilters.habits || null,
+      habits: appliedFilters.habits && appliedFilters.habits.length > 0 ? appliedFilters.habits : null,
       interests: appliedFilters.interests && appliedFilters.interests.length > 0 ? appliedFilters.interests : null,
       relationship: appliedFilters.relationship || null,
       religion: appliedFilters.religion || null,
@@ -591,6 +628,83 @@ export default function Home() {
             </h1>
           </div>
           <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+              <img 
+                src={searchIcon} 
+                alt="search" 
+                style={{ 
+                  position: "absolute", 
+                  left: "12px", 
+                  width: "18px", 
+                  height: "18px",
+                  zIndex: 1,
+                  pointerEvents: "none"
+                }} 
+              />
+              <input
+                type="text"
+                placeholder="Search by name or username..."
+                value={searchQuery}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchQuery(value);
+                  if (value.trim() !== "") {
+                    setIsSearchActive(true);
+                  } else {
+                    setIsSearchActive(false);
+                  }
+                }}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter" && searchQuery.trim() !== "") {
+                    setIsSearchActive(true);
+                    // Trigger search by updating filters dependency
+                    setFilters(prev => ({ ...prev }));
+                  }
+                }}
+                onBlur={() => {
+                  // Trigger search when user leaves the input field
+                  if (searchQuery.trim() !== "") {
+                    setIsSearchActive(true);
+                    setFilters(prev => ({ ...prev }));
+                  }
+                }}
+                style={{
+                  padding: "10px 20px 10px 40px",
+                  border: "1px solid #EA650A",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  width: "280px",
+                  outline: "none",
+                  backgroundColor: "#fff"
+                }}
+              />
+              {isSearchActive && searchQuery.trim() !== "" && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setIsSearchActive(false);
+                    setFilters(prev => ({ ...prev }));
+                  }}
+                  style={{
+                    position: "absolute",
+                    right: "8px",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "18px",
+                    color: "#999",
+                    padding: "0",
+                    width: "20px",
+                    height: "20px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                >
+                  ×
+                </button>
+              )}
+            </div>
             <button
               className="filter-btn"
               onClick={() => setIsFilterOpen(true)}
@@ -614,7 +728,13 @@ export default function Home() {
             {/* <button className="view-more-btn" onClick={() => navigate("/search")}>View More</button> */}
           </div>
         </div>
-        <Usercard feedData={feedData} loading={loadingFeed} onLike={handleLike} onConnect={handleConnect} onSkip={handleSkip}></Usercard>
+        <Usercard 
+          feedData={feedData} 
+          loading={loadingFeed} 
+          onLike={handleLike} 
+          onConnect={handleConnect} 
+          onSkip={handleSkip}
+        ></Usercard>
       </div>
 
       {/* third section */}

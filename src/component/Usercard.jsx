@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import profile1 from "../../src/assets/image/profile/profile1.png";
 import close from "../../src/assets/image/close.png";
 import heart from "../../src/assets/image/heart.png";
+import heartfillIcon from "../../src/assets/image/fill_heart.png";
 import c from "../../src/assets/image/c.png";
+import blackcIcon from "../../src/assets/image/black_c.png";
 
 export default function Usercard({ feedData = [], loading = false, onLike = null, onConnect = null, onSkip = null }) {
   const navigate = useNavigate();
@@ -105,21 +107,31 @@ export default function Usercard({ feedData = [], loading = false, onLike = null
               <button 
                 className="action-btn"
                 onClick={(e) => handleSkipClick(profile.userId, e)}
-                title="Skip (move to end)"
+                title="Delete the profile"
               >
                 <img src={close} alt="Skip"></img>
               </button>
               <button 
-                className={`action-btn-2 heart-btn`}
+                className="action-btn-2 heart-btn"
                 onClick={(e) => handleLikeClick(profile.userId, e)}
+                title="Like this user"
               >
-                <img src={heart} className="heart-btn-icon" alt="Like"></img>
+                <img 
+                  src={heart} 
+                  className="heart-btn-icon" 
+                  alt="Like"
+                ></img>
               </button>
               <button 
                 className="action-btn chat-btn"
                 onClick={(e) => handleConnectClick(profile.userId, e)}
+                title="Connect"
               >
-                <img src={c} className="chatbtn-icon" alt="Connect"></img>
+                <img 
+                  src={c} 
+                  className="chatbtn-icon" 
+                  alt="Connect"
+                ></img>
               </button>
             </div>
           </div>

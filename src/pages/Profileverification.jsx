@@ -209,10 +209,18 @@ const Profileverification = () => {
         }
         return age >= 18;
       }),
-    language: Yup.string().required("Preferred language is required"),
-    habits: Yup.array(),
-    interest: Yup.array(),
-    skill: Yup.array(),
+    language: Yup.array()
+      .min(1, "Please select at least one language")
+      .required("Please select at least one language"),
+    habits: Yup.array()
+      .min(1, "Please select at least one habit")
+      .required("Please select at least one habit"),
+    interest: Yup.array()
+      .min(1, "Please select at least one interest")
+      .required("Please select at least one interest"),
+    skill: Yup.array()
+      .min(1, "Please select at least one skill")
+      .required("Please select at least one skill"),
     industry: Yup.string().required("Industry is required"),
     company: Yup.string(),
     photo: Yup.mixed()
@@ -236,7 +244,7 @@ const Profileverification = () => {
       email: "",
       gender: "",
       birthDate: "",
-      language: "",
+      language: [],
       habits: [],
       interest: [],
       skill: [],
@@ -275,7 +283,7 @@ const Profileverification = () => {
         formData.append("habits", (values.habits || []).join(","));
         formData.append("interests", (values.interest || []).join(","));
         formData.append("skills", (values.skill || []).join(","));
-        formData.append("preferredLanguage", values.language);
+        formData.append("preferredLanguage", Array.isArray(values.language) ? values.language.join(",") : (values.language || ""));
         formData.append("email", values.email);
         formData.append("industry", values.industry || "");
         formData.append("company", values.company || "");
@@ -312,8 +320,9 @@ const Profileverification = () => {
         // Success
         setSuccess("Profile completed successfully! Redirecting...");
         
+        // Use window.location.href for full page reload to ensure cookie is properly read
         setTimeout(() => {
-          navigate("/");
+          window.location.href = "/";
         }, 1500);
 
       } catch (err) {
@@ -385,7 +394,9 @@ const Profileverification = () => {
         if (values.birthDate) stepData.dateOfBirth = values.birthDate;
         break;
       case 3:
-        if (values.language) stepData.preferredLanguage = values.language;
+        if (values.language && Array.isArray(values.language) && values.language.length > 0) {
+          stepData.preferredLanguage = values.language;
+        }
         break;
       case 4:
         if (values.habits && values.habits.length > 0) {

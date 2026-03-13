@@ -19,6 +19,7 @@ export default function EditProfile() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   
   const [data, setData] = useState({
     fullName: "",
@@ -29,12 +30,13 @@ export default function EditProfile() {
     gender: "",
     religion: "",
     status: "",
-    preferredLanguage: "",
+    preferredLanguage: [],
   });
 
   const [interests, setInterests] = useState([]);
   const [habits, setHabits] = useState([]);
   const [skills, setSkills] = useState([]);
+  const [languages, setLanguages] = useState([]);
   const [profileImage, setProfileImage] = useState(null);
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [industry, setIndustry] = useState("");
@@ -53,6 +55,7 @@ export default function EditProfile() {
   const [showInterestsDropdown, setShowInterestsDropdown] = useState(false);
   const [showHabitsDropdown, setShowHabitsDropdown] = useState(false);
   const [showSkillsDropdown, setShowSkillsDropdown] = useState(false);
+  const [showLanguagesDropdown, setShowLanguagesDropdown] = useState(false);
   const [loadingInterests, setLoadingInterests] = useState(false);
   const [loadingHabits, setLoadingHabits] = useState(false);
   const [loadingSkills, setLoadingSkills] = useState(false);
@@ -67,6 +70,7 @@ export default function EditProfile() {
         setShowInterestsDropdown(false);
         setShowHabitsDropdown(false);
         setShowSkillsDropdown(false);
+        setShowLanguagesDropdown(false);
       }
     };
 
@@ -139,23 +143,14 @@ export default function EditProfile() {
             }
           }
           
-          // Normalize preferred language value
-          let normalizedLanguage = profile.preferredLanguage || "";
-          if (normalizedLanguage) {
-            const lowerLang = normalizedLanguage.toLowerCase();
-            if (lowerLang === "english") {
-              normalizedLanguage = "English";
-            } else if (lowerLang === "hindi") {
-              normalizedLanguage = "Hindi";
-            } else if (lowerLang === "gujarati") {
-              normalizedLanguage = "Gujarati";
-            } else if (lowerLang === "marathi") {
-              normalizedLanguage = "Marathi";
-            } else if (lowerLang === "tamil") {
-              normalizedLanguage = "Tamil";
+          // Handle preferred language - can be string or array
+          let languageArray = [];
+          if (profile.preferredLanguage) {
+            if (Array.isArray(profile.preferredLanguage)) {
+              languageArray = profile.preferredLanguage;
             } else {
-              // Capitalize first letter if not matching
-              normalizedLanguage = normalizedLanguage.charAt(0).toUpperCase() + normalizedLanguage.slice(1).toLowerCase();
+              // Convert single string to array
+              languageArray = [profile.preferredLanguage];
             }
           }
           
@@ -168,12 +163,13 @@ export default function EditProfile() {
             gender: profile.gender || "",
             religion: normalizedReligion,
             status: profile.status || "",
-            preferredLanguage: normalizedLanguage,
+            preferredLanguage: [],
           });
           
           setInterests(profile.interests || []);
           setHabits(profile.habits || []);
           setSkills(profile.skills || []);
+          setLanguages(languageArray);
           setIndustry(""); // Will be set after industries list loads
           setCompany(""); // Will be set after companies list loads
           if (profile.profileImage) {
@@ -437,11 +433,47 @@ export default function EditProfile() {
     setSkills(skills.filter((_, i) => i !== index));
   };
 
+  const removeLanguage = (index) => {
+    setLanguages(languages.filter((_, i) => i !== index));
+    // Clear error when user removes a language
+    if (fieldErrors.preferredLanguage) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.preferredLanguage;
+        return newErrors;
+      });
+    }
+  };
+
+  const toggleLanguage = (languageName) => {
+    if (languages.includes(languageName)) {
+      setLanguages(languages.filter(l => l !== languageName));
+    } else {
+      setLanguages([...languages, languageName]);
+    }
+    // Clear error when user selects/deselects a language
+    if (fieldErrors.preferredLanguage) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.preferredLanguage;
+        return newErrors;
+      });
+    }
+  };
+
   const toggleInterest = (interestName) => {
     if (interests.includes(interestName)) {
       setInterests(interests.filter(i => i !== interestName));
     } else {
       setInterests([...interests, interestName]);
+    }
+    // Clear error when user selects/deselects an interest
+    if (fieldErrors.interests) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.interests;
+        return newErrors;
+      });
     }
   };
 
@@ -451,6 +483,14 @@ export default function EditProfile() {
     } else {
       setHabits([...habits, habitName]);
     }
+    // Clear error when user selects/deselects a habit
+    if (fieldErrors.habits) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.habits;
+        return newErrors;
+      });
+    }
   };
 
   const toggleSkill = (skillName) => {
@@ -458,6 +498,14 @@ export default function EditProfile() {
       setSkills(skills.filter(s => s !== skillName));
     } else {
       setSkills([...skills, skillName]);
+    }
+    // Clear error when user selects/deselects a skill
+    if (fieldErrors.skills) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.skills;
+        return newErrors;
+      });
     }
   };
 
@@ -473,10 +521,79 @@ export default function EditProfile() {
     }
   };
 
+  // Function to clean up error message - remove quotes and format properly
+  const cleanErrorMessage = (errorMessage) => {
+    if (!errorMessage) return errorMessage;
+    
+    // Remove escaped quotes and quotes around field names
+    // Example: "\"city\" is not allowed to be empty" -> "City is not allowed to be empty"
+    let cleaned = errorMessage.replace(/\\?"([^"]+)"\\?/g, (match, fieldName) => {
+      // Capitalize first letter of field name
+      const capitalized = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+      return capitalized;
+    });
+    
+    // Also handle cases like "city" (without escaped quotes)
+    cleaned = cleaned.replace(/"([^"]+)"/g, (match, fieldName) => {
+      const capitalized = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+      return capitalized;
+    });
+    
+    // Handle common field name variations
+    cleaned = cleaned.replace(/\bfullname\b/gi, 'Full name');
+    cleaned = cleaned.replace(/\bfull name\b/gi, 'Full name');
+    cleaned = cleaned.replace(/\bdateofbirth\b/gi, 'Date of birth');
+    cleaned = cleaned.replace(/\bdate of birth\b/gi, 'Date of birth');
+    cleaned = cleaned.replace(/\bpreferredlanguage\b/gi, 'Preferred language');
+    cleaned = cleaned.replace(/\bpreferred language\b/gi, 'Preferred language');
+    
+    return cleaned;
+  };
+
+  // Function to parse error message and map to field
+  const parseFieldError = (errorMessage) => {
+    const fieldErrorMap = {};
+    
+    // Clean the error message first
+    const cleanedMessage = cleanErrorMessage(errorMessage);
+    
+    // Check for common field-specific error patterns
+    if (errorMessage.toLowerCase().includes("city")) {
+      fieldErrorMap.city = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("email")) {
+      fieldErrorMap.email = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("full name") || errorMessage.toLowerCase().includes("fullname")) {
+      fieldErrorMap.fullName = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("gender")) {
+      fieldErrorMap.gender = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("date of birth") || errorMessage.toLowerCase().includes("birthdate")) {
+      fieldErrorMap.birthDate = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("religion")) {
+      fieldErrorMap.religion = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("status") || errorMessage.toLowerCase().includes("marital")) {
+      fieldErrorMap.status = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("language") || errorMessage.toLowerCase().includes("preferred")) {
+      fieldErrorMap.preferredLanguage = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("industry")) {
+      fieldErrorMap.industry = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("company")) {
+      fieldErrorMap.company = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("habit")) {
+      fieldErrorMap.habits = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("interest")) {
+      fieldErrorMap.interests = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("skill")) {
+      fieldErrorMap.skills = cleanedMessage;
+    }
+    
+    return fieldErrorMap;
+  };
+
   const handleSave = async () => {
     try {
       setError("");
       setSuccess("");
+      setFieldErrors({});
       setSaving(true);
 
       const token = getCookie("authToken");
@@ -497,7 +614,7 @@ export default function EditProfile() {
       formData.append("habits", habits.join(","));
       formData.append("interests", interests.join(","));
       formData.append("skills", skills.join(","));
-      formData.append("preferredLanguage", data.preferredLanguage);
+      formData.append("preferredLanguage", languages.join(","));
       formData.append("email", data.email);
       formData.append("industry", industry || "");
       formData.append("company", company || "");
@@ -518,7 +635,18 @@ export default function EditProfile() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || "Failed to update profile. Please try again.");
+        const errorMessage = result.message || "Failed to update profile. Please try again.";
+        // Try to parse field-specific errors
+        const parsedErrors = parseFieldError(errorMessage);
+        
+        if (Object.keys(parsedErrors).length > 0) {
+          // Field-specific error found
+          setFieldErrors(parsedErrors);
+        } else {
+          // General error - show at top
+          setError(errorMessage);
+        }
+        throw new Error(errorMessage);
       }
 
       // Update profile in cookies
@@ -547,7 +675,10 @@ export default function EditProfile() {
 
     } catch (err) {
       console.error("Error updating profile:", err);
-      setError(err.message || "Something went wrong. Please try again.");
+      // Only set general error if no field-specific errors were set
+      if (Object.keys(fieldErrors).length === 0) {
+        setError(err.message || "Something went wrong. Please try again.");
+      }
     } finally {
       setSaving(false);
     }
@@ -585,14 +716,11 @@ export default function EditProfile() {
             <ProfilecardHeader 
               showChangePassword={false}
               profileData={data.fullName ? { fullName: data.fullName, profileImage } : null}
+              onImageChange={handleImageChange}
+              showImageUpload={true}
             ></ProfilecardHeader>
 
-            {/* Error and Success Messages */}
-            {error && (
-              <div className="message-error" style={{ margin: "20px" }}>
-                {error}
-              </div>
-            )}
+            {/* Success Message */}
             {success && (
               <div className="message-success" style={{ margin: "20px" }}>
                 {success}
@@ -611,12 +739,27 @@ export default function EditProfile() {
                     <input
                       type="text"
                       value={data.fullName || ""}
-                      onChange={(e) => updateData("fullName", e.target.value)}
+                      onChange={(e) => {
+                        updateData("fullName", e.target.value);
+                        // Clear error when user starts typing
+                        if (fieldErrors.fullName) {
+                          setFieldErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.fullName;
+                            return newErrors;
+                          });
+                        }
+                      }}
                       placeholder="Enter full name"
-                      className="form-input"
+                      className={`form-input ${fieldErrors.fullName ? "input-error" : ""}`}
                     />
                   </div>
                 </div>
+                {fieldErrors.fullName && (
+                  <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
+                    {fieldErrors.fullName}
+                  </div>
+                )}
               </div>
 
               <div className="edit-form-group">
@@ -648,12 +791,26 @@ export default function EditProfile() {
                     <input
                       type="email"
                       value={data.email || ""}
-                      onChange={(e) => updateData("email", e.target.value)}
+                      onChange={(e) => {
+                        updateData("email", e.target.value);
+                        if (fieldErrors.email) {
+                          setFieldErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.email;
+                            return newErrors;
+                          });
+                        }
+                      }}
                       placeholder="example@email.com"
-                      className="form-input"
+                      className={`form-input ${fieldErrors.email ? "input-error" : ""}`}
                     />
                   </div>
                 </div>
+                {fieldErrors.email && (
+                  <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
+                    {fieldErrors.email}
+                  </div>
+                )}
               </div>
               <div className="edit-form-group">
                 <div className="edit-input-wrapper">
@@ -682,12 +839,24 @@ export default function EditProfile() {
                           }
                         }
                         updateData("birthDate", selectedDate);
+                        if (fieldErrors.birthDate) {
+                          setFieldErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.birthDate;
+                            return newErrors;
+                          });
+                        }
                       }}
                       max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
-                      className="form-input"
+                      className={`form-input ${fieldErrors.birthDate ? "input-error" : ""}`}
                     />
                   </div>
                 </div>
+                {fieldErrors.birthDate && (
+                  <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
+                    {fieldErrors.birthDate}
+                  </div>
+                )}
               </div>
               <div className="edit-form-group">
                 <div className="edit-input-wrapper">
@@ -698,8 +867,17 @@ export default function EditProfile() {
                     <label className="input-label">City</label>
                     <select
                       value={data.city || ""}
-                      onChange={(e) => updateData("city", e.target.value)}
-                      className="form-input"
+                      onChange={(e) => {
+                        updateData("city", e.target.value);
+                        if (fieldErrors.city) {
+                          setFieldErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.city;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      className={`form-input ${fieldErrors.city ? "input-error" : ""}`}
                       disabled={loadingCities}
                     >
                       <option value="">{loadingCities ? "Loading cities..." : "Select City"}</option>
@@ -711,6 +889,11 @@ export default function EditProfile() {
                     </select>
                   </div>
                 </div>
+                {fieldErrors.city && (
+                  <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
+                    {fieldErrors.city}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -799,6 +982,19 @@ export default function EditProfile() {
                   </div>
                 </div>
               </div>
+              {fieldErrors.interests && (
+                <div style={{ 
+                  marginTop: "8px", 
+                  marginBottom: "16px",
+                  fontSize: "12px", 
+                  color: "#dc2626",
+                  display: "block",
+                  width: "100%",
+                  paddingLeft: "0"
+                }}>
+                  {fieldErrors.interests}
+                </div>
+              )}
               <div className="edit-profile-section">
                 <div className="edit-profile-tags-container">
                   <div className="edit-profile-label">Habits</div>
@@ -881,6 +1077,19 @@ export default function EditProfile() {
                   </div>
                 </div>
               </div>
+              {fieldErrors.habits && (
+                <div style={{ 
+                  marginTop: "8px", 
+                  marginBottom: "16px",
+                  fontSize: "12px", 
+                  color: "#dc2626",
+                  display: "block",
+                  width: "100%",
+                  paddingLeft: "0"
+                }}>
+                  {fieldErrors.habits}
+                </div>
+              )}
 
               <div className="edit-profile-section">
                 <div className="edit-profile-tags-container">
@@ -964,94 +1173,217 @@ export default function EditProfile() {
                   </div>
                 </div>
               </div>
+              {fieldErrors.skills && (
+                <div style={{ 
+                  marginTop: "8px", 
+                  marginBottom: "16px",
+                  fontSize: "12px", 
+                  color: "#dc2626",
+                  display: "block",
+                  width: "100%",
+                  paddingLeft: "0"
+                }}>
+                  {fieldErrors.skills}
+                </div>
+              )}
 
               {/* Additional Info Grid */}
               <div className="edit-profile-info-grid">
-                <div className="edit-profile-field-inline">
-                  <label>Gender</label>
-                  <select
-                    value={data.gender || ""}
-                    onChange={(e) => updateData("gender", e.target.value)}
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  <span className="edit-profile-select-arrow">
-                    <img src={dropdownIcon} alt="Dropdown"></img>
-                  </span>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <div className="edit-profile-field-inline">
+                    <label>Gender</label>
+                    <select
+                      value={data.gender || ""}
+                      onChange={(e) => {
+                        updateData("gender", e.target.value);
+                        if (fieldErrors.gender) {
+                          setFieldErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.gender;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      className={fieldErrors.gender ? "input-error" : ""}
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <span className="edit-profile-select-arrow">
+                      <img src={dropdownIcon} alt="Dropdown"></img>
+                    </span>
+                  </div>
+                  {fieldErrors.gender && (
+                    <div style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "20px" }}>
+                      {fieldErrors.gender}
+                    </div>
+                  )}
                 </div>
-                <div className="edit-profile-field-inline">
-                  <label>Religion</label>
-                  <select
-                    value={data.religion || ""}
-                    onChange={(e) => updateData("religion", e.target.value)}
-                  >
-                    <option value="">Select Religion</option>
-                    <option value="Hindu">Hindu</option>
-                    <option value="Muslim">Muslim</option>
-                    <option value="Christian">Christian</option>
-                    <option value="Christianity">Christianity</option>
-                    <option value="Sikh">Sikh</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  <span className="edit-profile-select-arrow">
-                    <img src={dropdownIcon} alt="Dropdown"></img>
-                  </span>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <div className="edit-profile-field-inline">
+                    <label>Religion</label>
+                    <select
+                      value={data.religion || ""}
+                      onChange={(e) => {
+                        updateData("religion", e.target.value);
+                        if (fieldErrors.religion) {
+                          setFieldErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.religion;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      className={fieldErrors.religion ? "input-error" : ""}
+                    >
+                      <option value="">Select Religion</option>
+                      <option value="Hindu">Hindu</option>
+                      <option value="Muslim">Muslim</option>
+                      <option value="Christian">Christian</option>
+                      <option value="Christianity">Christianity</option>
+                      <option value="Sikh">Sikh</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <span className="edit-profile-select-arrow">
+                      <img src={dropdownIcon} alt="Dropdown"></img>
+                    </span>
+                  </div>
+                  {fieldErrors.religion && (
+                    <div style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "20px" }}>
+                      {fieldErrors.religion}
+                    </div>
+                  )}
                 </div>
-                <div className="edit-profile-field-inline">
-                  <label>Status</label>
-                  <select
-                    value={data.status || ""}
-                    onChange={(e) => updateData("status", e.target.value)}
-                  >
-                    <option value="">Select Status</option>
-                    <option value="Married">Married</option>
-                    <option value="Unmarried">Unmarried</option>
-                    <option value="Divorced">Divorced</option>
-                  </select>
-                  <span className="edit-profile-select-arrow">
-                    <img src={dropdownIcon} alt="Dropdown"></img>
-                  </span>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <div className="edit-profile-field-inline">
+                    <label>Status</label>
+                    <select
+                      value={data.status || ""}
+                      onChange={(e) => {
+                        updateData("status", e.target.value);
+                        if (fieldErrors.status) {
+                          setFieldErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.status;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      className={fieldErrors.status ? "input-error" : ""}
+                    >
+                      <option value="">Select Status</option>
+                      <option value="Married">Married</option>
+                      <option value="Unmarried">Unmarried</option>
+                      <option value="Divorced">Divorced</option>
+                    </select>
+                    <span className="edit-profile-select-arrow">
+                      <img src={dropdownIcon} alt="Dropdown"></img>
+                    </span>
+                  </div>
+                  {fieldErrors.status && (
+                    <div style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "20px" }}>
+                      {fieldErrors.status}
+                    </div>
+                  )}
                 </div>
-                <div className="edit-profile-field-inline">
-                  <label>Preferred Language</label>
-                  <select
-                    value={data.preferredLanguage || ""}
-                    onChange={(e) => updateData("preferredLanguage", e.target.value)}
-                  >
-                    <option value="">Select Language</option>
-                    <option value="English">English</option>
-                    <option value="Hindi">Hindi</option>
-                    <option value="Gujarati">Gujarati</option>
-                    <option value="Marathi">Marathi</option>
-                    <option value="Tamil">Tamil</option>
-                  </select>
-                  <span className="edit-profile-select-arrow">
-                    <img src={dropdownIcon} alt="Dropdown"></img>
-                  </span>
+                <div className="edit-profile-section">
+                  <div className="edit-profile-tags-container">
+                    <div className="edit-profile-label">Languages Spoken</div>
+                    <div className="edit-profile-tags-row" style={{ position: "relative" }}>
+                      <div className="edit-profile-tags">
+                        {languages.map((language, index) => (
+                          <span key={index} className="edit-profile-tag">
+                            {language}
+                            <button
+                              className="edit-profile-tag-remove"
+                              onClick={() => removeLanguage(index)}
+                            >
+                              <img src={removeIcom} alt="Remove"></img>
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <button className="edit-profile-dropdown-toggle" onClick={() => setShowLanguagesDropdown(!showLanguagesDropdown)}>
+                        <img src={dropdownIcon} alt="Dropdown"></img>
+                      </button>
+                      {showLanguagesDropdown && (
+                        <div className="edit-profile-dropdown-menu" style={{ position: "absolute", top: "100%", right: 0, backgroundColor: "white", border: "1px solid #E8EDF3", borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", maxHeight: "300px", overflowY: "auto", zIndex: 1000, minWidth: "200px", marginTop: "8px" }}>
+                          {["English", "Spanish"].map((language) => (
+                            <div
+                              key={language}
+                              onClick={() => {
+                                toggleLanguage(language);
+                              }}
+                              style={{
+                                padding: "10px 16px",
+                                cursor: "pointer",
+                                backgroundColor: languages.includes(language) ? "#F0F4F8" : "white",
+                                borderBottom: "1px solid #E8EDF3"
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!languages.includes(language)) {
+                                  e.target.style.backgroundColor = "#F9FBFE";
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!languages.includes(language)) {
+                                  e.target.style.backgroundColor = "white";
+                                }
+                              }}
+                            >
+                              {language}
+                              {languages.includes(language) && (
+                                <span style={{ marginLeft: "8px", color: "#EA650A" }}>✓</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {fieldErrors.preferredLanguage && (
+                    <div className="field-error-message" style={{ marginTop: "8px", fontSize: "12px", color: "#dc2626" }}>
+                      {fieldErrors.preferredLanguage}
+                    </div>
+                  )}
                 </div>
-                <div className="edit-profile-field-inline">
-                  <label>Industry <span className="required">*</span></label>
-                  <select
-                    value={industry || ""}
-                    onChange={(e) => {
-                      setIndustry(e.target.value);
-                      setCompany(""); // Clear company when industry changes
-                    }}
-                    disabled={loadingIndustries}
-                  >
-                    <option value="">Select Industry</option>
-                    {industriesList.map((ind) => (
-                      <option key={ind._id} value={ind._id}>
-                        {ind.name}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="edit-profile-select-arrow">
-                    <img src={dropdownIcon} alt="Dropdown"></img>
-                  </span>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <div className="edit-profile-field-inline">
+                    <label>Industry <span className="required">*</span></label>
+                    <select
+                      value={industry || ""}
+                      onChange={(e) => {
+                        setIndustry(e.target.value);
+                        setCompany(""); // Clear company when industry changes
+                        if (fieldErrors.industry) {
+                          setFieldErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.industry;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      disabled={loadingIndustries}
+                      className={fieldErrors.industry ? "input-error" : ""}
+                    >
+                      <option value="">Select Industry</option>
+                      {industriesList.map((ind) => (
+                        <option key={ind._id} value={ind._id}>
+                          {ind.name}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="edit-profile-select-arrow">
+                      <img src={dropdownIcon} alt="Dropdown"></img>
+                    </span>
+                  </div>
+                  {fieldErrors.industry && (
+                    <div style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "20px" }}>
+                      {fieldErrors.industry}
+                    </div>
+                  )}
                 </div>
                 {industry && (
                   <div className="edit-profile-field-inline">
@@ -1075,34 +1407,6 @@ export default function EditProfile() {
                 )}
               </div>
 
-              {/* Profile Image Upload */}
-              <div className="edit-profile-section">
-                <div className="edit-profile-tags-container">
-                  <div className="edit-profile-label">Profile Image</div>
-                  <div style={{ marginTop: "12px" }}>
-                    {profileImage && (
-                      <img 
-                        src={profileImage} 
-                        alt="Profile" 
-                        style={{ 
-                          width: "120px", 
-                          height: "120px", 
-                          borderRadius: "50%", 
-                          objectFit: "cover",
-                          marginBottom: "12px",
-                          border: "2px solid #EA650A"
-                        }} 
-                      />
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      style={{ display: "block", marginTop: "8px" }}
-                    />
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Action Buttons */}

@@ -19,8 +19,8 @@ const Step2 = ({ data, updateData, errors, touched }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   return (
     <div className="step-content active">
-      <h2 className="step-title">What's your Info</h2>
-      <p className="step-description">Let others know about your languages</p>
+      <h2 className="step-title">Your Information</h2>
+
 
       <div className="form-group">
         <div className="input-wrapper">
@@ -72,7 +72,8 @@ const Step2 = ({ data, updateData, errors, touched }) => {
 
       <div className="form-group">
         <div className="input-wrapper">
-          <div className="input-icon">
+          <div className="input-icon" onClick={() => dateInputRef.current?.showPicker?.()}
+            style={{ cursor: "pointer" }}>
             <img src={birthIcon} alt="Date of Birth"></img>
           </div>
           <div className="input-content">
@@ -92,14 +93,19 @@ const Step2 = ({ data, updateData, errors, touched }) => {
                   setShowDatePicker(false);
                 }}
                 max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+                // style={{
+                //   position: "absolute",
+                //   opacity: 0,
+                //   width: "100%",
+                //   height: "100%",
+                //   cursor: "pointer",
+                //   zIndex: 2,
+                //   pointerEvents: showDatePicker ? "auto" : "none"
+                // }}
                 style={{
                   position: "absolute",
                   opacity: 0,
-                  width: "100%",
-                  height: "100%",
-                  cursor: "pointer",
-                  zIndex: 2,
-                  pointerEvents: showDatePicker ? "auto" : "none"
+                  pointerEvents: "none"
                 }}
               />
               {/* Visible text input showing formatted date */}
@@ -107,17 +113,18 @@ const Step2 = ({ data, updateData, errors, touched }) => {
                 type="text"
                 readOnly
                 value={data.birthDate ? formatDateDisplay(data.birthDate) : ""}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setShowDatePicker(true);
-                  // Try to use showPicker() if available (modern browsers)
-                  if (dateInputRef.current?.showPicker) {
-                    dateInputRef.current.showPicker();
-                  } else {
-                    // Fallback for older browsers
-                    dateInputRef.current?.click();
-                  }
-                }}
+                // onClick={(e) => {
+                //   e.preventDefault();
+                //   setShowDatePicker(true);
+                //   // Try to use showPicker() if available (modern browsers)
+                //   if (dateInputRef.current?.showPicker) {
+                //     dateInputRef.current.showPicker();
+                //   } else {
+                //     // Fallback for older browsers
+                //     dateInputRef.current?.click();
+                //   }
+                // }}
+                onClick={() => dateInputRef.current?.click()}
                 onFocus={(e) => {
                   e.target.blur(); // Prevent keyboard from appearing
                   setShowDatePicker(true);

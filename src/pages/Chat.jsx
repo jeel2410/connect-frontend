@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import EmojiPicker from 'emoji-picker-react'
 import '../styles/style.css'
 import Header from '../component/Header'
 import Footer from '../component/Footer'
@@ -26,7 +27,9 @@ export default function Chat() {
   const [chatList, setChatList] = useState([])
   const [loadingChatList, setLoadingChatList] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const messagesEndRef = useRef(null)
+  const emojiPickerRef = useRef(null)
 
   // Get current user ID from profile API
   useEffect(() => {
@@ -160,6 +163,29 @@ export default function Chat() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
+
+  // Close emoji picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    if (showEmojiPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showEmojiPicker]);
+
+  // Handle emoji selection
+  const onEmojiClick = (emojiData) => {
+    setMessageInput(prev => prev + emojiData.emoji);
+    setShowEmojiPicker(false);
+  };
 
   // Function to fetch chat list
   const fetchChatList = async (search = "") => {
@@ -530,7 +556,27 @@ export default function Chat() {
                 </div>
 
                 <div className="chat-input-container">
-                  <div className="chat-input-wrapper">
+                  <div className="chat-input-wrapper" style={{ position: "relative" }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      style={{
+                        position: "absolute",
+                        left: "12px",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        fontSize: "20px",
+                        zIndex: 1,
+                        padding: "8px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}
+                      title="Add emoji"
+                    >
+                      😊
+                    </button>
                     <input
                       type="text"
                       placeholder="Your messages..."
@@ -539,7 +585,20 @@ export default function Chat() {
                       onChange={(e) => setMessageInput(e.target.value)}
                       onKeyPress={handleKeyPress}
                       disabled={sending}
+                      style={{ paddingLeft: "50px" }}
                     />
+                    {showEmojiPicker && (
+                      <div
+                        ref={emojiPickerRef}
+                        className="chat-emoji-picker"
+                      >
+                        <EmojiPicker
+                          onEmojiClick={onEmojiClick}
+                          width={350}
+                          height={400}
+                        />
+                      </div>
+                    )}
                     <button 
                       className="chat-send-btn"
                       onClick={handleSendMessage}
