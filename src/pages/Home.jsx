@@ -32,6 +32,8 @@ export default function Home() {
   const [loadingFeed, setLoadingFeed] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [likedProfiles, setLikedProfiles] = useState(new Set());
+  const [connectedProfiles, setConnectedProfiles] = useState(new Set());
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [filters, setFilters] = useState({
     ageMin: null,
@@ -217,6 +219,17 @@ export default function Home() {
         // Handle different possible response structures
         const feed = Array.isArray(feedData.data) ? feedData.data : (feedData.data.profiles || feedData.data.feed || []);
         setFeedData(feed);
+
+        // Pre-populate liked / connected sets from API flags so button states
+        // are correct immediately on page load / reload.
+        const newLiked = new Set(
+          feed.filter(p => p.isLiked).map(p => String(p._id || p.id))
+        );
+        const newConnected = new Set(
+          feed.filter(p => p.isConnected).map(p => String(p._id || p.id))
+        );
+        setLikedProfiles(newLiked);
+        setConnectedProfiles(newConnected);
       }
     } catch (error) {
       console.error("Error fetching feed data:", error);
@@ -258,11 +271,8 @@ export default function Home() {
       if (likeData.success) {
         // Show success toast notification
         toast.success("Profile liked successfully!");
-        // Remove the liked profile from the feed
-        setFeedData(prev => prev.filter(profile => {
-          const profileId = profile._id || profile.id;
-          return String(profileId) !== String(likedUserId);
-        }));
+        // Mark profile as liked without removing it from feed
+        setLikedProfiles(prev => new Set([...prev, String(likedUserId)]));
       } else {
         throw new Error(likeData.message || "Failed to like user");
       }
@@ -304,11 +314,8 @@ export default function Home() {
       if (connectData.success) {
         // Show success toast notification
         toast.success("Connection request sent successfully!");
-        // Remove the connected profile from the feed
-        setFeedData(prev => prev.filter(profile => {
-          const profileId = profile._id || profile.id;
-          return String(profileId) !== String(receiverId);
-        }));
+        // Mark profile as connected without removing it from feed
+        setConnectedProfiles(prev => new Set([...prev, String(receiverId)]));
       } else {
         throw new Error(connectData.message || "Failed to send connection request");
       }
@@ -734,6 +741,8 @@ export default function Home() {
           onLike={handleLike} 
           onConnect={handleConnect} 
           onSkip={handleSkip}
+          likedProfiles={likedProfiles}
+          connectedProfiles={connectedProfiles}
         ></Usercard>
       </div>
 
