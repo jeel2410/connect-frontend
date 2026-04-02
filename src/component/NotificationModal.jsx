@@ -9,6 +9,7 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -60,6 +61,49 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
       setNotifications([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Clear all notifications (backend deletes all for the user)
+  const handleClearAll = async () => {
+    if (notifications.length === 0 || clearing) {
+      return;
+    }
+    try {
+      setClearing(true);
+      const token = getCookie("authToken");
+      if (!token) {
+        console.error("User not authenticated");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/notifications`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error("Unauthorized: Please login again");
+          return;
+        }
+        throw new Error("Failed to clear notifications");
+      }
+
+      // Optimistically clear local state
+      setNotifications([]);
+      // Refresh unread count badge
+      if (onNotificationRead) {
+        onNotificationRead();
+      }
+    } catch (err) {
+      console.error("Error clearing notifications:", err);
+      setError(err.message || "Failed to clear notifications");
+    } finally {
+      setClearing(false);
     }
   };
 
@@ -265,6 +309,25 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
       <div className="notification-dropdown">
         <div className="notification-dropdown-header">
           <h2>Notifications</h2>
+          {notifications.length > 0 && (
+            <button
+              className="clear-all-btn"
+              onClick={handleClearAll}
+              disabled={clearing}
+              style={{
+                marginRight: "8px",
+                background: "transparent",
+                border: "none",
+                color: clearing ? "#999" : "#2563EB",
+                cursor: clearing ? "not-allowed" : "pointer",
+                fontWeight: 600
+              }}
+              aria-label="Clear all notifications"
+              title="Clear all notifications"
+            >
+              {clearing ? "Clearing..." : "Clear all"}
+            </button>
+          )}
           <button className="close-btn" onClick={onClose}>
             <img src={closeIcon} alt="Close"></img>
           </button>

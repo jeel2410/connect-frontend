@@ -368,7 +368,7 @@ const Header = () => {
                     <span className="chat-badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>
                   )}
                 </a>
-                <a href="/offer" className={`nav-link ${location.pathname === "/offer" ? "active" : ""}`}>
+                <a href="/offers" className={`nav-link ${location.pathname === "/offers" ? "active" : ""}`}>
                   Offers
                 </a>
               </>
@@ -490,7 +490,7 @@ const Header = () => {
                       <span className="chat-badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>
                     )}
                   </a>
-                  <a href="/offer" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                  <a href="/offers" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     Offers
                   </a>
                 </>

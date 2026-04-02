@@ -6,6 +6,7 @@ import heartfillIcon from "../../src/assets/image/fill_heart.png";
 import heartOutlineIcon from "../../src/assets/image/outline_icon.png";
 import blackcIcon from "../../src/assets/image/black_c.png";
 
+
 export default function Usercard({
   feedData = [],
   loading = false,
@@ -21,14 +22,14 @@ export default function Usercard({
   const profiles =
     feedData && feedData.length > 0
       ? feedData.map((item, index) => ({
-          id: item._id || item.id || index + 1,
-          userId: item._id || item.id,
-          name: item.fullName || item.name || "Unknown",
-          address: item.city || item.address || "Location not available",
-          image: item.profileImage || item.image || profile1,
-          verified: item.verified || false,
-          featured: item.featured || false,
-        }))
+        id: item._id || item.id || index + 1,
+        userId: item._id || item.id,
+        name: item.fullName || item.name || "Unknown",
+        address: item.city || item.address || "Location not available",
+        image: item.profileImage || item.image || profile1,
+        verified: item.verified || false,
+        featured: item.featured || false,
+      }))
       : [];
 
   const handleLikeClick = (userId, e) => {
@@ -140,13 +141,17 @@ export default function Usercard({
                 <button
                   className="action-btn-2 heart-btn"
                   onClick={(e) => handleLikeClick(profile.userId, e)}
-                  title={isLiked ? "Already liked" : "Like this user"}
-                  disabled={isLiked}
-                  style={{ opacity: isLiked ? 0.85 : 1, cursor: isLiked ? "default" : "pointer" }}
+                  title={isLiked ? "Unlike this user" : "Like this user"}
+                  style={{
+                    opacity: isLiked ? 0.85 : 1, cursor: "pointer", background: isLiked
+                      ? "linear-gradient(180deg, #FF6A6B 0%, #FE6057 100%)"
+                      : "transparent",
+                  }}
                 >
                   <img
                     src={isLiked ? heartfillIcon : heartOutlineIcon}
                     className="heart-btn-icon"
+
                     alt={isLiked ? "Liked" : "Like"}
                   />
                 </button>

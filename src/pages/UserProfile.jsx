@@ -1,6 +1,5 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import profilebg from "../assets/image/grouppic_bg.png"
 
 import UserProfileModal from '../component/UserProfileModal';
 import Header from '../component/Header';
@@ -14,10 +13,6 @@ const UserProfile = () => {
    <Header></Header>
     <div className="user-profile-wrapper">
       <div className="user-profile-bg">
-        <img 
-          src={profilebg}
-          alt="Background"
-        />
         <div className="user-profile-overlay"></div>
       </div>
 

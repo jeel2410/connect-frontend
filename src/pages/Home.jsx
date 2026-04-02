@@ -248,9 +248,12 @@ export default function Home() {
         return;
       }
 
-      // Call the like API
+      const isCurrentlyLiked = likedProfiles.has(String(likedUserId));
+      const method = isCurrentlyLiked ? "DELETE" : "POST";
+
+      // Toggle like/unlike API (same behavior as UserProfileModal)
       const likeResponse = await fetch(`${API_BASE_URL}/api/connection/like/${likedUserId}`, {
-        method: "POST",
+        method,
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -263,22 +266,28 @@ export default function Home() {
           return;
         }
         const errorData = await likeResponse.json();
-        throw new Error(errorData.message || "Failed to like user");
+        throw new Error(errorData.message || `Failed to ${isCurrentlyLiked ? "unlike" : "like"} user`);
       }
 
       const likeData = await likeResponse.json();
       
       if (likeData.success) {
-        // Show success toast notification
-        toast.success("Profile liked successfully!");
-        // Mark profile as liked without removing it from feed
-        setLikedProfiles(prev => new Set([...prev, String(likedUserId)]));
+        setLikedProfiles(prev => {
+          const updated = new Set(prev);
+          if (isCurrentlyLiked) {
+            updated.delete(String(likedUserId));
+          } else {
+            updated.add(String(likedUserId));
+          }
+          return updated;
+        });
+        toast.success(isCurrentlyLiked ? "Profile unliked successfully" : "Profile liked successfully!");
       } else {
-        throw new Error(likeData.message || "Failed to like user");
+        throw new Error(likeData.message || `Failed to ${isCurrentlyLiked ? "unlike" : "like"} user`);
       }
     } catch (error) {
-      console.error("Error liking user:", error);
-      toast.error(error.message || "Failed to like user");
+      console.error("Error toggling like:", error);
+      toast.error(error.message || "Failed to update like");
     }
   };
 
