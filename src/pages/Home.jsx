@@ -47,7 +47,7 @@ export default function Home() {
     company: null,
     industry: null
   });
-  
+
   const technologies = [
     { icon: htmlIcom },
     { icon: cssIcon },
@@ -118,13 +118,13 @@ export default function Home() {
       setLoadingFeed(true);
 
       // Check if any filters are applied or search is active
-      const hasFilters = filters.ageMin !== null || filters.ageMax !== null || 
-                        filters.language !== null || (filters.habits && filters.habits.length > 0) || 
-                        (filters.interests && filters.interests.length > 0) || filters.relationship !== null ||
-                        filters.religion !== null || filters.company !== null ||
-                        filters.industry !== null ||
-                        (filters.gender !== null && filters.gender !== "Any") ||
-                        (isSearchActive && searchQuery.trim() !== "");
+      const hasFilters = filters.ageMin !== null || filters.ageMax !== null ||
+        filters.language !== null || (filters.habits && filters.habits.length > 0) ||
+        (filters.interests && filters.interests.length > 0) || filters.relationship !== null ||
+        filters.religion !== null || filters.company !== null ||
+        filters.industry !== null ||
+        (filters.gender !== null && filters.gender !== "Any") ||
+        (isSearchActive && searchQuery.trim() !== "");
 
       // Get location coordinates only if no filters are applied
       let latitude = null;
@@ -147,12 +147,12 @@ export default function Home() {
       const queryParams = new URLSearchParams();
       queryParams.append("page", "1");
       queryParams.append("limit", "5000");
-      
+
       // Add gender filter if it's set and not "Any"
       if (genderFilter && genderFilter !== "Any" && genderFilter !== "any") {
         queryParams.append("gender", genderFilter);
       }
-      
+
       // Only add location if no filters are applied
       if (!hasFilters && latitude !== null && longitude !== null) {
         // queryParams.append("latitude", latitude.toString());
@@ -270,7 +270,7 @@ export default function Home() {
       }
 
       const likeData = await likeResponse.json();
-      
+
       if (likeData.success) {
         setLikedProfiles(prev => {
           const updated = new Set(prev);
@@ -319,7 +319,7 @@ export default function Home() {
       }
 
       const connectData = await connectResponse.json();
-      
+
       if (connectData.success) {
         // Show success toast notification
         toast.success("Connection request sent successfully!");
@@ -362,10 +362,10 @@ export default function Home() {
       }
 
       const skipData = await skipResponse.json();
-      
+
       if (skipData.success) {
         // Remove the skipped profile from the list
-        const newFeedData = feedData.filter(profile => 
+        const newFeedData = feedData.filter(profile =>
           (profile._id || profile.id) !== skippedUserId
         );
         setFeedData(newFeedData);
@@ -412,11 +412,11 @@ export default function Home() {
         let userProfile = null;
         if (profileData.success && profileData.data && profileData.data.profile) {
           const profile = profileData.data.profile;
-          
+
           // Save entire profile data to cookie as JSON
           setCookie("userProfile", JSON.stringify(profile), 7);
           userProfile = profile;
-          
+
           // Optionally save individual fields for easier access
           if (profile.fullName) {
             setCookie("userFullName", profile.fullName, 7);
@@ -430,7 +430,7 @@ export default function Home() {
           if (profile.phoneNumber) {
             setCookie("userPhoneNumber", profile.phoneNumber, 7);
           }
-          
+
           // Store currentLocation if available
           if (profile.currentLocation && profile.currentLocation.coordinates) {
             const coordinates = profile.currentLocation.coordinates;
@@ -489,7 +489,7 @@ export default function Home() {
       company: appliedFilters.company || null,
       industry: appliedFilters.industry || null
     };
-    
+
     setFilters(newFilters);
     setIsFilterOpen(false);
   };
@@ -519,143 +519,29 @@ export default function Home() {
         onApply={handleApplyFilters}
         onClear={handleClearFilters}
       />
-      {/* First section */}
-      {/* <div className="hero-container">
-        <div className="deco-circle deco-circle-1"></div>
-        <div className="deco-circle deco-circle-2"></div>
-        <div className="deco-dot deco-dot-1"></div>
-        <div className="deco-dot deco-dot-2"></div>
-        <div className="deco-dot deco-dot-3"></div>
 
-        <div className="hero-content">
-          <div className="hero-grid">
-            <div className="hero-left">
-              <div className="hero-badge">
-                <span>Etiam Eget Mattis</span>
-              </div>
-
-              <h1 className="hero-title">
-                Easy to <span className="text-orange">Hire</span>
-                <br></br>
-                <span className="text-weight">
-                  Talented Developers & Professional Agencies
-                </span>
-              </h1>
-
-              <p className="hero-description">
-                Easy to Hire and user friendly Platform. Loremipssume is simply
-                dummy text of the printing and typesetting industry lorem ipsum
-                has been the industry's standard dummy text.
-              </p>
-
-              <div className="search-box">
-                <div className="search-row">
-                  <div className="search-field">
-                    <label className="search-label">Job Name</label>
-                    <input
-                      type="text"
-                      placeholder="Search"
-                      className="search-input"
-                    />
-                  </div>
-
-                  <div className="search-field">
-                    <label className="search-label">Job Type</label>
-                    <div className="search-select-wrapper">
-                      <select className="search-select">
-                        <option value="">Select Job Type</option>
-                        <option value="software-developer">Software Developer</option>
-                        <option value="designer">Designer</option>
-                        <option value="marketing">Marketing</option>
-                        <option value="sales">Sales</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="search-button-wrapper">
-                    <button
-                      className="search-button"
-                      onClick={() => navigate("/search")}
-                    >
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.35-4.35"></path>
-                      </svg>
-                      Search
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            
-            <div className="hero-right">
-              <div className="hero-image-container">
-                <img
-                  src={heroImage}
-                  alt="Professional"
-                  className="hero-image"
-                />
-              </div>
-              <div className="review-card">
-                <div className="review-content">
-                  <div className="avatar-stack">
-                    <img src={avtar1} className="avatar"></img>
-                    <img src={avtar2} className="avatar"></img>
-                    <img src={avtar3} className="avatar"></img>
-                    <img src={avtar4} className="avatar"></img>
-                    <img src={avtar5} className="avatar"></img>
-                  </div>
-                  <div className="review-text">
-                    <div className="rating">
-                      <span className="rating-value">4.9</span>
-                      <span className="review-count">(370 review)</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="stats-card">
-              
-                <img src={floatchart}></img>
-              </div>
-
-              <div className="hero-deco hero-deco-1"></div>
-              <div className="hero-deco hero-deco-2"></div>
-            </div>
-          </div>
-        </div>
-      </div> */}
       {/* second section */}
       <div className="profile-container">
         <div className="sec-header">
           <div className="sec-header-left">
-            {/* <div className="byerul-badge">
-              <span className="byerul-text">Byerul Nedsori</span>
-            </div> */}
+
             <h1 className="title">
               Latest <span className="title-highlight">Profile</span>
             </h1>
           </div>
-          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-              <img 
-                src={searchIcon} 
-                alt="search" 
-                style={{ 
-                  position: "absolute", 
-                  left: "12px", 
-                  width: "18px", 
+          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end", maxWidth: "100%" }}>
+            <div style={{ position: "relative", display: "flex", alignItems: "center", flex: "1 1 220px", maxWidth: "280px", width: "100%", minWidth: 0 }}>
+              <img
+                src={searchIcon}
+                alt="search"
+                style={{
+                  position: "absolute",
+                  left: "12px",
+                  width: "18px",
                   height: "18px",
                   zIndex: 1,
                   pointerEvents: "none"
-                }} 
+                }}
               />
               <input
                 type="text"
@@ -689,7 +575,9 @@ export default function Home() {
                   border: "1px solid #EA650A",
                   borderRadius: "8px",
                   fontSize: "14px",
-                  width: "280px",
+                  width: "100%",
+                  maxWidth: "100%",
+                  boxSizing: "border-box",
                   outline: "none",
                   backgroundColor: "#fff"
                 }}
@@ -744,62 +632,19 @@ export default function Home() {
             {/* <button className="view-more-btn" onClick={() => navigate("/search")}>View More</button> */}
           </div>
         </div>
-        <Usercard 
-          feedData={feedData} 
-          loading={loadingFeed} 
-          onLike={handleLike} 
-          onConnect={handleConnect} 
+        <Usercard
+          feedData={feedData}
+          loading={loadingFeed}
+          onLike={handleLike}
+          onConnect={handleConnect}
           onSkip={handleSkip}
           likedProfiles={likedProfiles}
           connectedProfiles={connectedProfiles}
         ></Usercard>
       </div>
 
-      {/* third section */}
-      {/* <div className="tech-platform-container">
-        <div className="content-wrapper">
-          <div className="image-section">
-            <img
-              src={homebg}
-              alt="Person working on laptop"
-              className="main-image"
-            />
-          </div>
-          <div className="text-section">
-            <span className="badge-text">Donec Kuctus</span>
 
-            <h1 className="main-title">
-              <span className="highlight-number">60+</span> Technologies
-              <br />
-              Registered Our Platform
-            </h1>
 
-            <p className="description">
-              Phasellus in massa nec ipsum ultricies elementum. Sed a
-              condimentum ipsum. Donec euismod blandit dignissim. Fusce leo
-              quam, vestibulum nec lorem curabitur laoreet non nulla a
-              porttitor. Maecenas tempus lorem vel leo mattis, at convallis quam
-              vulputate. Nulla facilisi. Ut at rhoncus lectus. Phasellus
-              fermentum metus non leo congue varius. Sed vel facilisis sem. Nam
-              pharetra erat in dolor fermentum.
-            </p>
-            <div className="tech-icons">
-              {technologies.map((tech, index) => (
-                <div
-                  key={index}
-                  className="tech-icon"
-                >
-                  <img src={tech.icon} alt={`Tech ${index + 1}`}></img>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-      
-        <div className="decorative-dots top-dots"></div>
-      </div> */}
-   
 
       <Footer></Footer>
     </div>
