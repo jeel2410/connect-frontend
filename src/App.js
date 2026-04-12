@@ -36,7 +36,7 @@ const RootRoute = () => {
 
   // If not authenticated, show Register
   if (!isAuthenticated) {
-     return <Register />;
+    return <Register />;
   }
 
   // If authenticated but profile not complete, show profile completion
@@ -51,183 +51,167 @@ const RootRoute = () => {
 function App() {
   return (
     <GoogleOAuthProvider clientId="891198943361-e6pu3ag403m4s97gvbiuasgljgfbvcda.apps.googleusercontent.com">
-    <Router>
-      <Routes>
-        {/* Root route - Shows Register if not authenticated, Home if authenticated */}
-        <Route
-          path="/"
-          element={<RootRoute />}
-        />
-        
-        {/* Redirect /Login and /login to / */}
-        <Route
-          path="/Login"
-          element={<Navigate to="/" replace />}
-        />
-        <Route
-          path="/login"
-          element={<Navigate to="/" replace />}
-        />
-        
-        {/* Public Routes - Redirect to home if already authenticated */}
-        <Route
-          path="/Register"
-          element={
-            <PublicRoute>
-              <Register />
-            </PublicRoute>
-          }
-        />
-        <Route path="/otp-verification" element={<OtpVerification />} />
-        <Route 
-          path="/profile-complete" 
-          element={<Profileverification />} 
-        />
+      <Router>
+        <Routes>
+          {/* Root route - Shows Register if not authenticated, Home if authenticated */}
+          <Route
+            path="/"
+            element={<RootRoute />}
+          />
 
-        {/* Protected Routes - Require authToken and isProfileComplete === "true" */}
-        <Route
-          path="/search"
-          element={
-            <ProtectedRoute>
-              <Search />
-            </ProtectedRoute>
-          }
+          {/* Redirect /Login and /login to / */}
+          <Route
+            path="/Login"
+            element={<Navigate to="/" replace />}
+          />
+          <Route
+            path="/login"
+            element={<Navigate to="/" replace />}
+          />
+
+          {/* Public Routes - Redirect to home if already authenticated */}
+          <Route
+            path="/Register"
+            element={
+              <PublicRoute>
+                <Register />
+              </PublicRoute>
+            }
+          />
+          <Route path="/otp-verification" element={<OtpVerification />} />
+          <Route
+            path="/profile-complete"
+            element={<Profileverification />}
+          />
+
+          {/* Protected Routes - Require authToken and isProfileComplete === "true" */}
+          <Route
+            path="/search"
+            element={
+              <ProtectedRoute>
+                <Search />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/userprofile"
+            element={
+              <ProtectedRoute>
+                <UserProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/offers"
+            element={
+              <ProtectedRoute>
+                <Offer />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/editProfile"
+            element={
+              <ProtectedRoute>
+                <EditProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/connections"
+            element={
+              <ProtectedRoute>
+                <Connection />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/likes"
+            element={
+              <ProtectedRoute>
+                <Like />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chats"
+            element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/delete-account"
+            element={
+              <ProtectedRoute>
+                <DeleteAccount />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminProtectedRoute>
+                <Admin />
+              </AdminProtectedRoute>
+            }
+          />
+          {/* Public Routes - Accessible without authentication */}
+          <Route
+            path="/features"
+            element={<Features />}
+          />
+          <Route
+            path="/resources"
+            element={<Resources />}
+          />
+          <Route
+            path="/download-app"
+            element={<DownloadApp />}
+          />
+          <Route
+            path="/inquiry"
+            element={<Inquiry />}
+          />
+          <Route
+            path="/privacy-policy"
+            element={<PrivacyPolicy />}
+          />
+          <Route
+            path="/terms-of-use"
+            element={<TermsOfUse />}
+          />
+          <Route
+            path="/about-us"
+            element={<AboutUs />}
+          />
+          <Route
+            path="/cookie-policy"
+            element={<CookiePolicy />}
+          />
+        </Routes>
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
         />
-        <Route
-          path="/userprofile"
-          element={
-            <ProtectedRoute>
-              <UserProfile />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/offers"
-          element={
-            <ProtectedRoute>
-              <Offer />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/editProfile"
-          element={
-            <ProtectedRoute>
-              <EditProfile />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/connection"
-          element={
-            <ProtectedRoute>
-              <Connection />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/like"
-          element={
-            <ProtectedRoute>
-              <Like />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/chat"
-          element={
-            <ProtectedRoute>
-              <Chat />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/delete-account"
-          element={
-            <ProtectedRoute>
-              <DeleteAccount />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin"
-          element={
-            <AdminProtectedRoute>
-              <Admin />
-            </AdminProtectedRoute>
-          }
-        />
-        {/* Public Routes - Accessible without authentication */}
-        <Route
-          path="/features"
-          element={<Features />}
-        />
-        <Route
-          path="/resources"
-          element={<Resources />}
-        />
-        <Route
-          path="/download-app"
-          element={<DownloadApp />}
-        />
-        <Route
-          path="/inquiry"
-          element={<Inquiry />}
-        />
-        <Route
-          path="/privacy-policy"
-          element={
-            <ProtectedRoute>
-              <PrivacyPolicy />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/terms-of-use"
-          element={
-            <ProtectedRoute>
-              <TermsOfUse />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/about-us"
-          element={
-            <ProtectedRoute>
-              <AboutUs />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/cookie-policy"
-          element={
-            <ProtectedRoute>
-              <CookiePolicy />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-    </Router>
+      </Router>
     </GoogleOAuthProvider>
   );
 }

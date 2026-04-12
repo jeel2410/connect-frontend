@@ -85,12 +85,6 @@ const Footer = () => {
             <span className="separator">•</span>
             <a href="/inquiry" className="legal-link">Enquiry</a>
           </div>
-          <div className="footer-social">
-            <a className="social-icon"><img src={facebookIcon}></img></a>
-            <a className="social-icon"><img src={twitterIcon}></img></a>
-            <a className="social-icon"><img src={instagramIcon}></img></a>
-            <a className="social-icon"><img src={linkedIcon}></img></a>
-          </div>
         </div>
 
       </div>

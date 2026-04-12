@@ -83,7 +83,7 @@ const OtpVerification = () => {
           if (token) {
             setCookie("authToken", token, 7); // 7 days expiry
           }
-          
+
           // Save isProfileComplete status to cookie
           setCookie("isProfileComplete", isProfileComplete ? "true" : "false", 7);
           // Handle redirect based on user status
@@ -135,7 +135,7 @@ const OtpVerification = () => {
         }
       });
       setOtp(newOtp);
-      
+
       // Update formik value
       const otpString = newOtp.join("");
       formik.setFieldValue("otp", otpString);
@@ -147,7 +147,7 @@ const OtpVerification = () => {
       if (inputRefs.current[nextIndex]) {
         inputRefs.current[nextIndex].focus();
       }
-      
+
       // Auto-submit if 6 digits entered
       if (otpString.length === 6) {
         setTimeout(() => {
@@ -260,93 +260,91 @@ const OtpVerification = () => {
           <img src={sideImage} alt="Connect illustration" className="side-image" />
         </div>
         <div className="login-container">
-          <div className="login-header">
-            <img src={logo} alt="Connect Logo"></img>
-          </div>
+
 
           <div className="login-content">
-          <button 
-            type="button" 
-            className="otp-back-button"
-            onClick={handleBack}
-            aria-label="Go back"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-
-          <h1 className="login-title">OTP Verification</h1>
-          <p className="otp-description">
-            Please enter the 6-digit code sent to your Mobile number at {phoneNumber}
-          </p>
-
-          <form className="login-form" onSubmit={formik.handleSubmit}>
-            <div className="otp-input-container">
-              {otp.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(el) => (inputRefs.current[index] = el)}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  className={`otp-input ${formik.touched.otp && formik.errors.otp ? "input-error" : ""}`}
-                  value={digit}
-                  onChange={(e) => handleOtpChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  disabled={loading || formik.isSubmitting}
-                />
-              ))}
-            </div>
-
-            {/* Field Error Message */}
-            {formik.touched.otp && formik.errors.otp && (
-              <div className="field-error-message">
-                {formik.errors.otp}
-              </div>
-            )}
-
-            {/* API Error Message */}
-            {apiError && (
-              <div className="message-error">
-                {apiError}
-              </div>
-            )}
-
-            {/* Success Message */}
-            {success && (
-              <div className="message-success">
-                {success}
-              </div>
-            )}
-
             <button
-              type="submit"
-              className="login-button"
-              disabled={loading || formik.isSubmitting || otp.join("").length !== 6}
+              type="button"
+              className="otp-back-button"
+              onClick={handleBack}
+              aria-label="Go back"
             >
-              {loading || formik.isSubmitting ? (
-                <>
-                  <span className="spinner"></span>
-                  Verifying...
-                </>
-              ) : (
-                "Verify"
-              )}
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
 
-            <div className="otp-resend-container">
-              <span className="otp-resend-text">Didn't receive the code yet?</span>
+            <h1 className="login-title">OTP Verification</h1>
+            <p className="otp-description">
+              Please enter the 6-digit code sent to your Mobile number at {phoneNumber}
+            </p>
+
+            <form className="login-form" onSubmit={formik.handleSubmit}>
+              <div className="otp-input-container">
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => (inputRefs.current[index] = el)}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    className={`otp-input ${formik.touched.otp && formik.errors.otp ? "input-error" : ""}`}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    disabled={loading || formik.isSubmitting}
+                  />
+                ))}
+              </div>
+
+              {/* Field Error Message */}
+              {formik.touched.otp && formik.errors.otp && (
+                <div className="field-error-message">
+                  {formik.errors.otp}
+                </div>
+              )}
+
+              {/* API Error Message */}
+              {apiError && (
+                <div className="message-error">
+                  {apiError}
+                </div>
+              )}
+
+              {/* Success Message */}
+              {success && (
+                <div className="message-success">
+                  {success}
+                </div>
+              )}
+
               <button
-                type="button"
-                className="otp-resend-link"
-                onClick={handleResend}
-                disabled={loading || formik.isSubmitting}
+                type="submit"
+                className="login-button"
+                disabled={loading || formik.isSubmitting || otp.join("").length !== 6}
               >
-                Resend
+                {loading || formik.isSubmitting ? (
+                  <>
+                    <span className="spinner"></span>
+                    Verifying...
+                  </>
+                ) : (
+                  "Verify"
+                )}
               </button>
-            </div>
-          </form>
+
+              <div className="otp-resend-container">
+                <span className="otp-resend-text">Didn't receive the code yet?</span>
+                <button
+                  type="button"
+                  className="otp-resend-link"
+                  onClick={handleResend}
+                  disabled={loading || formik.isSubmitting}
+                >
+                  Resend
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>

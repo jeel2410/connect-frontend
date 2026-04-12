@@ -8,6 +8,7 @@ import userIcon from "../assets/image/user_icon.png"
 import NotificationModal from "./NotificationModal";
 import { getCookie, logout, isAdmin, getUserProfile, hasToken } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
+import profileIcon from "../assets/image/firstname.png"
 import "../styles/style.css"
 
 const Header = () => {
@@ -356,13 +357,13 @@ const Header = () => {
                 <a href="/" className={`nav-link ${location.pathname === "/" ? "active" : ""}`}>
                   Home
                 </a>
-                <a href="/connection" className={`nav-link ${location.pathname === "/connection" ? "active" : ""}`}>
+                <a href="/connections" className={`nav-link ${location.pathname === "/connections" ? "active" : ""}`}>
                   Connections
                 </a>
-                <a href="/like" className={`nav-link ${location.pathname === "/like" ? "active" : ""}`}>
+                <a href="/likes" className={`nav-link ${location.pathname === "/likes" ? "active" : ""}`}>
                   Likes
                 </a>
-                <a href="/chat" className={`nav-link ${location.pathname === "/chat" ? "active" : ""}`} style={{ position: "relative" }}>
+                <a href="/chats" className={`nav-link ${location.pathname === "/chats" ? "active" : ""}`} style={{ position: "relative" }}>
                   Chat
                   {unreadChatCount > 0 && (
                     <span className="chat-badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>
@@ -478,13 +479,13 @@ const Header = () => {
                   <a href="/" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     Home
                   </a>
-                  <a href="/connection" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                  <a href="/connections" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     Connections
                   </a>
-                  <a href="/like" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                  <a href="/likes" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     Likes
                   </a>
-                  <a href="/chat" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)} style={{ position: "relative" }}>
+                  <a href="/chats" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)} style={{ position: "relative" }}>
                     Chat
                     {unreadChatCount > 0 && (
                       <span className="chat-badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>
@@ -521,7 +522,7 @@ const Header = () => {
                   <span>{userName || "Loading..."}</span>
                 </div>
                 <div className="mobile-action-buttons">
-                  <div className="notification-wrapper">
+                  {/* <div className="notification-wrapper"> */}
                     <button className="mobile-icon-btn notification-btn" onClick={handleNotificationClick}>
                       <img src={notification} alt="Notifications"></img>
                       {unreadCount > 0 && (
@@ -533,23 +534,20 @@ const Header = () => {
                       onClose={() => setNotificationModalOpen(false)}
                       onNotificationRead={fetchUnreadCount}
                     />
-                  </div>
-                  <div className="mobile-profile-menu">
-                    <button className="mobile-profile-btn" onClick={handleProfileClick}>
-                      <img src={userIcon} alt="User"></img>
-                    </button>
-                    {userIsAdmin && (
-                      <button className="mobile-admin-btn" onClick={handleAdminClick}>
-                        <LayoutDashboard size={18} color="#09122E" />
-                        <span>Admin</span>
-                      </button>
-                    )}
-                    <button className="mobile-signout-btn" onClick={handleSignOut}>
-                      <LogOut size={18} color="#DC2626" />
-                      <span>Sign Out</span>
-                    </button>
-                  </div>
+                  {/* </div> */}
+                  <button className="mobile-icon-btn mobile-profile-btn" onClick={handleProfileClick} aria-label="My Profile">
+                    <img src={profileIcon} alt="User"></img>
+                  </button>
+                  <button className="mobile-icon-btn mobile-signout-icon-btn" onClick={handleSignOut} aria-label="Sign Out">
+                    <LogOut size={20} />
+                  </button>
                 </div>
+                {userIsAdmin && (
+                  <button className="mobile-admin-btn" onClick={handleAdminClick}>
+                    <LayoutDashboard size={18} color="#09122E" />
+                    <span>Admin</span>
+                  </button>
+                )}
               </div>
             )}
           </div>

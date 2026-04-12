@@ -529,8 +529,8 @@ export default function Home() {
               Latest <span className="title-highlight">Profile</span>
             </h1>
           </div>
-          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end", maxWidth: "100%" }}>
-            <div style={{ position: "relative", display: "flex", alignItems: "center", flex: "1 1 220px", maxWidth: "280px", width: "100%", minWidth: 0 }}>
+          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "nowrap", justifyContent: "flex-end", maxWidth: "100%", width: "100%", minWidth: 0 }}>
+            <div style={{ position: "relative", display: "flex", alignItems: "center", flex: "0 1 280px", width: "100%", maxWidth: "280px", minWidth: 0 }}>
               <img
                 src={searchIcon}
                 alt="search"
@@ -617,6 +617,7 @@ export default function Home() {
                 alignItems: "center",
                 gap: "8px",
                 padding: "10px 20px",
+                flexShrink: 0,
                 backgroundColor: "#fff",
                 border: "1px solid #EA650A",
                 borderRadius: "8px",
