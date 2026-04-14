@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import sideImage from "../../src/assets/image/side-image.svg"
+import sideImage from "../../src/assets/image/sideImage.png"
 import logo from "../../src/assets/image/connect_logo.png"
 import { useNavigate, useLocation } from "react-router-dom";
 import { setCookie } from "../utils/auth";
