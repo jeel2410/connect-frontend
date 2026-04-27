@@ -248,13 +248,21 @@ const Inquiry = () => {
                 />
               </div>
 
-              <button
-                type="submit"
-                className="inquiry-submit-btn"
-                disabled={loading}
-              >
-                {loading ? "Submitting..." : "Submit Enquiry"}
-              </button>
+              <div className="inquiry-submit-row">
+                <button
+                  type="submit"
+                  className="inquiry-submit-btn"
+                  disabled={loading}
+                >
+                  {loading ? "Submitting..." : "Submit Enquiry"}
+                </button>
+                <p className="inquiry-unsubscribe">
+                  To unsubscribe from our promotional mailers —{" "}
+                  <a href="mailto:support@conect.in?subject=Unsubscribe" className="inquiry-unsubscribe-link">
+                    Please click here
+                  </a>
+                </p>
+              </div>
             </form>
           </div>
         </div>

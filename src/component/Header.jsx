@@ -363,7 +363,7 @@ const Header = () => {
                 <a href="/likes" className={`nav-link ${location.pathname === "/likes" ? "active" : ""}`}>
                   Likes
                 </a>
-                <a href="/chats" className={`nav-link ${location.pathname === "/chats" ? "active" : ""}`} style={{ position: "relative" }}>
+                <a href="/chat" className={`nav-link ${location.pathname === "/chat" ? "active" : ""}`} style={{ position: "relative" }}>
                   Chat
                   {unreadChatCount > 0 && (
                     <span className="chat-badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>
@@ -485,7 +485,7 @@ const Header = () => {
                   <a href="/likes" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     Likes
                   </a>
-                  <a href="/chats" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)} style={{ position: "relative" }}>
+                  <a href="/chat" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)} style={{ position: "relative" }}>
                     Chat
                     {unreadChatCount > 0 && (
                       <span className="chat-badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>

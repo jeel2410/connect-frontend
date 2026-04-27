@@ -13,7 +13,6 @@ const Step8 = ({ data, updateData, errors, touched }) => {
   const selectedIndustry = data.industry || '';
   const selectedCompany = data.company || '';
 
-  // Fetch industries from API
   useEffect(() => {
     const fetchIndustries = async () => {
       try {
@@ -27,13 +26,10 @@ const Step8 = ({ data, updateData, errors, touched }) => {
             "Content-Type": "application/json",
           },
         });
-        
-        if (!response.ok) {
-          throw new Error("Failed to fetch industries");
-        }
+
+        if (!response.ok) throw new Error("Failed to fetch industries");
 
         const result = await response.json();
-        
         if (result.success && result.data && result.data.industries) {
           setIndustries(result.data.industries);
         } else {
@@ -51,7 +47,6 @@ const Step8 = ({ data, updateData, errors, touched }) => {
     fetchIndustries();
   }, []);
 
-  // Fetch companies when industry is selected
   useEffect(() => {
     const fetchCompanies = async () => {
       if (!selectedIndustry) {
@@ -70,13 +65,10 @@ const Step8 = ({ data, updateData, errors, touched }) => {
             "Content-Type": "application/json",
           },
         });
-        
-        if (!response.ok) {
-          throw new Error("Failed to fetch companies");
-        }
+
+        if (!response.ok) throw new Error("Failed to fetch companies");
 
         const result = await response.json();
-        
         if (result.success && result.data && result.data.companies) {
           setCompanies(result.data.companies);
         } else {
@@ -95,74 +87,75 @@ const Step8 = ({ data, updateData, errors, touched }) => {
   }, [selectedIndustry]);
 
   const selectIndustry = (industryId) => {
-    updateData('industry', industryId); // Store ID
-    // Clear company when industry changes
+    updateData('industry', industryId);
     updateData('company', '');
     updateData('_touched_industry', true);
   };
 
   const selectCompany = (companyId) => {
-    updateData('company', companyId); // Store ID
+    updateData('company', companyId);
     updateData('_touched_company', true);
   };
 
-  return ( 
-    <div className="step-content active"> 
-      <h2 className="step-title">Select Your Industry & Company</h2> 
-      <p className="step-description">Choose your industry and company</p> 
-       
-      {/* Industry Selection */}
-      <div className="form-group">
-        <label>Industry <span className="required">*</span></label>
-        {loadingIndustries ? (
-          <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-            Loading industries...
-          </div>
-        ) : industriesError ? (
-          <div style={{ padding: "20px", textAlign: "center", color: "#dc2626" }}>
-            {industriesError}
-          </div>
-        ) : industries.length === 0 ? (
-          <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-            No industries available
-          </div>
-        ) : (
-          <div className="industry-container">
-            {industries.map((industry) => (
-              <button
-                key={industry._id}
-                type="button"
-                className={`industry-option ${selectedIndustry === industry._id ? 'selected' : ''}`}
-                onClick={() => selectIndustry(industry._id)}
-              >
-                {industry.name}
-              </button>
-            ))}
-          </div>
-        )}
-        {touched?.industry && errors?.industry && (
-          <div className="field-error-message">{errors.industry}</div>
-        )}
-      </div>
+  return (
+    <div className="step-content active">
+      <h2 className="step-title">Select your Industry and Employer</h2>
+      <p className="step-description">Specify your industry and current workplace.</p>
 
-      {/* Company Selection - Only show when industry is selected */}
-      {selectedIndustry && (
-        <div className="form-group">
-          <label>Company</label>
-          {loadingCompanies ? (
-            <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-              Loading companies...
-            </div>
-          ) : companiesError ? (
-            <div style={{ padding: "20px", textAlign: "center", color: "#dc2626" }}>
-              {companiesError}
-            </div>
-          ) : companies.length === 0 ? (
-            <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-              No companies available for this industry
-            </div>
+      <div className="step8-layout">
+        {/* Left panel: Industries */}
+        <div className="step8-panel">
+          <div className="step8-panel-header">
+            <span className="step8-panel-label">Industry <span className="required">*</span></span>
+          </div>
+
+          {loadingIndustries ? (
+            <div className="step8-state-msg">Loading industries...</div>
+          ) : industriesError ? (
+            <div className="step8-state-msg" style={{ color: "#dc2626" }}>{industriesError}</div>
+          ) : industries.length === 0 ? (
+            <div className="step8-state-msg">No industries available</div>
           ) : (
-            <div className="industry-container">
+            <div className="step8-panel-list">
+              {industries.map((industry) => (
+                <button
+                  key={industry._id}
+                  type="button"
+                  className={`industry-option ${selectedIndustry === industry._id ? 'selected' : ''}`}
+                  onClick={() => selectIndustry(industry._id)}
+                >
+                  <span>{industry.name}</span>
+                  {selectedIndustry === industry._id && (
+                    <span className="step8-arrow">›</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {touched?.industry && errors?.industry && (
+            <div className="field-error-message">{errors.industry}</div>
+          )}
+        </div>
+
+        {/* Right panel: Companies */}
+        <div className="step8-panel">
+          <div className="step8-panel-header">
+            <span className="step8-panel-label">Company</span>
+          </div>
+
+          {!selectedIndustry ? (
+            <div className="step8-empty-panel">
+              <span>← Select an industry first</span>
+            </div>
+          ) : loadingCompanies ? (
+            <div className="step8-state-msg">Loading companies...</div>
+          ) : companiesError ? (
+            <div className="step8-state-msg" style={{ color: "#dc2626" }}>{companiesError}</div>
+          ) : companies.length === 0 ? (
+            <div className="step8-state-msg">No companies for this industry</div>
+          ) : (
+            <div className="step8-panel-list">
               {companies.map((company) => (
                 <button
                   key={company._id}
@@ -170,18 +163,19 @@ const Step8 = ({ data, updateData, errors, touched }) => {
                   className={`industry-option ${selectedCompany === company._id ? 'selected' : ''}`}
                   onClick={() => selectCompany(company._id)}
                 >
-                  {company.name}
+                  <span>{company.name}</span>
                 </button>
               ))}
             </div>
           )}
+
           {touched?.company && errors?.company && (
             <div className="field-error-message">{errors.company}</div>
           )}
         </div>
-      )}
-    </div> 
-  ); 
+      </div>
+    </div>
+  );
 };
 
 export default Step8;

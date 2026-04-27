@@ -57,8 +57,8 @@ const Step6 = ({ data, updateData, errors, touched }) => {
 
   return ( 
     <div className="step-content active"> 
-      <h2 className="step-title">What's your Skills?</h2> 
-      <p className="step-description">Let others know about your habits</p> 
+      <h2 className="step-title">Add your Skills</h2> 
+      <p className="step-description">List your key abilities and areas of expertise.</p> 
        
       <div className="form-group">
         <div className="habits-container">

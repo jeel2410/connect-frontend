@@ -249,6 +249,25 @@
   transform: translateY(0);
 }
 
+/* Total users badge */
+.section-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-total-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  background: #FEF0E7;
+  color: #EA650A;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+}
+
 /* Table Styles */
 .table-container {
   overflow-x: auto;

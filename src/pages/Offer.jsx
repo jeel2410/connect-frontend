@@ -18,9 +18,11 @@ const Offer = () => {
       <div className="dating-profile-wrapper">
         {/* <Sidebar /> */}
         <div className="offers-page-wrapper">
+         <div className="title-div">
+            <h1 className="inner-page-title"><span>Recommended</span><span className="title-highlight">Offers</span></h1>
+          </div>
           <div className="offers-page-card">
             <div className="offers-page-header">
-              <h1>Offers</h1>
               <div className="offers-page-search">
                 <span className="offers-page-select-icon">
                   <img src={creditcardicon} alt="search" />

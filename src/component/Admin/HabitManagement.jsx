@@ -90,11 +90,11 @@ const HabitManagement = () => {
   const handleDelete = async (habitId) => {
     // Check if there's only one habit remaining
     if (totalHabits <= 1) {
-      alert("Cannot delete the last habit. At least one habit must remain.");
+      alert("Cannot delete the last hobby. At least one hobby must remain.");
       return;
     }
 
-    if (!window.confirm("Are you sure you want to delete this habit?")) {
+    if (!window.confirm("Are you sure you want to delete this hobby?")) {
       return;
     }
 
@@ -106,7 +106,7 @@ const HabitManagement = () => {
         setCurrentPage(currentPage - 1);
       }
     } catch (err) {
-      alert(err.message || "Failed to delete habit");
+      alert(err.message || "Failed to delete hobby");
     } finally {
       setLoading(false);
     }
@@ -116,7 +116,7 @@ const HabitManagement = () => {
     e.preventDefault();
 
     if (!formData.name.trim()) {
-      alert("Please enter a habit name");
+      alert("Please enter a hobby name");
       return;
     }
 
@@ -140,7 +140,7 @@ const HabitManagement = () => {
       setEditingHabit(null);
       await fetchHabits(); // Refresh the list
     } catch (err) {
-      alert(err.message || "Failed to save habit");
+      alert(err.message || "Failed to save hobby");
     } finally {
       setSubmitting(false);
     }
@@ -149,13 +149,13 @@ const HabitManagement = () => {
   return (
     <div className="admin-section">
       <div className="admin-section-header">
-        <h2 className="section-title">Habit Management</h2>
+        <h2 className="section-title">Hobby Management</h2>
         <div className="admin-actions">
           <div className="search-container">
             <Search size={20} className="search-icon" />
             <input
               type="text"
-              placeholder="Search habits..."
+              placeholder="Search hobbies..."
               className="search-input"
               value={searchTerm}
               onChange={handleSearch}
@@ -163,7 +163,7 @@ const HabitManagement = () => {
           </div>
           <button className="add-btn" onClick={handleAdd}>
             <Plus size={20} />
-            Add Habit
+            Add Hobby
           </button>
         </div>
       </div>
@@ -192,7 +192,7 @@ const HabitManagement = () => {
             ) : habits.length === 0 ? (
               <tr>
                 <td colSpan="2" className="empty-state">
-                  No habits found
+                  No hobbies found
                 </td>
               </tr>
             ) : (
@@ -212,7 +212,7 @@ const HabitManagement = () => {
                       <button
                         className="action-btn delete-btn"
                         onClick={() => handleDelete(habit._id)}
-                        title={totalHabits <= 1 ? "Cannot delete the last habit" : "Delete"}
+                        title={totalHabits <= 1 ? "Cannot delete the last hobby" : "Delete"}
                         disabled={loading || totalHabits <= 1}
                         style={totalHabits <= 1 ? { opacity: 0.5, cursor: "not-allowed" } : {}}
                       >
@@ -230,7 +230,7 @@ const HabitManagement = () => {
       <div className="pagination-container">
         <div className="pagination-info">
           Showing {habits.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{" "}
-          {Math.min(currentPage * itemsPerPage, totalHabits)} of {totalHabits} habits
+          {Math.min(currentPage * itemsPerPage, totalHabits)} of {totalHabits} hobbies
         </div>
         <div className="pagination-controls">
           <button
@@ -281,7 +281,7 @@ const HabitManagement = () => {
         <div className="modal-overlay" onClick={() => setIsAddModalOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Add New Habit</h3>
+              <h3>Add New Hobby</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setIsAddModalOpen(false)}
@@ -291,13 +291,13 @@ const HabitManagement = () => {
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
               <div className="form-groups">
-                <label>Habit Name</label>
+                <label>Hobby Name</label>
                 <input
                   type="text"
                   className="form-input"
                   value={formData.name}
                   onChange={(e) => setFormData({ name: e.target.value })}
-                  placeholder="Enter habit name"
+                  placeholder="Enter hobby name"
                   required
                   disabled={submitting}
                 />
@@ -326,7 +326,7 @@ const HabitManagement = () => {
         <div className="modal-overlay" onClick={() => setIsEditModalOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Edit Habit</h3>
+              <h3>Edit Hobby</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setIsEditModalOpen(false)}
@@ -336,13 +336,13 @@ const HabitManagement = () => {
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
               <div className="form-groups">
-                <label>Habit Name</label>
+                <label>Hobby Name</label>
                 <input
                   type="text"
                   className="form-input"
                   value={formData.name}
                   onChange={(e) => setFormData({ name: e.target.value })}
-                  placeholder="Enter habit name"
+                  placeholder="Enter hobby name"
                   required
                   disabled={submitting}
                 />

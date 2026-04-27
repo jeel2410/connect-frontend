@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import "../../src/styles/style.css";
 import Header from "../component/Header"
 import filterIcon from "../../src/assets/image/filter.png"
+import searchIcon from "../../src/assets/image/serachIcon.png"
 import Usercard from "../component/Usercard";
 import leftarrow from "../../src/assets/image/leftarrow (1).png"
 import rightarrow from "../../src/assets/image/rightarrow.png"
@@ -18,6 +19,7 @@ const Search = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [feedData, setFeedData] = useState([]);
   const [loadingFeed, setLoadingFeed] = useState(false);
+  const [searchName, setSearchName] = useState("");
   const [filters, setFilters] = useState({
     ageMin: null,
     ageMax: null,
@@ -367,53 +369,22 @@ const Search = () => {
           onClear={handleClearFilters}
         />
 
-        <header className="header-search">
-              <div className="search-box">
-                <div className="search-row">
-                  <div className="search-field">
-                    <label className="search-label">Job Name</label>
-                    <input
-                      type="text"
-                      placeholder="Search"
-                      className="search-input"
-                    />
-                  </div>
-
-                  <div className="search-field">
-                    <label className="search-label">Job Type</label>
-                    <select className="search-select">
-                      <option>Software Developer</option>
-                      <option>Designer</option>
-                      <option>Marketing</option>
-                      <option>Sales</option>
-                    </select>
-                  </div>
-
-                  <div className="search-button-wrapper">
-                    <button className="search-button">
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.35-4.35"></path>
-                      </svg>
-                      Search
-                    </button>
-                  </div>
-                </div>
-              </div>
-        </header>
-
         <main className="main-content">
           <div className="content-header">
             <h1 className="page-title">
               <span className="highlight">{pagination.totalCount}</span> User Available Now
             </h1>
+            <div className="search-page-search">
+              <span className="search-page-search-icon">
+                <img src={searchIcon} alt="search" />
+              </span>
+              <input
+                type="text"
+                placeholder="Search here"
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+              />
+            </div>
             <button
               className="filter-btn"
               onClick={() => setIsFilterOpen(true)}
@@ -422,7 +393,13 @@ const Search = () => {
               Filter
             </button>
           </div>
-          <Usercard feedData={feedData} loading={loadingFeed} onLike={handleLike} onConnect={handleConnect} onSkip={handleSkip}></Usercard>
+          <Usercard
+            feedData={feedData.filter(u => !searchName || (u.fullName || u.name || "").toLowerCase().includes(searchName.toLowerCase()))}
+            loading={loadingFeed}
+            onLike={handleLike}
+            onConnect={handleConnect}
+            onSkip={handleSkip}
+          />
 
           {pagination.totalPages > 1 && (
             <div className="pagination">

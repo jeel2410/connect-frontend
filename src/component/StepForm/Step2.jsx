@@ -19,7 +19,8 @@ const Step2 = ({ data, updateData, errors, touched }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   return (
     <div className="step-content active">
-      <h2 className="step-title">Your Information</h2>
+      <h2 className="step-title">Your Profile Info</h2>
+      <p className="step-description">Provide basic details to complete your profile.</p>
 
 
       <div className="form-group">

@@ -57,8 +57,8 @@ const Step4 = ({ data, updateData, errors, touched }) => {
 
   return ( 
     <div className="step-content active"> 
-      <h2 className="step-title">What's your Hobbies?</h2> 
-      <p className="step-description">Let others know about your Hobbies</p> 
+      <h2 className="step-title">Chooses Hobbies</h2> 
+      <p className="step-description">Pick activities you enjoy in your free time.</p> 
        
       <div className="form-group">
         <div className="habits-container">

@@ -5,7 +5,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
   const menuItems = [
     { id: "users", label: "Users", icon: Users },
     { id: "skills", label: "Skills", icon: Briefcase },
-    { id: "habits", label: "Habits", icon: Activity },
+    { id: "habits", label: "Hobbies", icon: Activity },
     { id: "interests", label: "Interests", icon: Heart },
     { id: "companies", label: "Companies", icon: Building2 },
     { id: "industries", label: "Industries", icon: Factory },

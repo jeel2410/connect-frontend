@@ -75,13 +75,13 @@ const Footer = () => {
 
           </div>
           <div className="legal-links">
-            <a href="/privacy-policy" className="legal-link">Privacy Policy</a>
+            <a href="/privacy-policy" className="legal-link">Privacy</a>
             <span className="separator">•</span>
-            <a href="/terms-of-use" className="legal-link">Terms of Use</a>
+            <a href="/terms-of-use" className="legal-link">Terms</a>
             <span className="separator">•</span>
-            <a href="/about-us" className="legal-link">About Us</a>
+            <a href="/about-us" className="legal-link">About</a>
             <span className="separator">•</span>
-            <a href="/cookie-policy" className="legal-link">Cookie Policy</a>
+            <a href="/cookie-policy" className="legal-link">Cookies</a>
             <span className="separator">•</span>
             <a href="/inquiry" className="legal-link">Enquiry</a>
           </div>

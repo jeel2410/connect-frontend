@@ -216,7 +216,7 @@ export default function Home() {
 
       // Check if response is successful and has feed data
       if (feedData.success && feedData.data) {
-        // Handle different possible response structures
+        // Handle different possible response structsetFeedDataures
         const feed = Array.isArray(feedData.data) ? feedData.data : (feedData.data.profiles || feedData.data.feed || []);
         setFeedData(feed);
 
@@ -526,10 +526,10 @@ export default function Home() {
           <div className="sec-header-left">
 
             <h1 className="title">
-              Latest <span className="title-highlight">Profile</span>
+              Profiles <span className="title-highlight">Near You</span>
             </h1>
           </div>
-          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "nowrap", justifyContent: "flex-end", maxWidth: "100%", width: "100%", minWidth: 0 }}>
+          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "nowrap", justifyContent: "flex-start", width: "100%", minWidth: 0 }}>
             <div style={{ position: "relative", display: "flex", alignItems: "center", flex: "0 1 280px", width: "100%", maxWidth: "280px", minWidth: 0 }}>
               <img
                 src={searchIcon}

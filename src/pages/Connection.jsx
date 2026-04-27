@@ -35,7 +35,7 @@ const Connection = () => {
       }
 
       // Build URL with search parameter if provided
-      const url = search.trim() 
+      const url = search.trim()
         ? `${API_BASE_URL}/api/connection/connections?search=${encodeURIComponent(search.trim())}`
         : `${API_BASE_URL}/api/connection/connections`;
 
@@ -59,10 +59,10 @@ const Connection = () => {
 
       if (data.success && data.data) {
         // Handle different possible response structures
-        const connections = Array.isArray(data.data) 
-          ? data.data 
+        const connections = Array.isArray(data.data)
+          ? data.data
           : (data.data.connections || data.data.active || []);
-        
+
         setActiveConnections(connections);
       } else {
         setActiveConnections([]);
@@ -86,7 +86,7 @@ const Connection = () => {
       }
 
       // Build URL with search parameter if provided
-      const url = search.trim() 
+      const url = search.trim()
         ? `${API_BASE_URL}/api/connection/requests/received?search=${encodeURIComponent(search.trim())}`
         : `${API_BASE_URL}/api/connection/requests/received`;
 
@@ -110,10 +110,10 @@ const Connection = () => {
 
       if (data.success && data.data) {
         // Handle different possible response structures
-        const requests = Array.isArray(data.data) 
-          ? data.data 
+        const requests = Array.isArray(data.data)
+          ? data.data
           : (data.data.requests || data.data.incoming || data.data.received || []);
-        
+
         setIncomingRequests(requests);
       } else {
         setIncomingRequests([]);
@@ -137,7 +137,7 @@ const Connection = () => {
       }
 
       // Build URL with search parameter if provided
-      const url = search.trim() 
+      const url = search.trim()
         ? `${API_BASE_URL}/api/connection/requests/sent?search=${encodeURIComponent(search.trim())}`
         : `${API_BASE_URL}/api/connection/requests/sent`;
 
@@ -161,10 +161,10 @@ const Connection = () => {
 
       if (data.success && data.data) {
         // Handle different possible response structures
-        const requests = Array.isArray(data.data) 
-          ? data.data 
+        const requests = Array.isArray(data.data)
+          ? data.data
           : (data.data.requests || data.data.pending || data.data.sent || []);
-        
+
         setPendingRequests(requests);
       } else {
         setPendingRequests([]);
@@ -215,7 +215,7 @@ const Connection = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm]);
 
-      // Refresh all connections when navigating back to this page or when page becomes visible
+  // Refresh all connections when navigating back to this page or when page becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
       // Refresh all counts when page becomes visible
@@ -272,7 +272,7 @@ const Connection = () => {
       }
 
       const rejectData = await rejectResponse.json();
-      
+
       if (rejectData.success) {
         // Refetch incoming requests after successful reject
         await fetchIncomingRequests(searchTerm);
@@ -314,7 +314,7 @@ const Connection = () => {
       }
 
       const cancelData = await cancelResponse.json();
-      
+
       if (cancelData.success) {
         // Refetch pending requests after successful cancel
         await fetchPendingRequests(searchTerm);
@@ -355,7 +355,7 @@ const Connection = () => {
       }
 
       const acceptData = await acceptResponse.json();
-      
+
       if (acceptData.success) {
         // Refetch incoming requests after successful accept
         await fetchIncomingRequests(searchTerm);
@@ -371,7 +371,7 @@ const Connection = () => {
   // Handle message click - fetch chat history and navigate to chat page
   const handleMessage = async (connection) => {
     const userId = connection._id || connection.id;
-    
+
     try {
       const token = getCookie("authToken");
       if (!token) {
@@ -398,7 +398,7 @@ const Connection = () => {
       }
 
       const data = await response.json();
-      
+
       // Navigate to chat page with userId and chat history data
       navigate("/chat", {
         state: {
@@ -423,17 +423,19 @@ const Connection = () => {
       <div className="dating-profile-wrapper">
         {/* <Sidebar /> */}
         <div className="connections-page-wrapper">
+          <div className="title-div">
+            <h1 className="inner-page-title"><span>Manage</span><span className="title-highlight">Connections</span></h1>
+          </div>
           <div className="connections-page-card">
             <div className="connections-page-header">
-              <h1>Connections</h1>
               <div className="connections-page-search-filter">
                 <div className="connections-page-search">
                   <span className="connections-page-search-icon">
                     <img src={searchIcon} alt="search" />
                   </span>
-                  <input 
-                    type="text" 
-                    placeholder="Search here" 
+                  <input
+                    type="text"
+                    placeholder="Search here"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -479,211 +481,211 @@ const Connection = () => {
               </button>
             </div>
             <div className="connections-page-content-wrapper">
-            {activeTab === "active" && (
-              <div className={`connections-tab-content ${loadingActive ? 'loading' : ''}`}>
-                {loadingActive ? (
-                  <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
-                    Loading active connections...
-                  </div>
-                ) : activeConnections.length === 0 ? (
-                  <div style={{ 
-                    textAlign: "center", 
-                    padding: "60px 20px", 
-                    color: "#666" 
-                  }}>
-                    <div style={{ fontSize: "24px", fontWeight: "600", marginBottom: "12px", color: "#333" }}>
-                      No Active Connections
+              {activeTab === "active" && (
+                <div className={`connections-tab-content ${loadingActive ? 'loading' : ''}`}>
+                  {loadingActive ? (
+                    <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
+                      Loading active connections...
                     </div>
-                    <div style={{ fontSize: "16px", color: "#999" }}>
-                      You don't have any active connections yet
-                    </div>
-                  </div>
-                ) : (
-                  <div className="connections-page-grid">
-                    {activeConnections.map((connection) => (
-                      <div key={connection._id || connection.id} className="connections-page-item">
-                        <div 
-                          className="connections-page-container"
-                          onClick={() => {
-                            const userId = connection._id || connection.id || connection.userId;
-                            if (userId) {
-                              navigate("/userprofile", { state: { userId } });
-                            }
-                          }}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <img
-                            src={connection.profileImage || connection.image || profile1}
-                            alt={connection.fullName || connection.name || "User"}
-                            className="connections-page-avatar"
-                          />
-                          <div className="connection-name-content">
-                            <h3>
-                              {connection.fullName || connection.name || "Unknown"}
-                            </h3>
-                            <p>{connection.username || connection.city || connection.address || ""}</p>
-                          </div>
-                        </div>
-                        <button
-                          className="connections-page-message-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMessage(connection);
-                          }}
-                        >
-                          <img src={messageIcon} alt="message" /> Message
-                        </button>
+                  ) : activeConnections.length === 0 ? (
+                    <div style={{
+                      textAlign: "center",
+                      padding: "60px 20px",
+                      color: "#666"
+                    }}>
+                      <div style={{ fontSize: "24px", fontWeight: "600", marginBottom: "12px", color: "#333" }}>
+                        No Active Connections
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            {activeTab === "incoming" && (
-              <div className={`connections-tab-content ${loadingIncoming ? 'loading' : ''}`}>
-                {loadingIncoming ? (
-                  <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
-                    Loading incoming requests...
-                  </div>
-                ) : incomingRequests.length === 0 ? (
-                  <div style={{ 
-                    textAlign: "center", 
-                    padding: "60px 20px", 
-                    color: "#666" 
-                  }}>
-                    <div style={{ fontSize: "24px", fontWeight: "600", marginBottom: "12px", color: "#333" }}>
-                      No Incoming Requests
+                      <div style={{ fontSize: "16px", color: "#999" }}>
+                        You don't have any active connections yet
+                      </div>
                     </div>
-                    <div style={{ fontSize: "16px", color: "#999" }}>
-                      You don't have any incoming connection requests
-                    </div>
-                  </div>
-                ) : (
-                  <div className="connections-page-grid">
-                    {incomingRequests.map((request) => (
-                      <div key={request.requestId || request._id || request.id} className="connections-page-item incoming-item">
-                        <div 
-                          className="connections-page-container"
-                          onClick={() => {
-                            const userId = request._id || request.id || request.userId;
-                            if (userId) {
-                              navigate("/userprofile", { state: { userId } });
-                            }
-                          }}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <img
-                            src={request.profileImage || request.image || profile1}
-                            alt={request.fullName || request.name || "User"}
-                            className="connections-page-avatar"
-                          />
-                          <div className="connection-name-content">
-                            <h3>{request.fullName || request.name || "Unknown"}</h3>
-                            <p>{request.username || request.city || request.address || ""}</p>
+                  ) : (
+                    <div className="connections-page-grid">
+                      {activeConnections.map((connection) => (
+                        <div key={connection._id || connection.id} className="connections-page-item">
+                          <div
+                            className="connections-page-container"
+                            onClick={() => {
+                              const userId = connection._id || connection.id || connection.userId;
+                              if (userId) {
+                                navigate("/userprofile", { state: { userId } });
+                              }
+                            }}
+                            style={{ cursor: "pointer" }}
+                          >
+                            <img
+                              src={connection.profileImage || connection.image || profile1}
+                              alt={connection.fullName || connection.name || "User"}
+                              className="connections-page-avatar"
+                            />
+                            <div className="connection-name-content">
+                              <h3>
+                                {connection.fullName || connection.name || "Unknown"}
+                              </h3>
+                              <p>{connection.username || connection.city || connection.address || ""}</p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="incoming-actions">
                           <button
-                            className="reject-btn"
+                            className="connections-page-message-btn"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleReject(request.requestId || request._id || request.id);
+                              handleMessage(connection);
                             }}
                           >
-                            <img src={wrongICon} alt="Reject"></img> Reject
-                          </button>
-                          <button
-                            className="accept-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAccept(request.requestId || request._id || request.id);
-                            }}
-                          >
-                            <img src={rightIcon} alt="Accept"></img> Accept
+                            <img src={messageIcon} alt="message" /> Message
                           </button>
                         </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {activeTab === "incoming" && (
+                <div className={`connections-tab-content ${loadingIncoming ? 'loading' : ''}`}>
+                  {loadingIncoming ? (
+                    <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
+                      Loading incoming requests...
+                    </div>
+                  ) : incomingRequests.length === 0 ? (
+                    <div style={{
+                      textAlign: "center",
+                      padding: "60px 20px",
+                      color: "#666"
+                    }}>
+                      <div style={{ fontSize: "24px", fontWeight: "600", marginBottom: "12px", color: "#333" }}>
+                        No Incoming Requests
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            {activeTab === "pending" && (
-              <div className={`connections-tab-content ${loadingPending ? 'loading' : ''}`}>
-                {loadingPending ? (
-                  <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
-                    Loading pending requests...
-                  </div>
-                ) : pendingRequests.length === 0 ? (
-                  <div style={{ 
-                    textAlign: "center", 
-                    padding: "60px 20px", 
-                    color: "#666" 
-                  }}>
-                    <div style={{ fontSize: "24px", fontWeight: "600", marginBottom: "12px", color: "#333" }}>
-                      No Pending Requests
+                      <div style={{ fontSize: "16px", color: "#999" }}>
+                        You don't have any incoming connection requests
+                      </div>
                     </div>
-                    <div style={{ fontSize: "16px", color: "#999" }}>
-                      You haven't sent any connection requests yet
-                    </div>
-                  </div>
-                ) : (
-                  <div className="connections-page-grid">
-                    {pendingRequests.map((request) => (
-                      <div key={request._id || request.id} className="connections-page-item pending-item" style={{ position: "relative" }}>
-                        <div 
-                          className="connections-page-container"
-                          onClick={() => {
-                            const userId = request._id || request.id || request.userId;
-                            if (userId) {
-                              navigate("/userprofile", { state: { userId } });
-                            }
-                          }}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <img
-                            src={request.profileImage || request.image || profile1}
-                            alt={request.fullName || request.name || "User"}
-                            className="connections-page-avatar"
-                          />
-                          <div className="connection-name-content">
-                            <h3>{request.fullName || request.name || "Unknown"}</h3>
-                            <p>{request.username || request.city || request.address || ""}</p>
+                  ) : (
+                    <div className="connections-page-grid">
+                      {incomingRequests.map((request) => (
+                        <div key={request.requestId || request._id || request.id} className="connections-page-item incoming-item">
+                          <div
+                            className="connections-page-container"
+                            onClick={() => {
+                              const userId = request._id || request.id || request.userId;
+                              if (userId) {
+                                navigate("/userprofile", { state: { userId } });
+                              }
+                            }}
+                            style={{ cursor: "pointer" }}
+                          >
+                            <img
+                              src={request.profileImage || request.image || profile1}
+                              alt={request.fullName || request.name || "User"}
+                              className="connections-page-avatar"
+                            />
+                            <div className="connection-name-content">
+                              <h3>{request.fullName || request.name || "Unknown"}</h3>
+                              <p>{request.username || request.city || request.address || ""}</p>
+                            </div>
+                          </div>
+                          <div className="incoming-actions">
+                            <button
+                              className="reject-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleReject(request.requestId || request._id || request.id);
+                              }}
+                            >
+                              <img src={wrongICon} alt="Reject"></img> Reject
+                            </button>
+                            <button
+                              className="accept-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAccept(request.requestId || request._id || request.id);
+                              }}
+                            >
+                              <img src={rightIcon} alt="Accept"></img> Accept
+                            </button>
                           </div>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const receiverId = request._id || request.id || request.userId;
-                            if (receiverId) {
-                              handleCancelPending(receiverId);
-                            }
-                          }}
-                          title="Cancel request"
-                          style={{
-                            position: "absolute",
-                            top: "12px",
-                            right: "12px",
-                            background: "#FBEAEA",
-                            border: "none",
-                            borderRadius: "50%",
-                            width: "32px",
-                            height: "32px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            padding: "0"
-                          }}
-                        >
-                          <img src={wrongICon} alt="Cancel" style={{ width: "16px", height: "16px" }}></img>
-                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {activeTab === "pending" && (
+                <div className={`connections-tab-content ${loadingPending ? 'loading' : ''}`}>
+                  {loadingPending ? (
+                    <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
+                      Loading pending requests...
+                    </div>
+                  ) : pendingRequests.length === 0 ? (
+                    <div style={{
+                      textAlign: "center",
+                      padding: "60px 20px",
+                      color: "#666"
+                    }}>
+                      <div style={{ fontSize: "24px", fontWeight: "600", marginBottom: "12px", color: "#333" }}>
+                        No Pending Requests
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                      <div style={{ fontSize: "16px", color: "#999" }}>
+                        You haven't sent any connection requests yet
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="connections-page-grid">
+                      {pendingRequests.map((request) => (
+                        <div key={request._id || request.id} className="connections-page-item pending-item" style={{ position: "relative" }}>
+                          <div
+                            className="connections-page-container"
+                            onClick={() => {
+                              const userId = request._id || request.id || request.userId;
+                              if (userId) {
+                                navigate("/userprofile", { state: { userId } });
+                              }
+                            }}
+                            style={{ cursor: "pointer" }}
+                          >
+                            <img
+                              src={request.profileImage || request.image || profile1}
+                              alt={request.fullName || request.name || "User"}
+                              className="connections-page-avatar"
+                            />
+                            <div className="connection-name-content">
+                              <h3>{request.fullName || request.name || "Unknown"}</h3>
+                              <p>{request.username || request.city || request.address || ""}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const receiverId = request._id || request.id || request.userId;
+                              if (receiverId) {
+                                handleCancelPending(receiverId);
+                              }
+                            }}
+                            title="Cancel request"
+                            style={{
+                              position: "absolute",
+                              top: "12px",
+                              right: "12px",
+                              background: "#FBEAEA",
+                              border: "none",
+                              borderRadius: "50%",
+                              width: "32px",
+                              height: "32px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
+                              padding: "0"
+                            }}
+                          >
+                            <img src={wrongICon} alt="Cancel" style={{ width: "16px", height: "16px" }}></img>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

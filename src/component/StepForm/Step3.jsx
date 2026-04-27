@@ -23,6 +23,16 @@ import "../../styles/style.css"
 // };
 const Step3 = ({ data, updateData, errors, touched }) => {
   const languages = [
+    { id: 'Hindi', name: 'Hindi' },
+    { id: 'Bengali', name: 'Bengali' },
+    { id: 'Marathi', name: 'Marathi' },
+    { id: 'Telugu', name: 'Telugu' },
+    { id: 'Tamil', name: 'Tamil' },
+    { id: 'Gujarati', name: 'Gujarati' },
+    { id: 'Urdu', name: 'Urdu' },
+    { id: 'Kannada', name: 'Kannada' },
+    { id: 'Odia', name: 'Odia' },
+    { id: 'Malayalam', name: 'Malayalam' },
     { id: 'English', name: 'English' },
     { id: 'Spanish', name: 'Spanish' }
   ];
@@ -50,8 +60,8 @@ const Step3 = ({ data, updateData, errors, touched }) => {
 
   return (
     <div className="step-content active">
-      <h2 className="step-title">Languages Spoken</h2>
-      <p className="step-description">Let others know about your languages</p>
+      <h2 className="step-title">Known Languages</h2>
+      <p className="step-description">Select the languages you can read, write, or speak.</p>
       
       <div className="form-group">
         <div className="habits-container">

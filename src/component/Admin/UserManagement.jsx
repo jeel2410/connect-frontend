@@ -65,7 +65,12 @@ const UserManagement = () => {
   return (
     <div className="admin-section">
       <div className="admin-section-header">
-        <h2 className="section-title">User Management</h2>
+        <div className="section-title-group">
+          <h2 className="section-title">User Management</h2>
+          <span className="admin-total-badge">
+            {loading ? "—" : `${totalUsers.toLocaleString()} users`}
+          </span>
+        </div>
         <div className="search-container">
           <Search size={20} className="search-icon" />
           <input

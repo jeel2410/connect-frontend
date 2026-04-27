@@ -26,7 +26,7 @@ const Admin = () => {
             <h1 className="admin-title">
               {activeTab === "users" && "User Management"}
               {activeTab === "skills" && "Skill Management"}
-              {activeTab === "habits" && "Habit Management"}
+              {activeTab === "habits" && "Hobby Management"}
               {activeTab === "companies" && "Company Management"}
               {activeTab === "interests" && "Interest Management"}
               {activeTab === "industries" && "Industry Management"}
@@ -38,7 +38,7 @@ const Admin = () => {
             <p className="admin-subtitle">
               {activeTab === "users" && "View and manage all users"}
               {activeTab === "skills" && "Add, edit, and delete skills"}
-              {activeTab === "habits" && "Add, edit, and delete habits"}
+              {activeTab === "habits" && "Add, edit, and delete hobbies"}
               {activeTab === "interests" && "Add, edit, and delete interests"}
               {activeTab === "industries" && "Add, edit, and delete industries"}
               {activeTab === "companies" && "Add, edit, and delete companies"}

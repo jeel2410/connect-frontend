@@ -17,17 +17,16 @@ const CityManagement = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCity, setEditingCity] = useState(null);
-  const [formData, setFormData] = useState({ name: "" });
+  const [formData, setFormData] = useState({ name: "", isMetro: false });
   const [submitting, setSubmitting] = useState(false);
   const itemsPerPage = 10;
 
-  // Fetch cities from API
   const fetchCities = async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await getCities(currentPage, itemsPerPage, searchTerm);
-      
+
       if (response.success && response.data) {
         setCities(response.data.cities || []);
         setPagination(response.data.pagination || {
@@ -49,7 +48,6 @@ const CityManagement = () => {
     fetchCities();
   }, [currentPage]);
 
-  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       if (currentPage === 1) {
@@ -77,13 +75,13 @@ const CityManagement = () => {
   };
 
   const handleAdd = () => {
-    setFormData({ name: "" });
+    setFormData({ name: "", isMetro: false });
     setIsAddModalOpen(true);
   };
 
   const handleEdit = (city) => {
     setEditingCity(city);
-    setFormData({ name: city.name || "" });
+    setFormData({ name: city.name || "", isMetro: city.isMetro || false });
     setIsEditModalOpen(true);
   };
 
@@ -95,7 +93,7 @@ const CityManagement = () => {
     try {
       setLoading(true);
       await deleteCity(cityId);
-      await fetchCities(); // Refresh the list
+      await fetchCities();
       if (currentPage > 1 && cities.length === 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -117,22 +115,22 @@ const CityManagement = () => {
     try {
       setSubmitting(true);
       if (isEditModalOpen) {
-        // Update existing city
         await updateCity(editingCity._id, {
           name: formData.name.trim(),
+          isMetro: formData.isMetro,
         });
       } else {
-        // Add new city
         await createCity({
           name: formData.name.trim(),
+          isMetro: formData.isMetro,
         });
       }
 
       setIsAddModalOpen(false);
       setIsEditModalOpen(false);
-      setFormData({ name: "" });
+      setFormData({ name: "", isMetro: false });
       setEditingCity(null);
-      await fetchCities(); // Refresh the list
+      await fetchCities();
     } catch (err) {
       alert(err.message || "Failed to save city");
     } finally {
@@ -167,25 +165,26 @@ const CityManagement = () => {
           <thead>
             <tr>
               <th>Name</th>
+              <th>Type</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="2" className="empty-state">
+                <td colSpan="3" className="empty-state">
                   Loading...
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan="2" className="empty-state" style={{ color: "red" }}>
+                <td colSpan="3" className="empty-state" style={{ color: "red" }}>
                   {error}
                 </td>
               </tr>
             ) : cities.length === 0 ? (
               <tr>
-                <td colSpan="2" className="empty-state">
+                <td colSpan="3" className="empty-state">
                   No cities found
                 </td>
               </tr>
@@ -193,6 +192,13 @@ const CityManagement = () => {
               cities.map((city) => (
                 <tr key={city._id}>
                   <td>{city.name || "N/A"}</td>
+                  <td>
+                    {city.isMetro ? (
+                      <span className="admin-total-badge">Metro</span>
+                    ) : (
+                      <span style={{ color: "#6E7B8B", fontSize: "13px" }}>Other</span>
+                    )}
+                  </td>
                   <td>
                     <div className="action-buttons">
                       <button
@@ -289,11 +295,22 @@ const CityManagement = () => {
                   type="text"
                   className="form-input"
                   value={formData.name}
-                  onChange={(e) => setFormData({ name: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Enter city name"
                   required
                   disabled={submitting}
                 />
+              </div>
+              <div className="form-groups" style={{ flexDirection: "row", alignItems: "center", gap: "10px" }}>
+                <input
+                  type="checkbox"
+                  id="add-isMetro"
+                  checked={formData.isMetro}
+                  onChange={(e) => setFormData({ ...formData, isMetro: e.target.checked })}
+                  disabled={submitting}
+                  style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                />
+                <label htmlFor="add-isMetro" style={{ marginBottom: 0, cursor: "pointer" }}>Metro City</label>
               </div>
               <div className="modal-actions">
                 <button
@@ -334,11 +351,22 @@ const CityManagement = () => {
                   type="text"
                   className="form-input"
                   value={formData.name}
-                  onChange={(e) => setFormData({ name: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Enter city name"
                   required
                   disabled={submitting}
                 />
+              </div>
+              <div className="form-groups" style={{ flexDirection: "row", alignItems: "center", gap: "10px" }}>
+                <input
+                  type="checkbox"
+                  id="edit-isMetro"
+                  checked={formData.isMetro}
+                  onChange={(e) => setFormData({ ...formData, isMetro: e.target.checked })}
+                  disabled={submitting}
+                  style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                />
+                <label htmlFor="edit-isMetro" style={{ marginBottom: 0, cursor: "pointer" }}>Metro City</label>
               </div>
               <div className="modal-actions">
                 <button

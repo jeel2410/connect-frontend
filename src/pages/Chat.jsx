@@ -410,20 +410,23 @@ export default function Chat() {
       <div className="dating-profile-wrapper">
         {/* <Sidebar /> */}
         <div className="chat-page-wrapper">
+        <div className="title-div">
+            <h1 className="inner-page-title"><span>Member</span><span className="title-highlight">Chat</span></h1>
+          </div>
           <div className="chat-container">
           <div className="chat-sidebar">
             <div className="chat-header">
-              <h1>Chat</h1>
-            </div>
-            
-            <div className="chat-search">
-              <img src={searchIcon} alt="Search" className="search-icon" />
-              <input 
-                type="text" 
-                placeholder="Search here." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+              <div className="chat-search">
+                <span className="chat-search-icon">
+                  <img src={searchIcon} alt="Search" />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Search here"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
             </div>
 
             <div className="chat-contacts">

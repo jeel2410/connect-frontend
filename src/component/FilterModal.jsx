@@ -392,7 +392,7 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
           <div className="filter-section">
             <label className="filter-label">Language</label>
             <div className="chip-group">
-              {["english", "spanish"].map((lang) => (
+              {["Hindi", "Bengali", "Marathi", "Telugu", "Tamil", "Gujarati", "Urdu", "Kannada", "Odia", "Malayalam", "English", "Spanish"].map((lang) => (
                 <button
                   key={lang}
                   className={`chip ${language === lang ? "chip-active" : ""}`}
@@ -408,7 +408,7 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
           <div className="filter-section">
             <label className="filter-label">Relationship</label>
             <div className="chip-group">
-              {["Married", "Unmarried"].map((status) => (
+              {["Single", "Married", "Divorced", "Prefer not to say"].map((status) => (
                 <button
                   key={status}
                   className={`chip ${
@@ -426,7 +426,7 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
           <div className="filter-section">
             <label className="filter-label">Religion</label>
             <div className="chip-group">
-              {["Hindu", "Christian", "Muslim", "Chirstian","Sikh"].map((rel) => (
+              {["Hinduism", "Islam", "Christianity", "Sikhism", "Buddhism", "Jainism"].map((rel) => (
                 <button
                   key={rel}
                   className={`chip ${religion === rel ? "chip-active" : ""}`}

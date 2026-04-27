@@ -17,6 +17,7 @@ import AuthImage from "../component/AuthImage";
 import logo from "../../src/assets/image/connect_logo.png";
 import { getCookie, setCookie, isAuthenticated, hasToken } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
+import sideImage from "../../src/assets/image/sideImage.png"
 
 const Profileverification = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -71,7 +72,7 @@ const Profileverification = () => {
       try {
         const token = getCookie("authToken");
         if (!token) return;
-        
+
         const response = await fetch(`${API_BASE_URL}/api/user/profile/progress`, {
           method: "GET",
           headers: {
@@ -79,22 +80,22 @@ const Profileverification = () => {
             "Content-Type": "application/json",
           },
         });
-        
+
         if (!response.ok) {
           return; // No saved progress or error
         }
-        
+
         const data = await response.json();
-        
+
         if (data.success && data.data) {
           const { lastCompletedStep, profile, isProfileComplete } = data.data;
-          
+
           // If profile is complete, redirect immediately
           if (isProfileComplete) {
             navigate("/", { replace: true });
             return;
           }
-          
+
           // If profile exists, populate form with ALL saved data
           if (profile) {
             // Fetch cities to match city name to ID
@@ -108,7 +109,7 @@ const Profileverification = () => {
                     "Content-Type": "application/json",
                   },
                 });
-                
+
                 if (citiesResponse.ok) {
                   const citiesResult = await citiesResponse.json();
                   if (citiesResult.success && citiesResult.data && citiesResult.data.city) {
@@ -133,18 +134,24 @@ const Profileverification = () => {
                 console.error("Error fetching cities for matching:", err);
               }
             }
-            
+
+            // Normalize marital status
+            let maritalStatus = profile.status || "";
+            if (maritalStatus === "Unmarried") {
+              maritalStatus = "Single";
+            }
+
             // Ensure we populate ALL fields from saved profile, not just empty ones
             formik.setValues({
               mobileNumber: phoneNumber || "",
               fullName: profile.fullName || "",
               city: cityId, // Use matched city ID instead of name
               religion: profile.religion || "",
-              maritalStatus: profile.status || "",
+              maritalStatus: maritalStatus,
               email: profile.email || "",
               gender: profile.gender || "",
-              birthDate: profile.dateOfBirth 
-                ? new Date(profile.dateOfBirth).toISOString().split('T')[0] 
+              birthDate: profile.dateOfBirth
+                ? new Date(profile.dateOfBirth).toISOString().split('T')[0]
                 : "",
               language: profile.preferredLanguage || "",
               habits: profile.habits || [],
@@ -154,7 +161,7 @@ const Profileverification = () => {
               company: profile.company || "",
               photo: profile.profileImage || null,
             });
-            
+
             // Set current step to next incomplete step
             // If lastCompletedStep is 8 but profile is not complete, stay on step 8
             // Otherwise, go to next step after lastCompletedStep
@@ -177,7 +184,7 @@ const Profileverification = () => {
         console.error("Error loading saved progress:", error);
       }
     };
-    
+
     loadSavedProgress();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -198,7 +205,7 @@ const Profileverification = () => {
     gender: Yup.string().required("Gender is required"),
     birthDate: Yup.string()
       .required("Date of birth is required")
-      .test("age-18", "You must be at least 18 years old", function(value) {
+      .test("age-18", "You must be at least 18 years old", function (value) {
         if (!value) return false;
         const birthDate = new Date(value);
         const today = new Date();
@@ -269,7 +276,7 @@ const Profileverification = () => {
 
         // Prepare FormData for file upload
         const formData = new FormData();
-        
+
         // Add text fields
         formData.append("fullName", values.fullName);
         // Only append city if it has a valid value (not empty string and is a valid ObjectId)
@@ -319,7 +326,7 @@ const Profileverification = () => {
 
         // Success
         setSuccess("Profile completed successfully! Redirecting...");
-        
+
         // Use window.location.href for full page reload to ensure cookie is properly read
         setTimeout(() => {
           window.location.href = "/";
@@ -349,13 +356,13 @@ const Profileverification = () => {
     } else {
       // Set the field value first
       formik.setFieldValue(field, value, false); // false = don't validate immediately
-      
+
       // Immediately clear error if value is provided (for required fields)
       // This prevents showing error when a valid value is selected
       if (value && formik.errors[field]) {
         formik.setFieldError(field, undefined);
       }
-      
+
       // Then validate to ensure the value is correct
       setTimeout(async () => {
         try {
@@ -380,7 +387,7 @@ const Profileverification = () => {
   // Helper function to extract step-specific data
   const getStepDataForSave = (stepNumber, values) => {
     const stepData = {};
-    
+
     switch (stepNumber) {
       case 1:
         if (values.fullName) stepData.fullName = values.fullName;
@@ -423,7 +430,7 @@ const Profileverification = () => {
       default:
         break;
     }
-    
+
     return stepData;
   };
 
@@ -432,12 +439,12 @@ const Profileverification = () => {
     try {
       const token = getCookie("authToken");
       if (!token) return;
-      
+
       // Prepare step-specific data
       const stepData = getStepDataForSave(stepNumber, formik.values);
-      
+
       const formData = new FormData();
-      
+
       // Add step-specific fields
       Object.keys(stepData).forEach(key => {
         if (stepData[key] !== null && stepData[key] !== undefined) {
@@ -453,7 +460,7 @@ const Profileverification = () => {
           }
         }
       });
-      
+
       // Add photo if it's step 8
       if (stepNumber === 8 && formik.values.photo) {
         if (formik.values.photo instanceof File) {
@@ -464,9 +471,9 @@ const Profileverification = () => {
           formData.append("profileImage", blob, "profile.jpg");
         }
       }
-      
+
       formData.append("stepNumber", stepNumber.toString());
-      
+
       const response = await fetch(`${API_BASE_URL}/api/user/profile/step`, {
         method: "POST",
         headers: {
@@ -474,9 +481,9 @@ const Profileverification = () => {
         },
         body: formData,
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         console.error("Error saving step:", data.message);
         // Don't throw error, just log it - user can still proceed
@@ -490,7 +497,7 @@ const Profileverification = () => {
   const nextStep = async () => {
     // Validate current step before proceeding
     const currentStepFields = getStepFields(currentStep);
-    
+
     // Mark all fields in current step as touched to show errors
     currentStepFields.forEach(field => {
       formik.setFieldTouched(field, true);
@@ -532,7 +539,7 @@ const Profileverification = () => {
 
   // Track previous step to detect backward navigation
   const [previousStep, setPreviousStep] = useState(1);
-  
+
   // Reload saved data when navigating backward (to ensure we show saved data for previous steps)
   useEffect(() => {
     // Only reload if we're going backward (currentStep < previousStep)
@@ -541,7 +548,7 @@ const Profileverification = () => {
         try {
           const token = getCookie("authToken");
           if (!token) return;
-          
+
           const response = await fetch(`${API_BASE_URL}/api/user/profile/progress`, {
             method: "GET",
             headers: {
@@ -549,15 +556,15 @@ const Profileverification = () => {
               "Content-Type": "application/json",
             },
           });
-          
+
           if (!response.ok) return;
-          
+
           const data = await response.json();
-          
+
           if (data.success && data.data && data.data.profile) {
             const profile = data.data.profile;
             const currentValues = formik.values;
-            
+
             // Fetch cities to match city name to ID
             let cityId = currentValues.city || "";
             if (profile.city) {
@@ -570,7 +577,7 @@ const Profileverification = () => {
                     "Content-Type": "application/json",
                   },
                 });
-                
+
                 if (citiesResponse.ok) {
                   const citiesResult = await citiesResponse.json();
                   if (citiesResult.success && citiesResult.data && citiesResult.data.city) {
@@ -595,7 +602,7 @@ const Profileverification = () => {
                 console.error("Error fetching cities for matching:", err);
               }
             }
-            
+
             // When going back, always reload saved data for that step to ensure it's displayed
             // Merge saved data with current formik values (saved data takes precedence for fields in previous steps)
             const updates = {
@@ -606,7 +613,7 @@ const Profileverification = () => {
               maritalStatus: profile.status || currentValues.maritalStatus || "",
               email: profile.email || currentValues.email || "",
               gender: profile.gender || currentValues.gender || "",
-              birthDate: profile.dateOfBirth 
+              birthDate: profile.dateOfBirth
                 ? new Date(profile.dateOfBirth).toISOString().split('T')[0]
                 : (currentValues.birthDate || ""),
               language: profile.preferredLanguage || currentValues.language || "",
@@ -618,7 +625,7 @@ const Profileverification = () => {
               photo: profile.profileImage || currentValues.photo || null,
               mobileNumber: phoneNumber || currentValues.mobileNumber || "",
             };
-            
+
             // Update formik values with merged data
             formik.setValues(prev => ({ ...prev, ...updates }));
           }
@@ -626,10 +633,10 @@ const Profileverification = () => {
           console.error("Error reloading step data:", error);
         }
       };
-      
+
       reloadStepData();
     }
-    
+
     // Update previous step
     setPreviousStep(currentStep);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -695,7 +702,10 @@ const Profileverification = () => {
 
   return (
     <div className="verification-wrapper">
-      <AuthImage></AuthImage>
+      {/* <AuthImage></AuthImage> */}
+      <div className="side-image-container">
+        <img src={sideImage} alt="Side Image" className="side-image" />
+      </div>
 
       <div className="right-side">
         <div className="container">
@@ -710,7 +720,7 @@ const Profileverification = () => {
 
             <div className="form-content">
               {renderStep()}
-              
+
               {/* API Error Message */}
               {apiError && (
                 <div className="message-error">

@@ -52,8 +52,8 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
   }, []);
   return (
     <div className="step-content active">
-      <h2 className="step-title">About You</h2>
-      <p className="step-description">Enter your credentials to continue</p>
+      <h2 className="step-title">Tell us about yourself</h2>
+      <p className="step-description">Share a brief introduction so others can know you better.</p>
 
       <div className="form-group">
         <div className="input-wrapper">
@@ -142,13 +142,12 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
             >
               <option value="">Select Religion</option>
              
-              <option value="Hindu">Hindu</option>
-               <option value="Muslim">Muslim</option>
-              <option value="christian">Christian</option>
-               <option value="christianity">Christianity</option>
-               <option value="Sikh">Sikh</option>
-                <option value="Other">Other</option>
-                
+              <option value="Hinduism">Hinduism</option>
+              <option value="Islam">Islam</option>
+              <option value="Christianity">Christianity</option>
+              <option value="Sikhism">Sikhism</option>
+              <option value="Buddhism">Buddhism</option>
+              <option value="Jainism">Jainism</option>
             </select>
             {touched?.religion && errors?.religion && (
               <div className="field-error-message">{errors.religion}</div>
@@ -171,9 +170,10 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
               className={touched?.maritalStatus && errors?.maritalStatus ? "input-error" : ""}
             >
               <option value="">Select Status</option>
+              <option value="Single">Single</option>
               <option value="Married">Married</option>
-              <option value="Unmarried">Unmarried</option>
               <option value="Divorced">Divorced</option>
+              <option value="Prefer not to say">Prefer not to say</option>
             </select>
             {touched?.maritalStatus && errors?.maritalStatus && (
               <div className="field-error-message">{errors.maritalStatus}</div>

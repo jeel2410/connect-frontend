@@ -61,10 +61,10 @@ const Likes = () => {
 
       if (data.success && data.data) {
         // Handle different possible response structures
-        const profiles = Array.isArray(data.data) 
-          ? data.data 
+        const profiles = Array.isArray(data.data)
+          ? data.data
           : (data.data.liked || data.data.profiles || data.data.likes || []);
-        
+
         setLikedProfiles(profiles);
       } else {
         setLikedProfiles([]);
@@ -109,10 +109,10 @@ const Likes = () => {
 
       if (data.success && data.data) {
         // Handle different possible response structures
-        const profiles = Array.isArray(data.data) 
-          ? data.data 
+        const profiles = Array.isArray(data.data)
+          ? data.data
           : (data.data.liked || data.data.profiles || data.data.likes || data.data.whoLikedMe || []);
-        
+
         setWhoLikedMe(profiles);
       } else {
         setWhoLikedMe([]);
@@ -159,17 +159,19 @@ const Likes = () => {
       <div className="dating-profile-wrapper">
         {/* <Sidebar /> */}
         <div className="likes-page-wrapper">
+          <div className="title-div">
+            <h1 className="inner-page-title"><span>Profile</span><span className="title-highlight">Likes</span></h1>
+          </div>
           <div className="likes-page-card">
             <div className="likes-page-header">
-              <h1>Likes</h1>
               {activeTab === "myFavorite" && (
                 <div className="likes-page-search">
                   <span className="likes-page-search-icon">
                     <img src={searchIcon} alt="search" />
                   </span>
-                  <input 
-                    type="text" 
-                    placeholder="Search here" 
+                  <input
+                    type="text"
+                    placeholder="Search here"
                     value={searchQuery}
                     onChange={handleSearchChange}
                   />
@@ -181,13 +183,13 @@ const Likes = () => {
                 className={`likes-page-tab ${activeTab === "myFavorite" ? "active" : ""}`}
                 onClick={() => setActiveTab("myFavorite")}
               >
-                <img src={blackHeart} alt="My Favorite"></img> My Favorite
+                <img src={blackHeart} alt="You Liked"></img> You Liked
               </button>
               <button
                 className={`likes-page-tab ${activeTab === "likes" ? "active" : ""}`}
                 onClick={() => setActiveTab("likes")}
               >
-                 <img src={outlineHeart} alt="Likes"></img>  Likes
+                <img src={outlineHeart} alt="Likes"></img>  Liked you
               </button>
             </div>
             {activeTab === "myFavorite" && (
@@ -197,10 +199,10 @@ const Likes = () => {
                     Loading profiles...
                   </div>
                 ) : likedProfiles.length === 0 ? (
-                  <div style={{ 
-                    textAlign: "center", 
-                    padding: "60px 20px", 
-                    color: "#666" 
+                  <div style={{
+                    textAlign: "center",
+                    padding: "60px 20px",
+                    color: "#666"
                   }}>
                     <div style={{ fontSize: "24px", fontWeight: "600", marginBottom: "12px", color: "#333" }}>
                       No Liked Profiles Found
@@ -225,7 +227,7 @@ const Likes = () => {
                             alt="favorite"
                           />
                         </button>
-                        <div 
+                        <div
                           className="like-profile-content"
                           onClick={() => {
                             const userId = user._id || user.id || user.userId;
@@ -258,10 +260,10 @@ const Likes = () => {
                     Loading profiles...
                   </div>
                 ) : whoLikedMe.length === 0 ? (
-                  <div style={{ 
-                    textAlign: "center", 
-                    padding: "60px 20px", 
-                    color: "#666" 
+                  <div style={{
+                    textAlign: "center",
+                    padding: "60px 20px",
+                    color: "#666"
                   }}>
                     <div style={{ fontSize: "24px", fontWeight: "600", marginBottom: "12px", color: "#333" }}>
                       No One Liked You Yet
@@ -286,7 +288,7 @@ const Likes = () => {
                             alt="favorite"
                           />
                         </button>
-                        <div 
+                        <div
                           className="like-profile-content"
                           onClick={() => {
                             const userId = user._id || user.id || user.userId;

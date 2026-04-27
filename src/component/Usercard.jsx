@@ -6,6 +6,18 @@ import heartfillIcon from "../../src/assets/image/fill_heart.png";
 import heartOutlineIcon from "../../src/assets/image/outline_icon.png";
 import blackcIcon from "../../src/assets/image/black_c.png";
 
+// Helper function to calculate age from date of birth
+const calculateAge = (dateOfBirth) => {
+  if (!dateOfBirth) return null;
+  const birthDate = new Date(dateOfBirth);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
 
 export default function Usercard({
   feedData = [],
@@ -21,15 +33,21 @@ export default function Usercard({
   // Map feed data to profile format
   const profiles =
     feedData && feedData.length > 0
-      ? feedData.map((item, index) => ({
-        id: item._id || item.id || index + 1,
-        userId: item._id || item.id,
-        name: item.fullName || item.name || "Unknown",
-        address: item.city || item.address || "Location not available",
-        image: item.profileImage || item.image || profile1,
-        verified: item.verified || false,
-        featured: item.featured || false,
-      }))
+      ? feedData.map((item, index) => {
+        const userId = item._id || item.id;
+        // Use age from API if available, otherwise calculate it
+        const age = item.age || calculateAge(item.dateOfBirth);
+        const name = item.fullName || item.name || "Unknown";
+        return {
+          id: userId || index + 1,
+          userId: userId,
+          name: age ? `${name} (${age})` : name,
+          industry: item.industry || "Industry not specified",
+          image: item.profileImage || item.image || profile1,
+          verified: item.verified || false,
+          featured: item.featured || false,
+        };
+      })
       : [];
 
   const handleLikeClick = (userId, e) => {
@@ -122,7 +140,7 @@ export default function Usercard({
               </div>
 
               <h3 className="profile-name">{profile.name}</h3>
-              <p className="profile-address">{profile.address}</p>
+              <p className="profile-address">{profile.industry}</p>
 
               <div
                 className="profile-actions"

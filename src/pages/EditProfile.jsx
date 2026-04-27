@@ -130,13 +130,17 @@ export default function EditProfile() {
           if (normalizedReligion) {
             const lowerReligion = normalizedReligion.toLowerCase();
             if (lowerReligion === "christianity" || lowerReligion === "christian") {
-              normalizedReligion = "Christian";
-            } else if (lowerReligion === "hindu") {
-              normalizedReligion = "Hindu";
+              normalizedReligion = "Christianity";
+            } else if (lowerReligion === "hindu" || lowerReligion === "hinduism") {
+              normalizedReligion = "Hinduism";
             } else if (lowerReligion === "muslim" || lowerReligion === "islam") {
-              normalizedReligion = "Muslim";
-            } else if (lowerReligion === "sikh") {
-              normalizedReligion = "Sikh";
+              normalizedReligion = "Islam";
+            } else if (lowerReligion === "sikh" || lowerReligion === "sikhism") {
+              normalizedReligion = "Sikhism";
+            } else if (lowerReligion === "buddhism" || lowerReligion === "buddhist") {
+              normalizedReligion = "Buddhism";
+            } else if (lowerReligion === "jainism" || lowerReligion === "jain") {
+              normalizedReligion = "Jainism";
             } else {
               // Capitalize first letter if not matching
               normalizedReligion = normalizedReligion.charAt(0).toUpperCase() + normalizedReligion.slice(1).toLowerCase();
@@ -154,6 +158,11 @@ export default function EditProfile() {
             }
           }
           
+          let normalizedStatus = profile.status || "";
+          if (normalizedStatus === "Unmarried") {
+            normalizedStatus = "Single";
+          }
+          
           setData({
             fullName: profile.fullName || "",
             phoneNumber: profile.phoneNumber || "",
@@ -162,7 +171,7 @@ export default function EditProfile() {
             city: "", // Will be set after cities list loads
             gender: profile.gender || "",
             religion: normalizedReligion,
-            status: profile.status || "",
+            status: normalizedStatus,
             preferredLanguage: [],
           });
           
@@ -1239,12 +1248,12 @@ export default function EditProfile() {
                       className={fieldErrors.religion ? "input-error" : ""}
                     >
                       <option value="">Select Religion</option>
-                      <option value="Hindu">Hindu</option>
-                      <option value="Muslim">Muslim</option>
-                      <option value="Christian">Christian</option>
+                      <option value="Hinduism">Hinduism</option>
+                      <option value="Islam">Islam</option>
                       <option value="Christianity">Christianity</option>
-                      <option value="Sikh">Sikh</option>
-                      <option value="Other">Other</option>
+                      <option value="Sikhism">Sikhism</option>
+                      <option value="Buddhism">Buddhism</option>
+                      <option value="Jainism">Jainism</option>
                     </select>
                     <span className="edit-profile-select-arrow">
                       <img src={dropdownIcon} alt="Dropdown"></img>
@@ -1274,9 +1283,10 @@ export default function EditProfile() {
                       className={fieldErrors.status ? "input-error" : ""}
                     >
                       <option value="">Select Status</option>
+                      <option value="Single">Single</option>
                       <option value="Married">Married</option>
-                      <option value="Unmarried">Unmarried</option>
                       <option value="Divorced">Divorced</option>
+                      <option value="Prefer not to say">Prefer not to say</option>
                     </select>
                     <span className="edit-profile-select-arrow">
                       <img src={dropdownIcon} alt="Dropdown"></img>
@@ -1310,7 +1320,7 @@ export default function EditProfile() {
                       </button>
                       {showLanguagesDropdown && (
                         <div className="edit-profile-dropdown-menu" style={{ position: "absolute", top: "100%", right: 0, backgroundColor: "white", border: "1px solid #E8EDF3", borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", maxHeight: "300px", overflowY: "auto", zIndex: 1000, minWidth: "200px", marginTop: "8px" }}>
-                          {["English", "Spanish"].map((language) => (
+                          {["Hindi", "Bengali", "Marathi", "Telugu", "Tamil", "Gujarati", "Urdu", "Kannada", "Odia", "Malayalam", "English", "Spanish"].map((language) => (
                             <div
                               key={language}
                               onClick={() => {
