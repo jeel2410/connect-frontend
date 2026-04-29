@@ -16,7 +16,7 @@ export default function Chat() {
   const navigate = useNavigate()
   const incomingUserId = location.state?.userId || null
   const incomingChatHistory = location.state?.chatHistory || null
-  
+
   const [selectedUserId, setSelectedUserId] = useState(null)
   const [selectedUserProfile, setSelectedUserProfile] = useState(null)
   const [chatMessages, setChatMessages] = useState([])
@@ -121,16 +121,14 @@ export default function Chat() {
         }
 
         const profileData = await profileResponse.json();
-        
+
         if (profileData.success && profileData.data) {
           const profile = profileData.data.profile || profileData.data;
           setSelectedUserProfile(profile);
           setSelectedUserId(incomingUserId);
-          
+
           // Set chat messages if chat history is available
           if (incomingChatHistory) {
-            // Handle different possible chat history structures
-            // Could be: array, { messages: [...] }, or { data: { messages: [...] } }
             let messages = [];
             if (Array.isArray(incomingChatHistory)) {
               messages = incomingChatHistory;
@@ -139,8 +137,7 @@ export default function Chat() {
             } else {
               messages = incomingChatHistory.messages || incomingChatHistory.chatHistory || [];
             }
-            
-            // Sort messages by createdAt (oldest first, so latest appears at bottom)
+
             const sortedMessages = messages.sort((a, b) => {
               const dateA = new Date(a.createdAt || a.created_at || 0);
               const dateB = new Date(b.createdAt || b.created_at || 0);

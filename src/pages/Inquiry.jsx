@@ -258,7 +258,7 @@ const Inquiry = () => {
                 </button>
                 <p className="inquiry-unsubscribe">
                   To unsubscribe from our promotional mailers —{" "}
-                  <a href="mailto:support@conect.in?subject=Unsubscribe" className="inquiry-unsubscribe-link">
+                  <a href="https://base.connect.in/unsubscribe/index-org.php" target="_blank" rel="noopener noreferrer" className="inquiry-unsubscribe-link">
                     Please click here
                   </a>
                 </p>
