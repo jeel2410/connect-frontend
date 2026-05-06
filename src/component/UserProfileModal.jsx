@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import userProfile from "../assets/image/userProfile.png"
+import femaleDefault from "../assets/image/userProfile.png"
+import maleDefault from "../assets/image/maleProfile.svg"
 import closeIcon from "../assets/image/close.png"
 import heartfillIcon from "../assets/image/fill_heart.png"
 import heartOutlineIcon from "../assets/image/outline_icon.png"
@@ -488,13 +489,14 @@ export default function UserProfileModal({ userId }) {
   const age = calculateAge(profileData.dateOfBirth);
   const interests = profileData.interests || [];
   const habits = profileData.habits || [];
+  const defaultAvatar = (profileData.gender || "").toLowerCase() === "male" ? maleDefault : femaleDefault;
 
   return (
     <div>
       <div className="user-profile-top-section">
         <div className="user-profile-avatar-section">
           <img
-            src={profileData.profileImage || userProfile}
+            src={profileData.profileImage || defaultAvatar}
             alt={profileData.fullName || "Profile"}
             className="user-profile-avatar"
             onClick={() => setIsImagePopupOpen(true)}
@@ -661,7 +663,7 @@ export default function UserProfileModal({ userId }) {
               <img src={closeIcon} alt="Close" />
             </button>
             <img
-              src={profileData.profileImage || userProfile}
+              src={profileData.profileImage || defaultAvatar}
               alt={profileData.fullName || "Profile"}
               className="image-popup-img"
             />

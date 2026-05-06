@@ -11,6 +11,7 @@ import CardManagement from "../component/Admin/CardManagement";
 import CityManagement from "../component/Admin/CityManagement";
 import BroadcastNotification from "../component/Admin/BroadcastNotification";
 import InquiryManagement from "../component/Admin/InquiryManagement";
+import AuthBannerManagement from "../component/Admin/AuthBannerManagement";
 import "../styles/admin.css";
 
 const Admin = () => {
@@ -34,6 +35,7 @@ const Admin = () => {
               {activeTab === "cities" && "City Management"}
               {activeTab === "broadcast" && "Broadcast Notification"}
               {activeTab === "inquiries" && "Inquiry Management"}
+              {activeTab === "auth-banners" && "Auth Banner Management"}
             </h1>
             <p className="admin-subtitle">
               {activeTab === "users" && "View and manage all users"}
@@ -46,6 +48,7 @@ const Admin = () => {
               {activeTab === "cities" && "Add, edit, and delete cities"}
               {activeTab === "broadcast" && "Send notifications to all users"}
               {activeTab === "inquiries" && "View all inquiries and import from CSV"}
+              {activeTab === "auth-banners" && "Manage desktop and mobile banners for login, OTP, and profile verification screens"}
             </p>
           </div>
           <div className="admin-content-body">
@@ -59,6 +62,7 @@ const Admin = () => {
             {activeTab === "cities" && <CityManagement />}
             {activeTab === "broadcast" && <BroadcastNotification />}
             {activeTab === "inquiries" && <InquiryManagement />}
+            {activeTab === "auth-banners" && <AuthBannerManagement />}
           </div>
         </div>
       </div>

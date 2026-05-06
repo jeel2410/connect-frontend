@@ -180,17 +180,18 @@ const Likes = () => {
             </div>
             <div className="likes-page-tabs">
               <button
-                className={`likes-page-tab ${activeTab === "myFavorite" ? "active" : ""}`}
-                onClick={() => setActiveTab("myFavorite")}
-              >
-                <img src={blackHeart} alt="You Liked"></img> You Liked
-              </button>
-              <button
                 className={`likes-page-tab ${activeTab === "likes" ? "active" : ""}`}
                 onClick={() => setActiveTab("likes")}
               >
                 <img src={outlineHeart} alt="Likes"></img>  Liked you
               </button>
+              <button
+                className={`likes-page-tab ${activeTab === "myFavorite" ? "active" : ""}`}
+                onClick={() => setActiveTab("myFavorite")}
+              >
+                <img src={blackHeart} alt="You Liked"></img> You Liked
+              </button>
+
             </div>
             {activeTab === "myFavorite" && (
               <>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="100" fill="#dce8f0"/>
+  <!-- Body/shoulders -->
+  <ellipse cx="100" cy="185" rx="62" ry="48" fill="#8aafc8"/>
+  <!-- Neck -->
+  <rect x="88" y="118" width="24" height="22" rx="4" fill="#a8c4d8"/>
+  <!-- Head -->
+  <circle cx="100" cy="95" r="38" fill="#a8c4d8"/>
+  <!-- Hair (short male style - flat top area) -->
+  <path d="M62 88 Q63 52 100 50 Q137 52 138 88 Q130 72 100 70 Q70 72 62 88Z" fill="#5a4a42"/>
+  <!-- Face skin -->
+  <circle cx="100" cy="97" r="33" fill="#f5c9a0"/>
+  <!-- Ears -->
+  <ellipse cx="67" cy="97" rx="5" ry="7" fill="#f0bc90"/>
+  <ellipse cx="133" cy="97" rx="5" ry="7" fill="#f0bc90"/>
+</svg>

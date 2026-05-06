@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import API_BASE_URL from "../utils/config";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
-import sideImage from "../../src/assets/image/sideImage.png"
+import DynamicAuthImage from "../component/DynamicAuthImage";
 
 const Register = () => {
   const [loading, setLoading] = useState(false);
@@ -121,14 +121,12 @@ const Register = () => {
     <div>
       <Header></Header>
       <div className="login-page">
-        <div className="side-image-container">
-          <img src={sideImage} alt="Side Image" className="side-image" />
-        </div>
+        <DynamicAuthImage />
         <div className="login-container">
           {/* <div className="login-header">
             <img src={logo} alt="Connect Logo"></img>
           </div> */}
-    
+
           <div className="login-content">
             <h1 className="login-title">Register / Login</h1>
             <form className="login-form" onSubmit={formik.handleSubmit}>

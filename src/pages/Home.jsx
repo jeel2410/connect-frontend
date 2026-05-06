@@ -529,7 +529,7 @@ export default function Home() {
               Profiles <span className="title-highlight">Near You</span>
             </h1>
           </div>
-          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "nowrap", justifyContent: "flex-start", width: "100%", minWidth: 0 }}>
+          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "nowrap", justifyContent: "flex-end", minWidth: 0 }}>
             <div style={{ position: "relative", display: "flex", alignItems: "center", flex: "0 1 280px", width: "100%", maxWidth: "280px", minWidth: 0 }}>
               <img
                 src={searchIcon}

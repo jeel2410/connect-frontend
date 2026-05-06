@@ -1171,3 +1171,92 @@ export const exportInquiriesToCSV = async (search = "", status = "") => {
     throw error;
   }
 };
+
+// Broadcast Offer Email API
+export const broadcastOfferEmail = async ({ title, description }) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/notifications/broadcast-offer`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ title, description }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to send offer email");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending broadcast offer email:", error);
+    throw error;
+  }
+};
+
+// Auth Banners API
+export const getAuthBanners = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/auth-banners`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch auth banners");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching auth banners:", error);
+    throw error;
+  }
+};
+
+export const createAuthBanner = async (formData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/auth-banners`, {
+      method: "POST",
+      headers: getAuthHeadersFormData(),
+      body: formData,
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to upload auth banner");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error uploading auth banner:", error);
+    throw error;
+  }
+};
+
+export const deleteAuthBanner = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/auth-banners/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to delete auth banner");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error deleting auth banner:", error);
+    throw error;
+  }
+};
+
+export const toggleAuthBanner = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/auth-banners/${id}/toggle`, {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to toggle auth banner");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error toggling auth banner:", error);
+    throw error;
+  }
+};

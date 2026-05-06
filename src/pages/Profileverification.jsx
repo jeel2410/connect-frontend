@@ -13,11 +13,10 @@ import Step5 from "../../src/component/StepForm/Step5";
 import Step6 from "../../src/component/StepForm/Step6";
 import Step7 from "../../src/component/StepForm/Step7";
 import Step8 from "../../src/component/StepForm/Step8";
-import AuthImage from "../component/AuthImage";
 import logo from "../../src/assets/image/connect_logo.png";
 import { getCookie, setCookie, isAuthenticated, hasToken } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
-import sideImage from "../../src/assets/image/sideImage.png"
+import DynamicAuthImage from "../component/DynamicAuthImage";
 
 const Profileverification = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -702,10 +701,7 @@ const Profileverification = () => {
 
   return (
     <div className="verification-wrapper">
-      {/* <AuthImage></AuthImage> */}
-      <div className="side-image-container">
-        <img src={sideImage} alt="Side Image" className="side-image" />
-      </div>
+      <DynamicAuthImage />
 
       <div className="right-side">
         <div className="container">
