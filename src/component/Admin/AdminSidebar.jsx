@@ -3,6 +3,7 @@ import { Users, Briefcase, Heart, LayoutDashboard, MapPin, Activity, Building2, 
 
 const AdminSidebar = ({ activeTab, setActiveTab }) => {
   const menuItems = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "users", label: "Users", icon: Users },
     { id: "skills", label: "Skills", icon: Briefcase },
     { id: "habits", label: "Hobbies", icon: Activity },
@@ -24,16 +25,15 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
           <span>Admin Panel</span>
         </div>
       </div>
-      
+
       <nav className="admin-sidebar-nav">
         {menuItems.map((item) => {
           const Icon = item.icon;
           return (
             <button
               key={item.id}
-              className={`admin-sidebar-item ${
-                activeTab === item.id ? "active" : ""
-              }`}
+              className={`admin-sidebar-item ${activeTab === item.id ? "active" : ""
+                }`}
               onClick={() => setActiveTab(item.id)}
             >
               <Icon size={20} />

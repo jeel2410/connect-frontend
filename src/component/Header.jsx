@@ -284,10 +284,10 @@ const Header = () => {
 
       if (data.success && data.data) {
         // Handle different possible response structures
-        const chats = Array.isArray(data.data) 
-          ? data.data 
+        const chats = Array.isArray(data.data)
+          ? data.data
           : (data.data.chats || data.data.list || []);
-        
+
         // Sum up all unseenCount values
         const totalUnread = chats.reduce((sum, chat) => {
           return sum + (chat.unseenCount || 0);
@@ -368,6 +368,9 @@ const Header = () => {
                   {unreadChatCount > 0 && (
                     <span className="chat-badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>
                   )}
+                </a>
+                <a href="/share" className={`nav-link ${location.pathname === "/share" ? "active" : ""}`}>
+                  Share
                 </a>
                 <a href="/offers" className={`nav-link ${location.pathname === "/offers" ? "active" : ""}`}>
                   Offers
@@ -491,6 +494,9 @@ const Header = () => {
                       <span className="chat-badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>
                     )}
                   </a>
+                  <a href="/share" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                    Share
+                  </a>
                   <a href="/offers" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     Offers
                   </a>
@@ -523,17 +529,17 @@ const Header = () => {
                 </div>
                 <div className="mobile-action-buttons">
                   {/* <div className="notification-wrapper"> */}
-                    <button className="mobile-icon-btn notification-btn" onClick={handleNotificationClick}>
-                      <img src={notification} alt="Notifications"></img>
-                      {unreadCount > 0 && (
-                        <span className="notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
-                      )}
-                    </button>
-                    <NotificationModal
-                      isOpen={notificationModalOpen}
-                      onClose={() => setNotificationModalOpen(false)}
-                      onNotificationRead={fetchUnreadCount}
-                    />
+                  <button className="mobile-icon-btn notification-btn" onClick={handleNotificationClick}>
+                    <img src={notification} alt="Notifications"></img>
+                    {unreadCount > 0 && (
+                      <span className="notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
+                    )}
+                  </button>
+                  <NotificationModal
+                    isOpen={notificationModalOpen}
+                    onClose={() => setNotificationModalOpen(false)}
+                    onNotificationRead={fetchUnreadCount}
+                  />
                   {/* </div> */}
                   <button className="mobile-icon-btn mobile-profile-btn" onClick={handleProfileClick} aria-label="My Profile">
                     <img src={profileIcon} alt="User"></img>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, Mail, Phone, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Mail, Phone, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
 import { getUsers } from "../../utils/adminApi";
 
 const UserManagement = () => {
@@ -7,6 +7,11 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
+  const [industryFilter, setIndustryFilter] = useState("");
+  const [interestFilter, setInterestFilter] = useState("");
+  const [religionFilter, setReligionFilter] = useState("");
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -22,7 +27,15 @@ const UserManagement = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await getUsers(currentPage, itemsPerPage, searchTerm);
+        const response = await getUsers(
+          currentPage,
+          itemsPerPage,
+          searchTerm,
+          cityFilter,
+          industryFilter,
+          interestFilter,
+          religionFilter
+        );
         
         if (response.success && response.data) {
           setUsers(response.data.users || []);
@@ -43,10 +56,10 @@ const UserManagement = () => {
 
     const timer = setTimeout(() => {
       fetchUsers();
-    }, searchTerm ? 500 : 0); // Debounce only for search, not for page changes
+    }, (searchTerm || cityFilter || industryFilter || interestFilter || religionFilter) ? 500 : 0);
 
     return () => clearTimeout(timer);
-  }, [currentPage, searchTerm]);
+  }, [currentPage, searchTerm, cityFilter, industryFilter, interestFilter, religionFilter]);
 
   const totalPages = pagination.totalPages;
   const totalUsers = pagination.totalItems;
@@ -71,52 +84,127 @@ const UserManagement = () => {
             {loading ? "—" : `${totalUsers.toLocaleString()} users`}
           </span>
         </div>
-        <div className="search-container">
-          <Search size={20} className="search-icon" />
-          <input
-            type="text"
-            placeholder="Search users by name, email, or phone..."
-            className="search-input"
-            value={searchTerm}
-            onChange={handleSearch}
-          />
+        <div className="search-controls-group">
+          <div className="search-container">
+            <Search size={20} className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search by name, email, phone..."
+              className="search-input"
+              value={searchTerm}
+              onChange={handleSearch}
+            />
+          </div>
+          <button 
+            className={`add-btn filter-trigger-btn ${isFilterExpanded || cityFilter || industryFilter || interestFilter || religionFilter ? "active" : ""}`}
+            onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+          >
+            <SlidersHorizontal size={16} />
+            <span>Advanced Filters</span>
+          </button>
         </div>
       </div>
+
+      {isFilterExpanded && (
+        <div className="admin-filters-panel">
+          <div className="filters-grid">
+            <div className="filter-field">
+              <label>City</label>
+              <input
+                type="text"
+                placeholder="Filter by city name..."
+                value={cityFilter}
+                onChange={(e) => { setCityFilter(e.target.value); setCurrentPage(1); }}
+              />
+            </div>
+            <div className="filter-field">
+              <label>Industry</label>
+              <input
+                type="text"
+                placeholder="Filter by industry..."
+                value={industryFilter}
+                onChange={(e) => { setIndustryFilter(e.target.value); setCurrentPage(1); }}
+              />
+            </div>
+            <div className="filter-field">
+              <label>Interest</label>
+              <input
+                type="text"
+                placeholder="Filter by interest..."
+                value={interestFilter}
+                onChange={(e) => { setInterestFilter(e.target.value); setCurrentPage(1); }}
+              />
+            </div>
+            <div className="filter-field">
+              <label>Religion</label>
+              <input
+                type="text"
+                placeholder="Filter by religion..."
+                value={religionFilter}
+                onChange={(e) => { setReligionFilter(e.target.value); setCurrentPage(1); }}
+              />
+            </div>
+          </div>
+          <div className="filters-actions">
+            {(cityFilter || industryFilter || interestFilter || religionFilter || searchTerm) && (
+              <button 
+                className="add-btn reset-filters-btn"
+                onClick={() => {
+                  setCityFilter("");
+                  setIndustryFilter("");
+                  setInterestFilter("");
+                  setReligionFilter("");
+                  setSearchTerm("");
+                  setCurrentPage(1);
+                }}
+              >
+                <X size={16} />
+                Clear All Filters
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="table-container">
         <table className="admin-table">
           <thead>
             <tr>
-              <th>First Name</th>
-              <th>Last Name</th>
+              <th>Full Name</th>
               <th>Email</th>
               <th>Phone Number</th>
+              <th>City</th>
+              <th>Industry</th>
+              <th>Religion</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="4" className="empty-state">
+                <td colSpan="6" className="empty-state">
                   Loading...
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan="4" className="empty-state" style={{ color: "red" }}>
+                <td colSpan="6" className="empty-state" style={{ color: "red" }}>
                   {error}
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan="4" className="empty-state">
+                <td colSpan="6" className="empty-state">
                   No users found
                 </td>
               </tr>
             ) : (
               users.map((user) => (
                 <tr key={user._id}>
-                  <td>{user.userDetails?.fullName?.split(" ")[0] || "N/A"}</td>
-                  <td>{user.userDetails?.fullName?.split(" ").slice(1).join(" ") || "N/A"}</td>
+                  <td>
+                    <span style={{ fontWeight: 600, color: "#09122E" }}>
+                      {user.userDetails?.fullName || "N/A"}
+                    </span>
+                  </td>
                   <td>
                     <div className="table-cell-with-icon">
                       <Mail size={16} />
@@ -128,6 +216,17 @@ const UserManagement = () => {
                       <Phone size={16} />
                       {user.phoneNumber || "N/A"}
                     </div>
+                  </td>
+                  <td>
+                    <span className="table-cell-badge badge-city">
+                      {user.userDetails?.city || "N/A"}
+                    </span>
+                  </td>
+                  <td>{user.userDetails?.industry || "N/A"}</td>
+                  <td>
+                    <span className="table-cell-badge badge-religion">
+                      {user.userDetails?.religion || "N/A"}
+                    </span>
                   </td>
                 </tr>
               ))

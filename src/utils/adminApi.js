@@ -19,7 +19,7 @@ const getAuthHeadersFormData = () => {
 };
 
 // Users API
-export const getUsers = async (page = 1, limit = 10, search = "") => {
+export const getUsers = async (page = 1, limit = 10, search = "", city = "", industry = "", interest = "", religion = "") => {
   try {
     const queryParams = new URLSearchParams({
       page: page.toString(),
@@ -27,6 +27,18 @@ export const getUsers = async (page = 1, limit = 10, search = "") => {
     });
     if (search) {
       queryParams.append("search", search);
+    }
+    if (city) {
+      queryParams.append("city", city);
+    }
+    if (industry) {
+      queryParams.append("industry", industry);
+    }
+    if (interest) {
+      queryParams.append("interest", interest);
+    }
+    if (religion) {
+      queryParams.append("religion", religion);
     }
 
     const response = await fetch(`${API_BASE_URL}/api/admin/users?${queryParams.toString()}`, {
@@ -1260,3 +1272,163 @@ export const toggleAuthBanner = async (id) => {
     throw error;
   }
 };
+
+/**
+ * Get count of users with incomplete profiles
+ * @param {string} days - Duration ('7', '15', '30', '45', 'all')
+ */
+export const getIncompleteProfileCount = async (days = 'all') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/notifications/broadcast-incomplete-profile-count?days=${days}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch incomplete profile count");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching incomplete profile count:", error);
+    throw error;
+  }
+};
+
+/**
+ * Send SMS to users with incomplete profiles
+ * @param {Object} data - { days, message }
+ */
+export const sendIncompleteProfileSms = async (data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/notifications/broadcast-incomplete-profile-sms`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to send incomplete profile SMS");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending incomplete profile SMS:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get count of all users filtered by registration duration
+ * @param {string} days - Duration ('7', '15', '30', '45', 'all')
+ */
+export const getGeneralUserCount = async (days = 'all') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/notifications/broadcast-user-count?days=${days}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch user count");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching user count:", error);
+    throw error;
+  }
+};
+
+/**
+ * Send general SMS broadcast
+ * @param {Object} data - { days, message, templateId }
+ */
+export const sendGeneralSmsBroadcast = async (data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/notifications/broadcast-general-sms`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to send general SMS broadcast");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending general SMS broadcast:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get count of users with email addresses filtered by registration duration
+ * @param {string} days - Duration ('7', '15', '30', '45', 'all')
+ */
+export const getTargetedEmailUserCount = async (days = 'all') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/notifications/broadcast-targeted-email-count?days=${days}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch email user count");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching email user count:", error);
+    throw error;
+  }
+};
+
+/**
+ * Send targeted HTML email broadcast
+ * @param {Object} data - { days, subject, htmlContent }
+ */
+export const sendTargetedEmailBroadcast = async (data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/notifications/broadcast-targeted-email`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to send targeted email broadcast");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending targeted email broadcast:", error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch core platform metrics snapshot for the Admin Dashboard
+ * @returns {Promise<Object>} API response with dashboard statistics
+ */
+export const getDashboardStats = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/dashboard-stats`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch dashboard stats");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching dashboard stats:", error);
+    throw error;
+  }
+};
+

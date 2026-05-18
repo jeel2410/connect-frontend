@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
-import profileImage from "../../src/assets/image/profile.png";
+import femaleDefault from "../../src/assets/image/userProfile.png";
+import maleDefault from "../../src/assets/image/maleProfile.png";
 import editIcon from "../../src/assets/image/edit (1).png";
 import passwordIcon from "../../src/assets/image/passwordIcon.png";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +10,9 @@ export default function ProfilecardHeader({ showChangePassword = true, profileDa
   const fileInputRef = useRef(null);
   
   const displayName = profileData?.fullName || "User";
-  const displayImage = profileData?.profileImage || profileImage;
+  const gender = (profileData?.gender || "").toLowerCase();
+  const defaultAvatar = gender === "male" ? maleDefault : femaleDefault;
+  const displayImage = profileData?.profileImage || defaultAvatar;
   
   const handleImageClick = () => {
     if (fileInputRef.current && showImageUpload) {

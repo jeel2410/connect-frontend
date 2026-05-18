@@ -9,6 +9,7 @@ import EditProfile from "./pages/EditProfile";
 import Connection from "./pages/Connection";
 import Like from "./pages/Like";
 import Chat from "./pages/Chat";
+import Share from "./pages/Share";
 import DeleteAccount from "./pages/DeleteAccount";
 import Register from "./pages/Register";
 import OtpVerification from "./pages/OtpVerification";
@@ -146,6 +147,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Chat />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/share"
+            element={
+              <ProtectedRoute>
+                <Share />
               </ProtectedRoute>
             }
           />

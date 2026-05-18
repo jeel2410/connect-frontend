@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import femaleDefault from "../../src/assets/image/userProfile.png";
-import maleDefault from "../../src/assets/image/maleProfile.svg";
+import maleDefault from "../../src/assets/image/maleProfile.png";
 import close from "../../src/assets/image/close.png";
 import heartfillIcon from "../../src/assets/image/fill_heart.png";
 import heartOutlineIcon from "../../src/assets/image/outline_icon.png";

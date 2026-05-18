@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import profileImage from "../../src/assets/image/profile.png";
+import femaleDefault from "../../src/assets/image/userProfile.png";
+import maleDefault from "../../src/assets/image/maleProfile.png";
 import profileIconActive from "../../src/assets/image/profileicon/profile.png";
 import profileIcon from "../../src/assets/image/profileicon/profile_black.png";
 import connectionIconActive from "../../src/assets/image/profileicon/connection_white.png";
@@ -24,7 +25,9 @@ export default function Sidebar({ profileData = null }) {
   const cachedProfile = profileData || getUserProfile();
 
   const displayName = cachedProfile?.fullName || "User";
-  const displayImage = cachedProfile?.profileImage || profileImage;
+  const gender = (cachedProfile?.gender || "").toLowerCase();
+  const defaultAvatar = gender === "male" ? maleDefault : femaleDefault;
+  const displayImage = cachedProfile?.profileImage || defaultAvatar;
 
   const handleDeleteAccount = async () => {
     try {

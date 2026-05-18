@@ -12,10 +12,11 @@ import CityManagement from "../component/Admin/CityManagement";
 import BroadcastNotification from "../component/Admin/BroadcastNotification";
 import InquiryManagement from "../component/Admin/InquiryManagement";
 import AuthBannerManagement from "../component/Admin/AuthBannerManagement";
+import Dashboard from "../component/Admin/Dashboard";
 import "../styles/admin.css";
 
 const Admin = () => {
-  const [activeTab, setActiveTab] = useState("users");
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   return (
     <div className="admin-page">
@@ -25,6 +26,7 @@ const Admin = () => {
         <div className="admin-main-content">
           <div className="admin-content-header">
             <h1 className="admin-title">
+              {activeTab === "dashboard" && "Dashboard"}
               {activeTab === "users" && "User Management"}
               {activeTab === "skills" && "Skill Management"}
               {activeTab === "habits" && "Hobby Management"}
@@ -38,6 +40,7 @@ const Admin = () => {
               {activeTab === "auth-banners" && "Auth Banner Management"}
             </h1>
             <p className="admin-subtitle">
+              {activeTab === "dashboard" && "Platform overview and core metrics snapshot"}
               {activeTab === "users" && "View and manage all users"}
               {activeTab === "skills" && "Add, edit, and delete skills"}
               {activeTab === "habits" && "Add, edit, and delete hobbies"}
@@ -52,6 +55,7 @@ const Admin = () => {
             </p>
           </div>
           <div className="admin-content-body">
+            {activeTab === "dashboard" && <Dashboard />}
             {activeTab === "users" && <UserManagement />}
             {activeTab === "skills" && <SkillManagement />}
             {activeTab === "habits" && <HabitManagement />}

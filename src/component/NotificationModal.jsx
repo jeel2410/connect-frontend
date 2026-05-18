@@ -47,10 +47,10 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
 
       if (data.success && data.data) {
         // Handle different possible response structures
-        const notificationList = Array.isArray(data.data) 
-          ? data.data 
+        const notificationList = Array.isArray(data.data)
+          ? data.data
           : (data.data.notifications || data.data.list || []);
-        
+
         setNotifications(notificationList);
       } else {
         setNotifications([]);
@@ -162,11 +162,11 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
       // Close the modal
       onClose();
       // Navigate to likes page and auto-select "likes" tab
-      navigate('/like', { state: { activeTab: 'likes' } });
+      navigate('/likes', { state: { activeTab: 'likes' } });
     } else if (notification.type === 'message') {
       // Get sender ID from notification
       let senderId = null;
-      
+
       // Check data.senderId first (from notification service)
       if (notification.data?.senderId) {
         senderId = notification.data.senderId;
@@ -187,7 +187,7 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
       if (senderId) {
         // Close the modal
         onClose();
-        
+
         // Try to fetch chat history, then navigate
         try {
           const token = getCookie("authToken");
@@ -280,7 +280,7 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
-    
+
     if (diffInSeconds < 60) {
       return "Just now";
     } else if (diffInSeconds < 3600) {
@@ -293,8 +293,8 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
       const days = Math.floor(diffInSeconds / 86400);
       return `${days} day${days > 1 ? "s" : ""} ago`;
     } else {
-      return date.toLocaleDateString("en-US", { 
-        month: "short", 
+      return date.toLocaleDateString("en-US", {
+        month: "short",
         day: "numeric",
         year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined
       });
@@ -343,10 +343,10 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
               {error}
             </div>
           ) : notifications.length === 0 ? (
-            <div style={{ 
-              textAlign: "center", 
-              padding: "60px 20px", 
-              color: "#666" 
+            <div style={{
+              textAlign: "center",
+              padding: "60px 20px",
+              color: "#666"
             }}>
               <div style={{ fontSize: "18px", fontWeight: "600", marginBottom: "12px", color: "#333" }}>
                 No Notifications
@@ -361,15 +361,15 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
                 const isLikeNotification = notification.type === 'like';
                 const isMessageNotification = notification.type === 'message';
                 const isClickable = isLikeNotification || isMessageNotification;
-                
+
                 // Only format message for like notifications, keep original for others
-                const notificationMessage = isLikeNotification 
+                const notificationMessage = isLikeNotification
                   ? formatNotificationMessage(notification)
                   : (notification.message || notification.body || notification.title || "Notification");
-                
+
                 return (
-                  <div 
-                    key={notification._id || notification.id} 
+                  <div
+                    key={notification._id || notification.id}
                     className={`notification-item ${!notification.isRead ? "unread" : ""} ${isClickable ? "clickable" : ""}`}
                     onClick={() => handleNotificationClick(notification)}
                     style={isClickable ? { cursor: 'pointer' } : {}}

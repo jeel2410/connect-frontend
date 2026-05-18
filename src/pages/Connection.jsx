@@ -8,7 +8,8 @@ import filterIcon from "../../src/assets/image/filterIcon.png";
 import messageIcon from "../../src/assets/image/bluemessageIcon.png";
 import wrongICon from "../../src/assets/image/wrong.png"
 import rightIcon from "../../src/assets/image/right.png"
-import profile1 from "../../src/assets/image/profile/profile1.png"
+import femaleDefault from "../../src/assets/image/userProfile.png";
+import maleDefault from "../../src/assets/image/maleProfile.png";
 import { getCookie } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 
@@ -515,7 +516,7 @@ const Connection = () => {
                             style={{ cursor: "pointer" }}
                           >
                             <img
-                              src={connection.profileImage || connection.image || profile1}
+                              src={connection.profileImage || connection.image || ((connection.gender || "").toLowerCase() === 'male' ? maleDefault : femaleDefault)}
                               alt={connection.fullName || connection.name || "User"}
                               className="connections-page-avatar"
                             />
@@ -575,7 +576,7 @@ const Connection = () => {
                             style={{ cursor: "pointer" }}
                           >
                             <img
-                              src={request.profileImage || request.image || profile1}
+                              src={request.profileImage || request.image || ((request.gender || "").toLowerCase() === 'male' ? maleDefault : femaleDefault)}
                               alt={request.fullName || request.name || "User"}
                               className="connections-page-avatar"
                             />
@@ -644,7 +645,7 @@ const Connection = () => {
                             style={{ cursor: "pointer" }}
                           >
                             <img
-                              src={request.profileImage || request.image || profile1}
+                              src={request.profileImage || request.image || ((request.gender || "").toLowerCase() === 'male' ? maleDefault : femaleDefault)}
                               alt={request.fullName || request.name || "User"}
                               className="connections-page-avatar"
                             />

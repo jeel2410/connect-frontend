@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import femaleDefault from "../assets/image/userProfile.png"
-import maleDefault from "../assets/image/maleProfile.svg"
+import maleDefault from "../assets/image/maleProfile.png"
 import closeIcon from "../assets/image/close.png"
 import heartfillIcon from "../assets/image/fill_heart.png"
 import heartOutlineIcon from "../assets/image/outline_icon.png"
@@ -249,11 +249,11 @@ export default function UserProfileModal({ userId }) {
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         // Show success toast notification
         toast.success("Connection request sent successfully!");
-        
+
         // After sending request, check if it was auto-accepted or refresh profile
         // For now, just refresh the profile to get updated status
         const profileResponse = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`, {
@@ -263,7 +263,7 @@ export default function UserProfileModal({ userId }) {
             "Content-Type": "application/json",
           },
         });
-        
+
         if (profileResponse.ok) {
           const profileData = await profileResponse.json();
           if (profileData.success && profileData.data) {
@@ -317,7 +317,7 @@ export default function UserProfileModal({ userId }) {
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         setIsConnected(false);
         // Refresh profile to get updated connection status
@@ -328,7 +328,7 @@ export default function UserProfileModal({ userId }) {
             "Content-Type": "application/json",
           },
         });
-        
+
         if (profileResponse.ok) {
           const profileData = await profileResponse.json();
           if (profileData.success && profileData.data) {
@@ -382,7 +382,7 @@ export default function UserProfileModal({ userId }) {
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         // Toggle the like status
         setIsLiked(!isLiked);
@@ -436,7 +436,7 @@ export default function UserProfileModal({ userId }) {
       }
 
       const data = await response.json();
-      
+
       // Navigate to chat page with userId and chat history data
       navigate("/chat", {
         state: {
@@ -508,14 +508,14 @@ export default function UserProfileModal({ userId }) {
           </div>
         </div>
         <div className="user-profile-social-btns">
-          <button 
+          <button
             className="user-profile-social-btn close-btn"
             onClick={handleClose}
             title="Close"
           >
             <img src={closeIcon} alt="Close"></img>
           </button>
-          <button 
+          <button
             className="user-profile-social-btn heartfill-btn"
             onClick={handleLike}
             disabled={sendingLike}
@@ -525,13 +525,13 @@ export default function UserProfileModal({ userId }) {
             <img src={isLiked ? heartfillIcon : heartOutlineIcon} alt={isLiked ? "Unlike" : "Like"}></img>
           </button>
           {!isConnected && (
-            <button 
+            <button
               className="user-profile-social-btn blackc-btn"
               onClick={handleConnect}
               disabled={sendingConnect || hasPendingRequest}
               title={
-                hasPendingRequest 
-                  ? 'Connection request pending' 
+                hasPendingRequest
+                  ? 'Connection request pending'
                   : 'Connect'
               }
             >
@@ -549,21 +549,21 @@ export default function UserProfileModal({ userId }) {
           )}
           {isConnected && (
             <>
-              <button 
+              <button
                 className="user-profile-social-btn message-btn"
                 onClick={handleMessage}
                 title="Send message"
               >
                 <img src={messageIcon} alt="Message"></img>
               </button>
-              <button 
+              <button
                 className="user-profile-social-btn remove-connection-btn"
                 onClick={handleRemoveConnection}
                 disabled={sendingConnect}
                 title="Remove connection"
                 style={{ opacity: sendingConnect ? 0.6 : 1 }}
               >
-                <img 
+                <img
                   src={blackcIcon}
                   style={{
                     backgroundColor: "white",
@@ -655,7 +655,7 @@ export default function UserProfileModal({ userId }) {
       {isImagePopupOpen && (
         <div className="image-popup-overlay" onClick={() => setIsImagePopupOpen(false)}>
           <div className="image-popup-content" onClick={(e) => e.stopPropagation()}>
-            <button 
+            <button
               className="image-popup-close-btn"
               onClick={() => setIsImagePopupOpen(false)}
               title="Close"
