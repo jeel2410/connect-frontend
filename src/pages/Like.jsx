@@ -7,7 +7,8 @@ import searchIcon from "../../src/assets/image/serachIcon.png";
 import outlineHeart from "../../src/assets/image/outline_icon.png"
 import blackHeart from "../../src/assets/image/black_icon.png"
 import heartIcon from "../../src/assets/image/favourite_Icon.png";
-import profile1 from "../../src/assets/image/profile/profile1.png"
+import femaleDefault from "../../src/assets/image/userProfile.png";
+import maleDefault from "../../src/assets/image/maleProfile.png";
 import { getCookie } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 
@@ -239,7 +240,7 @@ const Likes = () => {
                           style={{ cursor: "pointer" }}
                         >
                           <img
-                            src={user.profileImage || user.image || profile1}
+                            src={user.profileImage || user.image || ((user.gender || "").toLowerCase() === 'male' ? maleDefault : femaleDefault)}
                             alt={user.fullName || user.name || "User"}
                             className="like-avatar"
                           />
@@ -300,7 +301,7 @@ const Likes = () => {
                           style={{ cursor: "pointer" }}
                         >
                           <img
-                            src={user.profileImage || user.image || profile1}
+                            src={user.profileImage || user.image || ((user.gender || "").toLowerCase() === 'male' ? maleDefault : femaleDefault)}
                             alt={user.fullName || user.name || "User"}
                             className="like-avatar"
                           />

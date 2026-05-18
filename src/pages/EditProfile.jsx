@@ -724,7 +724,7 @@ export default function EditProfile() {
             {/* Header with Avatar */}
             <ProfilecardHeader 
               showChangePassword={false}
-              profileData={data.fullName ? { fullName: data.fullName, profileImage } : null}
+              profileData={data.fullName ? { fullName: data.fullName, profileImage, gender: data.gender } : null}
               onImageChange={handleImageChange}
               showImageUpload={true}
             ></ProfilecardHeader>

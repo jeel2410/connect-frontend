@@ -125,38 +125,6 @@ const OtpVerification = () => {
   });
 
   const handleOtpChange = (index, value) => {
-    if (value.length > 1) {
-      // Handle paste
-      const pastedOtp = value.slice(0, 6).split("");
-      const newOtp = [...otp];
-      pastedOtp.forEach((digit, i) => {
-        if (index + i < 6) {
-          newOtp[index + i] = digit;
-        }
-      });
-      setOtp(newOtp);
-
-      // Update formik value
-      const otpString = newOtp.join("");
-      formik.setFieldValue("otp", otpString);
-      setApiError("");
-      setSuccess("");
-
-      // Focus the next empty input or the last one
-      const nextIndex = Math.min(index + pastedOtp.length, 5);
-      if (inputRefs.current[nextIndex]) {
-        inputRefs.current[nextIndex].focus();
-      }
-
-      // Auto-submit if 6 digits entered
-      if (otpString.length === 6) {
-        setTimeout(() => {
-          formik.handleSubmit();
-        }, 100);
-      }
-      return;
-    }
-
     // Only allow numbers
     if (value && !/^\d$/.test(value)) {
       return;
@@ -176,6 +144,37 @@ const OtpVerification = () => {
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
+
+    // Auto-submit if 6 digits entered
+    if (otpString.length === 6) {
+      setTimeout(() => {
+        formik.handleSubmit();
+      }, 100);
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const data = e.clipboardData.getData("text").trim();
+    
+    // Only process if it's a number
+    if (!/^\d+$/.test(data)) return;
+
+    const pastedOtp = data.slice(0, 6).split("");
+    const newOtp = ["", "", "", "", "", ""];
+    pastedOtp.forEach((digit, i) => {
+      if (i < 6) newOtp[i] = digit;
+    });
+    
+    setOtp(newOtp);
+    const otpString = newOtp.join("");
+    formik.setFieldValue("otp", otpString);
+    setApiError("");
+    setSuccess("");
+
+    // Focus the last filled input
+    const lastIndex = Math.min(pastedOtp.length - 1, 5);
+    inputRefs.current[lastIndex]?.focus();
 
     // Auto-submit if 6 digits entered
     if (otpString.length === 6) {
@@ -278,20 +277,22 @@ const OtpVerification = () => {
             </p>
 
             <form className="login-form" onSubmit={formik.handleSubmit}>
-              <div className="otp-input-container">
+              <div className="otp-input-container" onPaste={handlePaste}>
                 {otp.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={(el) => (inputRefs.current[index] = el)}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    className={`otp-input ${formik.touched.otp && formik.errors.otp ? "input-error" : ""}`}
-                    value={digit}
-                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
-                    disabled={loading || formik.isSubmitting}
-                  />
+                    <input
+                      key={index}
+                      ref={(el) => (inputRefs.current[index] = el)}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="\d*"
+                      maxLength={1}
+                      autoComplete={index === 0 ? "one-time-code" : "off"}
+                      className={`otp-input ${formik.touched.otp && formik.errors.otp ? "input-error" : ""}`}
+                      value={digit}
+                      onChange={(e) => handleOtpChange(index, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(index, e)}
+                      disabled={loading || formik.isSubmitting}
+                    />
                 ))}
               </div>
 

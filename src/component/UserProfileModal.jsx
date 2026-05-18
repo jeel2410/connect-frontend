@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import femaleDefault from "../assets/image/userProfile.png"
-import maleDefault from "../assets/image/maleProfile.svg"
+import maleDefault from "../assets/image/maleProfile.png"
 import closeIcon from "../assets/image/close.png"
 import heartfillIcon from "../assets/image/fill_heart.png"
 import heartOutlineIcon from "../assets/image/outline_icon.png"
