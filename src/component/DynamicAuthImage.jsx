@@ -61,11 +61,11 @@ const DynamicAuthImage = () => {
       </div>
 
       {/* Mobile top banner — only rendered when a mobile banner exists */}
-      {/* {mobileSrc && (
+      {mobileSrc && (
         <div className="auth-mobile-banner">
           <img src={mobileSrc} alt="Connect" className="auth-mobile-banner-img" />
         </div>
-      )} */}
+      )}
     </>
   );
 };
