@@ -125,7 +125,26 @@ const OtpVerification = () => {
   });
 
   const handleOtpChange = (index, value) => {
-    // Only allow numbers
+    // Handle multi-digit input (mobile autofill / OTP suggestion fills full code)
+    if (value && value.length > 1) {
+      const digits = value.replace(/\D/g, "").slice(0, 6);
+      if (!digits) return;
+      const newOtp = ["", "", "", "", "", ""];
+      digits.split("").forEach((d, i) => { newOtp[i] = d; });
+      setOtp(newOtp);
+      const otpString = newOtp.join("");
+      formik.setFieldValue("otp", otpString);
+      setApiError("");
+      setSuccess("");
+      const lastIndex = Math.min(digits.length - 1, 5);
+      inputRefs.current[lastIndex]?.focus();
+      if (otpString.length === 6) {
+        setTimeout(() => { formik.handleSubmit(); }, 100);
+      }
+      return;
+    }
+
+    // Only allow single digit numbers
     if (value && !/^\d$/.test(value)) {
       return;
     }
@@ -150,6 +169,14 @@ const OtpVerification = () => {
       setTimeout(() => {
         formik.handleSubmit();
       }, 100);
+    }
+  };
+
+  // Fallback for browsers that fire 'input' event during autofill instead of 'change'
+  const handleOtpInput = (index, e) => {
+    const value = e.target.value;
+    if (value.length > 1) {
+      handleOtpChange(index, value);
     }
   };
 
@@ -277,7 +304,7 @@ const OtpVerification = () => {
             </p>
 
             <form className="login-form" onSubmit={formik.handleSubmit}>
-              <div className="otp-input-container" onPaste={handlePaste}>
+              <div className="otp-input-container">
                 {otp.map((digit, index) => (
                     <input
                       key={index}
@@ -285,12 +312,14 @@ const OtpVerification = () => {
                       type="text"
                       inputMode="numeric"
                       pattern="\d*"
-                      maxLength={1}
+                      maxLength={6}
                       autoComplete={index === 0 ? "one-time-code" : "off"}
                       className={`otp-input ${formik.touched.otp && formik.errors.otp ? "input-error" : ""}`}
                       value={digit}
                       onChange={(e) => handleOtpChange(index, e.target.value)}
+                      onInput={(e) => handleOtpInput(index, e)}
                       onKeyDown={(e) => handleKeyDown(index, e)}
+                      onPaste={handlePaste}
                       disabled={loading || formik.isSubmitting}
                     />
                 ))}
