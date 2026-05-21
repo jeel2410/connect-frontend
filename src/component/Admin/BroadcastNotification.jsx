@@ -197,11 +197,13 @@ function OfferEmailSection() {
 }
 
 // ─── Incomplete Profile SMS Section ───────────────────────────────────────────
-
+// NOTE: No message input field is required on the frontend because the broadcast SMS
+// is sent directly via the pre-approved MyToday BulkSMS template on the backend.
 function IncompleteProfileSmsSection() {
-  const [formData, setFormData] = useState({ days: "all", message: "" });
+  const [formData, setFormData] = useState({ days: "all" });
   const [userCount, setUserCount] = useState(0);
   const [loadingCount, setLoadingCount] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
@@ -225,9 +227,6 @@ function IncompleteProfileSmsSection() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.message.trim() && !formData.templateId.trim()) {
-      return setError("Please enter either an SMS message or a Template ID");
-    }
     if (userCount === 0) return setError("No users match the selected criteria");
 
     try {
@@ -235,13 +234,10 @@ function IncompleteProfileSmsSection() {
       setError(null);
       setSuccessMsg(null);
       const response = await sendIncompleteProfileSms({
-        days: formData.days,
-        message: formData.message.trim(),
-        templateId: formData.templateId.trim()
+        days: formData.days
       });
       if (response.success) {
-        setSuccessMsg(`SMS broadcast initiated to ${response.data.sent} users!`);
-        setFormData({ ...formData, message: "", templateId: "" });
+        setSuccessMsg(`SMS broadcast initiated to ${response.data?.sent || userCount} users!`);
         setTimeout(() => setSuccessMsg(null), 8000);
       } else {
         setError(response.message || "Failed to send SMS broadcast");
@@ -298,34 +294,6 @@ function IncompleteProfileSmsSection() {
               </p>
             </div>
           </div>
-        </div>
-
-        <div className="form-groups">
-          <label>SMS Message</label>
-          <textarea
-            className="form-input"
-            value={formData.message}
-            onChange={(e) => { setFormData({ ...formData, message: e.target.value }); setError(null); }}
-            placeholder="Hi {{name}}, complete your profile on Connect India to start finding matches! Visit: conect.in"
-            rows={3}
-            disabled={submitting}
-            style={{ resize: "vertical" }}
-          />
-          <p style={{ margin: "4px 0 0 0", fontSize: 11, color: "#94A3B8" }}>
-            Optional if using a Template ID. Use <code>{"{{name}}"}</code> for personalization.
-          </p>
-        </div>
-
-        <div className="form-groups">
-          <label>Template ID</label>
-          <input
-            type="text"
-            className="form-input"
-            value={formData.templateId}
-            onChange={(e) => setFormData({ ...formData, templateId: e.target.value })}
-            placeholder="e.g. HXa9e67bedbd3675f8adcc9b7a1..."
-            disabled={submitting}
-          />
         </div>
 
         <button type="submit" className="btn-primary" disabled={submitting || userCount === 0} style={{ background: "#7C3AED" }}
