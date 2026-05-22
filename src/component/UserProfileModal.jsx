@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import femaleDefault from "../assets/image/userProfile.png"
-import maleDefault from "../assets/image/maleProfile.png"
+import { getAvatar } from "../utils/avatarHelper"
 import closeIcon from "../assets/image/close.png"
 import heartfillIcon from "../assets/image/fill_heart.png"
 import heartOutlineIcon from "../assets/image/outline_icon.png"
@@ -489,7 +488,7 @@ export default function UserProfileModal({ userId }) {
   const age = calculateAge(profileData.dateOfBirth);
   const interests = profileData.interests || [];
   const habits = profileData.habits || [];
-  const defaultAvatar = (profileData.gender || "").toLowerCase() === "male" ? maleDefault : femaleDefault;
+  const defaultAvatar = getAvatar(profileData.gender, age || profileData.dateOfBirth);
 
   return (
     <div>

@@ -6,7 +6,7 @@ import Header from '../component/Header'
 import Footer from '../component/Footer'
 import Sidebar from '../component/Sidebar'
 import searchIcon from '../assets/image/serachIcon.png'
-import profile1 from '../assets/image/profile/profile1.png'
+import { getAvatar } from '../utils/avatarHelper'
 import sendIcon from "../assets/image/sendIcon.png"
 import { getCookie, getUserProfile } from '../utils/auth'
 import API_BASE_URL from '../utils/config'
@@ -460,7 +460,7 @@ export default function Chat() {
                     >
                       <div className="contact-avatar">
                         <img 
-                          src={chat.profileImage || profile1} 
+                          src={chat.profileImage || getAvatar(chat.gender, chat.dateOfBirth)}
                           alt={chat.fullName || "User"} 
                         />
                         {chat.unseenCount > 0 && (
@@ -500,7 +500,7 @@ export default function Chat() {
                 <div className="chat-main-header">
                   <div className="chat-main-avatar">
                     <img 
-                      src={selectedUserProfile.profileImage || profile1} 
+                      src={selectedUserProfile.profileImage || getAvatar(selectedUserProfile.gender, selectedUserProfile.dateOfBirth || selectedUserProfile.age || selectedUserProfile.birthDate)}
                       alt={selectedUserProfile.fullName || "User"} 
                     />
                   </div>

@@ -76,8 +76,8 @@ const Step7 = ({ data, updateData, errors, touched }) => {
 
   return (
     <div className="step-content active">
-      <h2 className="step-title">Upload Profile Photo</h2>
-      <p className="step-description">Add a clear photo to personalize your profile</p>
+      <h2 className="step-title">Upload Profile Photo (Optional)</h2>
+      <p className="step-description">Add a clear photo to personalize your profile, or skip it by clicking Submit</p>
       
       <div 
         className={`upload-container ${isDragging ? 'dragging' : ''} ${preview ? 'has-image' : ''} ${touched?.photo && errors?.photo ? 'upload-error' : ''}`}

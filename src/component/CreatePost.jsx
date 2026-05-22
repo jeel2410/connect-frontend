@@ -3,8 +3,6 @@ import { Image as ImageIcon, FileText, File, X, Send, Paperclip, Plus } from 'lu
 import API_BASE_URL from '../utils/config';
 import { getCookie, getUserProfile } from '../utils/auth';
 import { toast } from 'react-toastify';
-import femaleDefault from '../assets/image/userProfile.png';
-import maleDefault from '../assets/image/maleProfile.png';
 
 const CreatePost = ({ onPostCreated }) => {
   const [content, setContent] = useState('');

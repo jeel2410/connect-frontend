@@ -1,13 +1,12 @@
 import React from 'react';
 import { FileText, Image as ImageIcon, File } from 'lucide-react';
-import femaleDefault from '../assets/image/userProfile.png';
-import maleDefault from '../assets/image/maleProfile.png';
+import { getAvatar } from '../utils/avatarHelper';
 
 const PostCard = ({ post }) => {
   const { userId, content, attachments, createdAt } = post;
   const userDetail = userId?.userDetailId;
   const displayName = userDetail?.fullName || 'User';
-  const displayImage = userDetail?.profileImage || (userDetail?.gender === 'female' ? femaleDefault : maleDefault);
+  const displayImage = userDetail?.profileImage || getAvatar(userDetail?.gender, userDetail?.dateOfBirth);
   
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };

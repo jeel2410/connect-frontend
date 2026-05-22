@@ -230,9 +230,9 @@ const Profileverification = () => {
     industry: Yup.string().required("Industry is required"),
     company: Yup.string(),
     photo: Yup.mixed()
-      .required("Profile image is required")
+      .nullable()
       .test("fileSize", "File size must be less than 5MB", (value) => {
-        if (!value) return false;
+        if (!value) return true;
         if (value instanceof File) {
           return value.size <= 5 * 1024 * 1024;
         }

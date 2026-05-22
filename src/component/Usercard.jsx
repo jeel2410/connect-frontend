@@ -1,7 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import femaleDefault from "../../src/assets/image/userProfile.png";
-import maleDefault from "../../src/assets/image/maleProfile.png";
+import { getAvatar } from "../utils/avatarHelper";
 import close from "../../src/assets/image/close.png";
 import heartfillIcon from "../../src/assets/image/fill_heart.png";
 import heartOutlineIcon from "../../src/assets/image/outline_icon.png";
@@ -39,8 +38,7 @@ export default function Usercard({
         // Use age from API if available, otherwise calculate it
         const age = item.age || calculateAge(item.dateOfBirth);
         const name = item.fullName || item.name || "Unknown";
-        const gender = (item.gender || "").toLowerCase();
-        const defaultAvatar = gender === "male" ? maleDefault : femaleDefault;
+        const defaultAvatar = getAvatar(item.gender, age || item.dateOfBirth);
         return {
           id: userId || index + 1,
           userId: userId,
