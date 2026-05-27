@@ -49,6 +49,7 @@ const OtpVerification = () => {
       }
 
       try {
+        const trafficSource = localStorage.getItem("trafficSource");
         const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
           method: "POST",
           headers: {
@@ -57,6 +58,7 @@ const OtpVerification = () => {
           body: JSON.stringify({
             phoneNumber: storedPhoneNumber,
             otp: values.otp,
+            trafficSource,
           }),
         });
 
@@ -86,6 +88,7 @@ const OtpVerification = () => {
 
           // Save isProfileComplete status to cookie
           setCookie("isProfileComplete", isProfileComplete ? "true" : "false", 7);
+          localStorage.removeItem("trafficSource");
           // Handle redirect based on user status
           if (!isProfileComplete) {
             // New user with incomplete profile - redirect to register/profile completion

@@ -176,24 +176,25 @@ const UserManagement = () => {
               <th>City</th>
               <th>Industry</th>
               <th>Religion</th>
+              <th>Traffic Source</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="6" className="empty-state">
+                <td colSpan="7" className="empty-state">
                   Loading...
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan="6" className="empty-state" style={{ color: "red" }}>
+                <td colSpan="7" className="empty-state" style={{ color: "red" }}>
                   {error}
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan="6" className="empty-state">
+                <td colSpan="7" className="empty-state">
                   No users found
                 </td>
               </tr>
@@ -226,6 +227,11 @@ const UserManagement = () => {
                   <td>
                     <span className="table-cell-badge badge-religion">
                       {user.userDetails?.religion || "N/A"}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="table-cell-badge badge-source" style={{ backgroundColor: "#E2F0FD", color: "#0B63E5", textTransform: "capitalize" }}>
+                      {user.trafficSource || "direct"}
                     </span>
                   </td>
                 </tr>

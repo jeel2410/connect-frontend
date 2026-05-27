@@ -13,6 +13,7 @@ import BroadcastNotification from "../component/Admin/BroadcastNotification";
 import InquiryManagement from "../component/Admin/InquiryManagement";
 import AuthBannerManagement from "../component/Admin/AuthBannerManagement";
 import Dashboard from "../component/Admin/Dashboard";
+import TrafficSourceStats from "../component/Admin/TrafficSourceStats";
 import "../styles/admin.css";
 
 const Admin = () => {
@@ -38,6 +39,7 @@ const Admin = () => {
               {activeTab === "broadcast" && "Broadcast Notification"}
               {activeTab === "inquiries" && "Inquiry Management"}
               {activeTab === "auth-banners" && "Auth Banner Management"}
+              {activeTab === "traffic-sources" && "Traffic Sources"}
             </h1>
             <p className="admin-subtitle">
               {activeTab === "dashboard" && "Platform overview and core metrics snapshot"}
@@ -52,6 +54,7 @@ const Admin = () => {
               {activeTab === "broadcast" && "Send notifications to all users"}
               {activeTab === "inquiries" && "View all inquiries and import from CSV"}
               {activeTab === "auth-banners" && "Manage desktop and mobile banners for login, OTP, and profile verification screens"}
+              {activeTab === "traffic-sources" && "View registered user counts by traffic source parameters"}
             </p>
           </div>
           <div className="admin-content-body">
@@ -67,6 +70,7 @@ const Admin = () => {
             {activeTab === "broadcast" && <BroadcastNotification />}
             {activeTab === "inquiries" && <InquiryManagement />}
             {activeTab === "auth-banners" && <AuthBannerManagement />}
+            {activeTab === "traffic-sources" && <TrafficSourceStats />}
           </div>
         </div>
       </div>

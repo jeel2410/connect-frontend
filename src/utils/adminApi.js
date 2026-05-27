@@ -1432,3 +1432,29 @@ export const getDashboardStats = async () => {
   }
 };
 
+export const getTrafficSources = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/traffic-sources`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch traffic sources stats");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching traffic sources stats:", error);
+    throw error;
+  }
+};
+

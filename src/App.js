@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import Profileverification from "./pages/Profileverification";
@@ -50,6 +51,14 @@ const RootRoute = () => {
 };
 
 function App() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const source = params.get("source") || params.get("utm_source");
+    if (source) {
+      localStorage.setItem("trafficSource", source);
+    }
+  }, []);
+
   return (
     <GoogleOAuthProvider clientId="891198943361-e6pu3ag403m4s97gvbiuasgljgfbvcda.apps.googleusercontent.com">
       <Router>
