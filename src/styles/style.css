@@ -5855,11 +5855,6 @@ body {
   margin-bottom: 12px;
 }
 
-.dating-profile-info-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
 .dating-profile-info-item {
   border-bottom: 1px solid #DDE2EE;
   padding-bottom: 16px;

@@ -180,6 +180,10 @@ export default function ProfilepageCard({ profileData }) {
                 <label>Status</label>
                 <p>{profileData.status || "Not provided"}</p>
               </div>
+              <div className="dating-profile-info-item">
+                <label>Fast Connect</label>
+                <p>{profileData.fastConnect ? "Enabled" : "Disabled"}</p>
+              </div>
             </div>
 
             {profileData.preferredLanguage && (
