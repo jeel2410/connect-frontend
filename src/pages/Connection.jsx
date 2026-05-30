@@ -9,7 +9,7 @@ import messageIcon from "../../src/assets/image/bluemessageIcon.png";
 import wrongICon from "../../src/assets/image/wrong.png"
 import rightIcon from "../../src/assets/image/right.png"
 import { getAvatar } from "../utils/avatarHelper";
-import { getCookie } from "../utils/auth";
+import { getCookie, setCookie } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 
 const Connection = () => {
@@ -23,6 +23,8 @@ const Connection = () => {
   const [loadingPending, setLoadingPending] = useState(false);
   const [loadingIncoming, setLoadingIncoming] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [fastConnect, setFastConnect] = useState(false);
+  const [loadingFastConnect, setLoadingFastConnect] = useState(false);
 
   // Fetch active connections from API
   const fetchActiveConnections = async (search = "") => {
@@ -177,11 +179,87 @@ const Connection = () => {
     }
   };
 
+  // Fetch user profile to get fastConnect setting
+  const fetchUserProfile = async () => {
+    try {
+      const token = getCookie("authToken");
+      if (!token) return;
+      const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data && result.data.profile) {
+          setFastConnect(result.data.profile.fastConnect || false);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user profile for fastConnect:", error);
+    }
+  };
+
+  // Handle toggle Fast Connect option
+  const handleToggleFastConnect = async (checked) => {
+    try {
+      setLoadingFastConnect(true);
+      const token = getCookie("authToken");
+      if (!token) {
+        console.error("User not authenticated");
+        return;
+      }
+
+      // Optimistically set fastConnect state
+      setFastConnect(checked);
+
+      const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fastConnect: checked
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update Fast Connect setting");
+      }
+
+      const result = await response.json();
+      if (result.success && result.data && result.data.profile) {
+        setFastConnect(result.data.profile.fastConnect || false);
+        // Also update the userProfile cookie
+        const userProfile = getCookie("userProfile");
+        if (userProfile) {
+          try {
+            const parsed = JSON.parse(userProfile);
+            parsed.fastConnect = result.data.profile.fastConnect;
+            setCookie("userProfile", JSON.stringify(parsed), 7);
+          } catch (e) {
+            console.error("Error parsing/updating userProfile cookie", e);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error updating Fast Connect setting:", error);
+      // Revert in case of error
+      setFastConnect(!checked);
+    } finally {
+      setLoadingFastConnect(false);
+    }
+  };
+
   // Fetch all data when component mounts to show counts on all tabs
   useEffect(() => {
     fetchActiveConnections("");
     fetchPendingRequests("");
     fetchIncomingRequests("");
+    fetchUserProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -223,6 +301,7 @@ const Connection = () => {
         fetchActiveConnections(searchTerm);
         fetchPendingRequests(searchTerm);
         fetchIncomingRequests(searchTerm);
+        fetchUserProfile();
       }
     };
 
@@ -236,6 +315,7 @@ const Connection = () => {
       fetchActiveConnections(searchTerm);
       fetchPendingRequests(searchTerm);
       fetchIncomingRequests(searchTerm);
+      fetchUserProfile();
     }, 100);
 
     return () => {
@@ -543,6 +623,65 @@ const Connection = () => {
               )}
               {activeTab === "incoming" && (
                 <div className={`connections-tab-content ${loadingIncoming ? 'loading' : ''}`}>
+                  {/* Fast Connect Toggle */}
+                  <div className="fast-connect-wrapper" style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "16px 20px",
+                    background: "linear-gradient(135deg, rgba(234, 101, 10, 0.05) 0%, rgba(244, 63, 94, 0.05) 100%)",
+                    border: "1px solid rgba(234, 101, 10, 0.15)",
+                    borderRadius: "12px",
+                    marginBottom: "20px"
+                  }}>
+                    <div className="fast-connect-info" style={{ marginRight: "20px", textAlign: "left" }}>
+                      <h4 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#1F2937", fontFamily: "'Basier Square', sans-serif" }}>Fast Connect</h4>
+                      <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "#6B7280", fontFamily: "'Basier Square', sans-serif" }}>
+                        When enabled, connection requests sent to you are automatically accepted instantly without requiring your approval.
+                      </p>
+                    </div>
+                    <label className="toggle-switch" style={{
+                      position: "relative",
+                      display: "inline-block",
+                      width: "50px",
+                      height: "26px",
+                      flexShrink: 0
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={fastConnect}
+                        disabled={loadingFastConnect}
+                        onChange={(e) => handleToggleFastConnect(e.target.checked)}
+                        style={{ opacity: 0, width: 0, height: 0 }}
+                      />
+                      <span className="toggle-slider" style={{
+                        position: "absolute",
+                        cursor: "pointer",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: fastConnect ? "#EA650A" : "#ccc",
+                        transition: "0.4s",
+                        borderRadius: "34px",
+                        boxShadow: fastConnect ? "0 0 8px rgba(234, 101, 10, 0.4)" : "none",
+                        opacity: loadingFastConnect ? 0.7 : 1
+                      }}>
+                        <span className="toggle-circle" style={{
+                          position: "absolute",
+                          content: '""',
+                          height: "18px",
+                          width: "18px",
+                          left: fastConnect ? "28px" : "4px",
+                          bottom: "4px",
+                          backgroundColor: "white",
+                          transition: "0.4s",
+                          borderRadius: "50%"
+                        }}></span>
+                      </span>
+                    </label>
+                  </div>
+
                   {loadingIncoming ? (
                     <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
                       Loading incoming requests...

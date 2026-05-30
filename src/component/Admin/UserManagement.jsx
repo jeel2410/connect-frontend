@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Search, Mail, Phone, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
 import { getUsers } from "../../utils/adminApi";
+import API_BASE_URL from "../../utils/config";
+import { getCookie } from "../../utils/auth";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -20,6 +22,66 @@ const UserManagement = () => {
     itemsPerPage: 10,
   });
   const itemsPerPage = 10;
+
+  // Filter option lists
+  const [cities, setCities] = useState([]);
+  const [industries, setIndustries] = useState([]);
+  const [interests, setInterests] = useState([]);
+  const religions = ["Hinduism", "Islam", "Christianity", "Sikhism", "Buddhism", "Jainism"];
+
+  // Fetch filter options (cities, industries, interests)
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      const token = getCookie("authToken");
+      if (!token) return;
+
+      const headers = {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+
+      // Fetch cities
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/list/city`, { headers });
+        if (res.ok) {
+          const result = await res.json();
+          if (result.success && result.data && result.data.city) {
+            setCities(result.data.city);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching cities for filters:", err);
+      }
+
+      // Fetch industries
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/list/industries`, { headers });
+        if (res.ok) {
+          const result = await res.json();
+          if (result.success && result.data && result.data.industries) {
+            setIndustries(result.data.industries);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching industries for filters:", err);
+      }
+
+      // Fetch interests
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/list/interest`, { headers });
+        if (res.ok) {
+          const result = await res.json();
+          if (result.success && result.data && result.data.interests) {
+            setInterests(result.data.interests);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching interests for filters:", err);
+      }
+    };
+
+    fetchFilterOptions();
+  }, []);
 
   // Fetch users from API
   useEffect(() => {
@@ -110,39 +172,59 @@ const UserManagement = () => {
           <div className="filters-grid">
             <div className="filter-field">
               <label>City</label>
-              <input
-                type="text"
-                placeholder="Filter by city name..."
+              <select
                 value={cityFilter}
                 onChange={(e) => { setCityFilter(e.target.value); setCurrentPage(1); }}
-              />
+              >
+                <option value="">Select City</option>
+                {cities.map((city) => (
+                  <option key={city._id} value={city._id}>
+                    {city.name.charAt(0).toUpperCase() + city.name.slice(1)}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="filter-field">
               <label>Industry</label>
-              <input
-                type="text"
-                placeholder="Filter by industry..."
+              <select
                 value={industryFilter}
                 onChange={(e) => { setIndustryFilter(e.target.value); setCurrentPage(1); }}
-              />
+              >
+                <option value="">Select Industry</option>
+                {industries.map((ind) => (
+                  <option key={ind._id} value={ind._id}>
+                    {ind.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="filter-field">
               <label>Interest</label>
-              <input
-                type="text"
-                placeholder="Filter by interest..."
+              <select
                 value={interestFilter}
                 onChange={(e) => { setInterestFilter(e.target.value); setCurrentPage(1); }}
-              />
+              >
+                <option value="">Select Interest</option>
+                {interests.map((int) => (
+                  <option key={int._id} value={int.name}>
+                    {int.name.charAt(0).toUpperCase() + int.name.slice(1)}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="filter-field">
               <label>Religion</label>
-              <input
-                type="text"
-                placeholder="Filter by religion..."
+              <select
                 value={religionFilter}
                 onChange={(e) => { setReligionFilter(e.target.value); setCurrentPage(1); }}
-              />
+              >
+                <option value="">Select Religion</option>
+                {religions.map((rel) => (
+                  <option key={rel} value={rel}>
+                    {rel}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="filters-actions">

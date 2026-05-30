@@ -908,63 +908,6 @@ export default function EditProfile() {
                 )}
               </div>
 
-              <div className="edit-form-group" style={{ gridColumn: "span 2" }}>
-                <div className="fast-connect-wrapper" style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "16px 20px",
-                  background: "linear-gradient(135deg, rgba(234, 101, 10, 0.05) 0%, rgba(244, 63, 94, 0.05) 100%)",
-                  border: "1px solid rgba(234, 101, 10, 0.15)",
-                  borderRadius: "12px",
-                  marginTop: "10px"
-                }}>
-                  <div className="fast-connect-info" style={{ marginRight: "20px" }}>
-                    <h4 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#1F2937", fontFamily: "'Basier Square', sans-serif" }}>Fast Connect</h4>
-                    <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "#6B7280", fontFamily: "'Basier Square', sans-serif" }}>
-                      When enabled, connection requests sent to you are automatically accepted instantly without requiring your approval.
-                    </p>
-                  </div>
-                  <label className="toggle-switch" style={{
-                    position: "relative",
-                    display: "inline-block",
-                    width: "50px",
-                    height: "26px",
-                    flexShrink: 0
-                  }}>
-                    <input
-                      type="checkbox"
-                      checked={data.fastConnect || false}
-                      onChange={(e) => updateData("fastConnect", e.target.checked)}
-                      style={{ opacity: 0, width: 0, height: 0 }}
-                    />
-                    <span className="toggle-slider" style={{
-                      position: "absolute",
-                      cursor: "pointer",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundColor: data.fastConnect ? "#EA650A" : "#ccc",
-                      transition: "0.4s",
-                      borderRadius: "34px",
-                      boxShadow: data.fastConnect ? "0 0 8px rgba(234, 101, 10, 0.4)" : "none"
-                    }}>
-                      <span className="toggle-circle" style={{
-                        position: "absolute",
-                        content: '""',
-                        height: "18px",
-                        width: "18px",
-                        left: data.fastConnect ? "28px" : "4px",
-                        bottom: "4px",
-                        backgroundColor: "white",
-                        transition: "0.4s",
-                        borderRadius: "50%"
-                      }}></span>
-                    </span>
-                  </label>
-                </div>
-              </div>
             </div>
 
             {/* More Information Section */}

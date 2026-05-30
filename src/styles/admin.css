@@ -1324,7 +1324,8 @@
   letter-spacing: 0.5px;
 }
 
-.filter-field input {
+.filter-field input,
+.filter-field select {
   width: 100%;
   box-sizing: border-box;
   padding: 10px 14px;
@@ -1335,9 +1336,11 @@
   font-family: 'Inter', sans-serif;
   transition: all 0.2s ease;
   background-color: #F8F9FA;
+  height: 42px;
 }
 
-.filter-field input:focus {
+.filter-field input:focus,
+.filter-field select:focus {
   outline: none;
   border-color: #EA650A;
   background-color: #ffffff;
