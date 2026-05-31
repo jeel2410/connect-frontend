@@ -46,6 +46,14 @@ const Share = () => {
     setPosts([newPost, ...posts]);
   };
 
+  const handleReact = (postId, updatedReactions) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post._id === postId ? { ...post, reactions: updatedReactions } : post
+      )
+    );
+  };
+
   return (
     <>
       <Header />
@@ -72,7 +80,7 @@ const Share = () => {
               ) : (
                 <div className="posts-list">
                   {posts.map((post) => (
-                    <PostCard key={post._id} post={post} />
+                    <PostCard key={post._id} post={post} onReact={handleReact} />
                   ))}
                 </div>
               )}
