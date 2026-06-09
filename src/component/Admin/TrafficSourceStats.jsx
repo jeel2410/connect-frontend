@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BarChart3, Users, RefreshCw } from "lucide-react";
+import { BarChart3, Users, RefreshCw, Smile } from "lucide-react";
 import { getTrafficSources } from "../../utils/adminApi";
 
 const TrafficSourceStats = () => {
@@ -18,7 +18,14 @@ const TrafficSourceStats = () => {
       setError(null);
       const response = await getTrafficSources();
       if (response.success && response.data) {
-        setStats(response.data || []);
+        const rawData = response.data;
+        if (Array.isArray(rawData)) {
+          setStats(rawData);
+        } else if (rawData && Array.isArray(rawData.stats)) {
+          setStats(rawData.stats);
+        } else {
+          setStats([]);
+        }
       } else {
         setError(response.message || "Failed to load traffic source statistics");
       }
@@ -36,6 +43,7 @@ const TrafficSourceStats = () => {
   }, []);
 
   const totalUsers = stats.reduce((sum, item) => sum + item.count, 0);
+  const totalComplete = stats.reduce((sum, item) => sum + (item.completeCount || 0), 0);
 
   if (loading) {
     return (
@@ -92,6 +100,21 @@ const TrafficSourceStats = () => {
           </div>
         </div>
 
+        <div className="dashboard-stat-card card-theme-emerald">
+          <div className="card-top">
+            <div className="card-icon-container" style={{ background: "linear-gradient(135deg, #ECFDF5 0%, #A7F3D0 100%)", color: "#059669" }}>
+              <Smile size={24} />
+            </div>
+          </div>
+          <div className="card-middle">
+            <span className="card-value">{totalComplete.toLocaleString()}</span>
+            <h3 className="card-title">Completed Profiles</h3>
+          </div>
+          <div className="card-bottom">
+            <p className="card-desc">Users who completed the full registration flow</p>
+          </div>
+        </div>
+
         <div className="dashboard-stat-card card-theme-pink">
           <div className="card-top">
             <div className="card-icon-container" style={{ background: "linear-gradient(135deg, #FCE7F3 0%, #FBCFE8 100%)", color: "#BE185D" }}>
@@ -113,20 +136,23 @@ const TrafficSourceStats = () => {
           <thead>
             <tr>
               <th>Traffic Parameter</th>
-              <th>Registered Users Count</th>
+              <th>Registered Users</th>
+              <th>Completed Profiles</th>
+              <th>Completion Rate</th>
               <th>Percentage of Total</th>
             </tr>
           </thead>
           <tbody>
             {stats.length === 0 ? (
               <tr>
-                <td colSpan="3" className="empty-state">
+                <td colSpan="5" className="empty-state">
                   No traffic sources found.
                 </td>
               </tr>
             ) : (
               stats.map((item, index) => {
                 const percentage = totalUsers > 0 ? ((item.count / totalUsers) * 100).toFixed(1) : 0;
+                const completionRate = item.count > 0 ? (((item.completeCount || 0) / item.count) * 100).toFixed(1) : 0;
                 return (
                   <tr key={index}>
                     <td>
@@ -140,8 +166,18 @@ const TrafficSourceStats = () => {
                       </span>
                     </td>
                     <td>
+                      <span className="table-cell-badge" style={{ fontWeight: 600, backgroundColor: "#D1FAE5", color: "#065F46" }}>
+                        {(item.completeCount || 0).toLocaleString()} profiles
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ fontWeight: 600, color: "#065F46" }}>
+                        {completionRate}%
+                      </span>
+                    </td>
+                    <td>
                       <div style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%" }}>
-                        <div style={{ flex: 1, height: "8px", background: "#EDF2F7", borderRadius: "4px", overflow: "hidden", minWidth: "150px" }}>
+                        <div style={{ flex: 1, height: "8px", background: "#EDF2F7", borderRadius: "4px", overflow: "hidden", minWidth: "120px" }}>
                           <div style={{ width: `${percentage}%`, height: "100%", background: "#0B63E5", borderRadius: "4px" }}></div>
                         </div>
                         <span style={{ fontSize: "14px", fontWeight: 600, color: "#4A5568" }}>{percentage}%</span>

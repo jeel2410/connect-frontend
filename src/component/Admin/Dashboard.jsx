@@ -82,6 +82,17 @@ const Dashboard = () => {
       borderColor: "#38BDF8",
     },
     {
+      id: "complete-profiles",
+      title: "Completed Profiles",
+      value: stats?.totalCompleteProfiles || 0,
+      icon: Smile,
+      color: "emerald",
+      description: "Users who completed full registration",
+      accentBg: "linear-gradient(135deg, #ECFDF5 0%, #A7F3D0 100%)",
+      iconColor: "#059669",
+      borderColor: "#34D399",
+    },
+    {
       id: "connections",
       title: "Connection Requests",
       value: stats?.totalConnectionRequests || 0,
