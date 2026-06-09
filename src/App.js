@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import Profileverification from "./pages/Profileverification";
 import Search from "./pages/Search";
@@ -50,18 +50,26 @@ const RootRoute = () => {
   return <Home />;
 };
 
-function App() {
+// Component to dynamically track traffic sources from URL query parameters (even on redirects)
+const TrafficSourceTracker = () => {
+  const location = useLocation();
+
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     const source = params.get("source") || params.get("utm_source");
     if (source) {
       localStorage.setItem("trafficSource", source);
     }
-  }, []);
+  }, [location]);
 
+  return null;
+};
+
+function App() {
   return (
     <GoogleOAuthProvider clientId="891198943361-e6pu3ag403m4s97gvbiuasgljgfbvcda.apps.googleusercontent.com">
       <Router>
+        <TrafficSourceTracker />
         <Routes>
           {/* Root route - Shows Register if not authenticated, Home if authenticated */}
           <Route
