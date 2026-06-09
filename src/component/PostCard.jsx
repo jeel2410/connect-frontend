@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FileText, Image as ImageIcon, File } from 'lucide-react';
 import { getAvatar } from '../utils/avatarHelper';
 import { getCookie, getUserProfile } from '../utils/auth';
@@ -10,8 +10,9 @@ const PostCard = ({ post, onReact }) => {
   const userDetail = userId?.userDetailId;
   const displayName = userDetail?.fullName || 'User';
   const displayImage = userDetail?.profileImage || getAvatar(userDetail?.gender, userDetail?.dateOfBirth);
-  
+
   const [showEmojiBar, setShowEmojiBar] = useState(false);
+  const likeWrapperRef = useRef(null);
 
   const userProfile = getUserProfile();
   const currentUserId = userProfile?.originalid || userProfile?._id || userProfile?.id;
@@ -33,6 +34,22 @@ const PostCard = ({ post, onReact }) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (likeWrapperRef.current && !likeWrapperRef.current.contains(e.target)) {
+        setShowEmojiBar(false);
+      }
+    };
+    if (showEmojiBar) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showEmojiBar]);
+
+  const userReaction = (reactions || []).find(
+    (r) => r.userId?._id === currentUserId || r.userId === currentUserId
+  );
 
   const handleReactionClick = async (emoji) => {
     setShowEmojiBar(false);
@@ -64,19 +81,6 @@ const PostCard = ({ post, onReact }) => {
       console.error('Error reacting to post:', err);
       toast.error('Something went wrong. Please try again.');
     }
-  };
-
-  const handleCardClick = (e) => {
-    // Prevent triggering overlay when clicking links, buttons, images, files, or existing reaction displays
-    if (
-      e.target.closest('a') || 
-      e.target.closest('button') || 
-      e.target.closest('.post-reactions-display') || 
-      e.target.closest('.post-attachment-image')
-    ) {
-      return;
-    }
-    setShowEmojiBar(true);
   };
 
   const renderAttachment = (att, index) => {
@@ -115,7 +119,7 @@ const PostCard = ({ post, onReact }) => {
     .join(', ') + (totalReactionsCount > 10 ? ` and ${totalReactionsCount - 10} others` : '');
 
   return (
-    <div className="post-card" onClick={handleCardClick} style={{ position: 'relative' }}>
+    <div className="post-card">
       <div className="post-header">
         <img src={displayImage} alt={displayName} className="post-user-avatar" />
         <div className="post-user-info">
@@ -132,7 +136,7 @@ const PostCard = ({ post, onReact }) => {
         </div>
       )}
 
-      {/* Stacked Emojis Display Bar (Only show if there are reactions) */}
+      {/* Reactions count display */}
       {totalReactionsCount > 0 && (
         <div className="post-reactions-display">
           <div className="reaction-emoji-stack">
@@ -153,29 +157,35 @@ const PostCard = ({ post, onReact }) => {
         </div>
       )}
 
-      {/* Modern Blurred Reaction Overlay */}
-      {showEmojiBar && (
-        <div 
-          className="emoji-selection-overlay" 
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowEmojiBar(false);
-          }}
-        >
-          <div className="emoji-selection-overlay-bar" onClick={(e) => e.stopPropagation()}>
-            {EMOJIS.map((emoji) => (
-              <button
-                key={emoji}
-                className="emoji-btn"
-                onClick={() => handleReactionClick(emoji)}
-                title={REACTION_DETAILS[emoji]?.label}
-              >
-                {emoji}
-              </button>
-            ))}
-          </div>
+      {/* Action bar with Like button */}
+      <div className="post-actions-bar">
+        <div className="post-like-wrapper" ref={likeWrapperRef}>
+          {showEmojiBar && (
+            <div className="emoji-picker-popup">
+              {EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  className="emoji-btn"
+                  onClick={() => handleReactionClick(emoji)}
+                  title={REACTION_DETAILS[emoji]?.label}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          )}
+          <button
+            className={`post-like-btn ${userReaction ? 'reacted' : ''}`}
+            style={userReaction ? { color: REACTION_DETAILS[userReaction.reaction]?.color } : {}}
+            onClick={() => setShowEmojiBar((prev) => !prev)}
+          >
+            <span className="like-btn-emoji">
+              {userReaction ? userReaction.reaction : '👍'}
+            </span>
+            <span className="like-btn-label">Like</span>
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 };
