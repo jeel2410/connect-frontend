@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FileText, Image as ImageIcon, File } from 'lucide-react';
 import { getAvatar } from '../utils/avatarHelper';
 import { getCookie, getUserProfile } from '../utils/auth';
@@ -6,13 +7,20 @@ import API_BASE_URL from '../utils/config';
 import { toast } from 'react-toastify';
 
 const PostCard = ({ post, onReact }) => {
-  const { _id: postId, userId, content, attachments, createdAt, reactions } = post;
+  const { _id: postId, userId, content, attachments, createdAt, reactions, linkPreview } = post;
   const userDetail = userId?.userDetailId;
   const displayName = userDetail?.fullName || 'User';
   const displayImage = userDetail?.profileImage || getAvatar(userDetail?.gender, userDetail?.dateOfBirth);
 
   const [showEmojiBar, setShowEmojiBar] = useState(false);
   const likeWrapperRef = useRef(null);
+  const navigate = useNavigate();
+
+  const handleProfileClick = () => {
+    if (userId?._id) {
+      navigate('/userprofile', { state: { userId: userId._id } });
+    }
+  };
 
   const userProfile = getUserProfile();
   const currentUserId = userProfile?.originalid || userProfile?._id || userProfile?.id;
@@ -121,10 +129,54 @@ const PostCard = ({ post, onReact }) => {
   return (
     <div className="post-card">
       <div className="post-header">
-        <img src={displayImage} alt={displayName} className="post-user-avatar" />
-        <div className="post-user-info">
-          <h4 className="post-user-name">{displayName}</h4>
-          <span className="post-date">{formatDate(createdAt)}</span>
+        <div className="post-header-left">
+          <img 
+            src={displayImage} 
+            alt={displayName} 
+            className="post-user-avatar" 
+            onClick={handleProfileClick}
+          />
+          <div className="post-user-info">
+            <h4 className="post-user-name" onClick={handleProfileClick}>
+              {displayName}
+            </h4>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span className="post-date">{formatDate(createdAt)}</span>
+              {post.isApproved === false && (
+                <span className="pending-badge" style={{ background: '#FFF3CD', border: '1px solid #FFEBAA', color: '#856404', fontSize: '11px', fontWeight: '600', padding: '2px 8px', borderRadius: '12px' }}>
+                  Pending Admin Approval
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="post-header-right">
+          <div className="post-like-wrapper" ref={likeWrapperRef}>
+            {showEmojiBar && (
+              <div className="emoji-picker-popup">
+                {EMOJIS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    className="emoji-btn"
+                    onClick={() => handleReactionClick(emoji)}
+                    title={REACTION_DETAILS[emoji]?.label}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              className={`post-like-btn ${userReaction ? 'reacted' : ''}`}
+              style={userReaction ? { color: REACTION_DETAILS[userReaction.reaction]?.color } : {}}
+              onClick={() => setShowEmojiBar((prev) => !prev)}
+            >
+              <span className="like-btn-emoji">
+                {userReaction ? userReaction.reaction : '👍'}
+              </span>
+              <span className="like-btn-label">Like</span>
+            </button>
+          </div>
         </div>
       </div>
       <div className="post-content">
@@ -157,35 +209,6 @@ const PostCard = ({ post, onReact }) => {
         </div>
       )}
 
-      {/* Action bar with Like button */}
-      <div className="post-actions-bar">
-        <div className="post-like-wrapper" ref={likeWrapperRef}>
-          {showEmojiBar && (
-            <div className="emoji-picker-popup">
-              {EMOJIS.map((emoji) => (
-                <button
-                  key={emoji}
-                  className="emoji-btn"
-                  onClick={() => handleReactionClick(emoji)}
-                  title={REACTION_DETAILS[emoji]?.label}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          )}
-          <button
-            className={`post-like-btn ${userReaction ? 'reacted' : ''}`}
-            style={userReaction ? { color: REACTION_DETAILS[userReaction.reaction]?.color } : {}}
-            onClick={() => setShowEmojiBar((prev) => !prev)}
-          >
-            <span className="like-btn-emoji">
-              {userReaction ? userReaction.reaction : '👍'}
-            </span>
-            <span className="like-btn-label">Like</span>
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

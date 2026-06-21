@@ -11,12 +11,13 @@ const Share = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sortBy, setSortBy] = useState('latest');
 
   const fetchPosts = async () => {
     try {
       setLoading(true);
       const token = getCookie('authToken');
-      const response = await fetch(`${API_BASE_URL}/api/posts`, {
+      const response = await fetch(`${API_BASE_URL}/api/posts?sortBy=${sortBy}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -40,7 +41,7 @@ const Share = () => {
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [sortBy]);
 
   const handlePostCreated = (newPost) => {
     setPosts([newPost, ...posts]);
@@ -66,6 +67,21 @@ const Share = () => {
             <CreatePost onPostCreated={handlePostCreated} />
 
             <div className="posts-feed">
+              <div className="feed-header">
+                <h3 className="feed-title">Recent Articles</h3>
+                <div className="feed-sort-container">
+                  <span className="feed-sort-label">Sort by:</span>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="feed-sort-select"
+                  >
+                    <option value="latest">Latest</option>
+                    <option value="popularity">Popularity</option>
+                  </select>
+                </div>
+              </div>
+
               {loading ? (
                 <div className="posts-loading">
                   <div className="spinner"></div>

@@ -14,6 +14,7 @@ import InquiryManagement from "../component/Admin/InquiryManagement";
 import AuthBannerManagement from "../component/Admin/AuthBannerManagement";
 import Dashboard from "../component/Admin/Dashboard";
 import TrafficSourceStats from "../component/Admin/TrafficSourceStats";
+import PostApproval from "../component/Admin/PostApproval";
 import "../styles/admin.css";
 
 const Admin = () => {
@@ -29,6 +30,7 @@ const Admin = () => {
             <h1 className="admin-title">
               {activeTab === "dashboard" && "Dashboard"}
               {activeTab === "users" && "User Management"}
+              {activeTab === "post-approvals" && "Post Approvals"}
               {activeTab === "skills" && "Skill Management"}
               {activeTab === "habits" && "Hobby Management"}
               {activeTab === "companies" && "Company Management"}
@@ -44,6 +46,7 @@ const Admin = () => {
             <p className="admin-subtitle">
               {activeTab === "dashboard" && "Platform overview and core metrics snapshot"}
               {activeTab === "users" && "View and manage all users"}
+              {activeTab === "post-approvals" && "Review and approve/reject newly shared posts or links"}
               {activeTab === "skills" && "Add, edit, and delete skills"}
               {activeTab === "habits" && "Add, edit, and delete hobbies"}
               {activeTab === "interests" && "Add, edit, and delete interests"}
@@ -60,6 +63,7 @@ const Admin = () => {
           <div className="admin-content-body">
             {activeTab === "dashboard" && <Dashboard />}
             {activeTab === "users" && <UserManagement />}
+            {activeTab === "post-approvals" && <PostApproval />}
             {activeTab === "skills" && <SkillManagement />}
             {activeTab === "habits" && <HabitManagement />}
             {activeTab === "interests" && <InterestManagement />}
