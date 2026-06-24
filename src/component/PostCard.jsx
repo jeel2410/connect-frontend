@@ -180,8 +180,22 @@ const PostCard = ({ post, onReact }) => {
         </div>
       </div>
       <div className="post-content">
-        <p>{content}</p>
+        <p style={{ whiteSpace: 'pre-line' }}>{content}</p>
       </div>
+      {linkPreview && linkPreview.url && (
+        <div className="post-link-preview" style={{ display: 'flex', gap: '16px', border: '1px solid #E8EDF3', borderRadius: '8px', overflow: 'hidden', background: '#F8F9FB', marginBottom: '16px', marginTop: '8px' }}>
+          {linkPreview.image && (
+            <img src={linkPreview.image} alt="preview" style={{ width: '150px', height: '100px', objectFit: 'cover', flexShrink: 0 }} />
+          )}
+          <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
+            <h5 style={{ fontSize: '14px', fontWeight: '700', margin: '0 0 6px 0', color: '#09122E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{linkPreview.title || 'External Link'}</h5>
+            {linkPreview.description && (
+              <p style={{ fontSize: '12px', color: '#777E90', margin: '0 0 8px 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{linkPreview.description}</p>
+            )}
+            <a href={linkPreview.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#EA650A', fontWeight: '600', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{linkPreview.url}</a>
+          </div>
+        </div>
+      )}
       {attachments && attachments.length > 0 && (
         <div className="post-attachments">
           {attachments.map((att, index) => renderAttachment(att, index))}

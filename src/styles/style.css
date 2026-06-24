@@ -8068,6 +8068,16 @@ like page */
   box-shadow: 0 6px 15px rgba(234, 101, 10, 0.3);
 }
 
+.create-post-option-btn {
+  background: #FF852D !important;
+  box-shadow: 0 4px 12px rgba(255, 133, 45, 0.2) !important;
+}
+
+.create-post-option-btn:hover {
+  background: #E67322 !important;
+  box-shadow: 0 6px 15px rgba(255, 133, 45, 0.3) !important;
+}
+
 .create-post-form-card {
   background: white;
   border: 1px solid #DDE2EE;
@@ -8350,13 +8360,13 @@ like page */
 }
 
 .link-btn-variant {
-  background: #353945 !important;
-  box-shadow: 0 4px 10px rgba(53, 57, 69, 0.2) !important;
+  background: #4C505D !important;
+  box-shadow: 0 4px 10px rgba(76, 80, 93, 0.2) !important;
 }
 
 .link-btn-variant:hover {
-  background: #23262F !important;
-  box-shadow: 0 6px 15px rgba(53, 57, 69, 0.3) !important;
+  background: #3A3E48 !important;
+  box-shadow: 0 6px 15px rgba(76, 80, 93, 0.3) !important;
 }
 
 .post-content {

@@ -18,7 +18,53 @@ const CreatePost = ({ onPostCreated }) => {
   const [targetIndustries, setTargetIndustries] = useState([]);
   const [targetAgeGroups, setTargetAgeGroups] = useState([]);
   const [industriesList, setIndustriesList] = useState([]);
+  const [linkPreview, setLinkPreview] = useState(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!shareLink) {
+      setLinkPreview(null);
+      return;
+    }
+
+    const urlPattern = /https?:\/\/[^\s]+/i;
+    if (!urlPattern.test(shareLink.trim())) {
+      setLinkPreview(null);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        setLoadingPreview(true);
+        const token = getCookie('authToken');
+        const response = await fetch(`${API_BASE_URL}/api/posts/link-preview?url=${encodeURIComponent(shareLink.trim())}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setLinkPreview(result.data);
+          } else {
+            setLinkPreview(null);
+          }
+        } else {
+          setLinkPreview(null);
+        }
+      } catch (err) {
+        console.error('Error fetching preview:', err);
+        setLinkPreview(null);
+      } finally {
+        setLoadingPreview(false);
+      }
+    }, 1000); // 1s debounce
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [shareLink]);
 
   useEffect(() => {
     const fetchIndustries = async () => {
@@ -66,6 +112,8 @@ const CreatePost = ({ onPostCreated }) => {
     setTargetCity(false);
     setTargetIndustries([]);
     setTargetAgeGroups([]);
+    setLinkPreview(null);
+    setLoadingPreview(false);
     setIsExpanded(false);
     setShowOptions(false);
   };
@@ -133,6 +181,8 @@ const CreatePost = ({ onPostCreated }) => {
         setTargetCity(false);
         setTargetIndustries([]);
         setTargetAgeGroups([]);
+        setLinkPreview(null);
+        setLoadingPreview(false);
         setIsExpanded(false);
         setShowOptions(false);
         if (onPostCreated) onPostCreated(data.data);
@@ -159,7 +209,7 @@ const CreatePost = ({ onPostCreated }) => {
           ) : (
             <div className="share-options-container" style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
               <button
-                className="create-btn-main"
+                className="create-btn-main create-post-option-btn"
                 onClick={() => {
                   setShareType('post');
                   setIsExpanded(true);
@@ -207,6 +257,25 @@ const CreatePost = ({ onPostCreated }) => {
                   onChange={(e) => setShareLink(e.target.value)}
                 />
               </div>
+
+              {/* Dynamic Link Preview */}
+              {loadingPreview && (
+                <div style={{ fontSize: '12px', color: '#777E90', padding: '8px', fontStyle: 'italic' }}>Fetching link preview...</div>
+              )}
+              {linkPreview && linkPreview.url && (
+                <div className="post-link-preview-edit" style={{ display: 'flex', gap: '16px', border: '1px solid #E8EDF3', borderRadius: '8px', overflow: 'hidden', background: '#F8F9FB', marginTop: '-8px' }}>
+                  {linkPreview.image && (
+                    <img src={linkPreview.image} alt="preview" style={{ width: '150px', height: '100px', objectFit: 'cover', flexShrink: 0 }} />
+                  )}
+                  <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
+                    <h5 style={{ fontSize: '14px', fontWeight: '700', margin: '0 0 6px 0', color: '#09122E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{linkPreview.title || 'External Link'}</h5>
+                    {linkPreview.description && (
+                      <p style={{ fontSize: '12px', color: '#777E90', margin: '0 0 8px 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{linkPreview.description}</p>
+                    )}
+                    <a href={linkPreview.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#EA650A', fontWeight: '600', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{linkPreview.url}</a>
+                  </div>
+                </div>
+              )}
 
               <div className="reason-input-group">
                 <label style={{ fontSize: '14px', fontWeight: '600', color: '#353945', marginBottom: '6px', display: 'block' }}>Why are you sharing this? <span style={{ color: '#EA650A' }}>*</span></label>
