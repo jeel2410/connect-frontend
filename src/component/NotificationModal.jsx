@@ -235,6 +235,11 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
           });
         }
       }
+    } else if (notification.type === 'post') {
+      // Close the modal
+      onClose();
+      // Navigate to share page
+      navigate('/share');
     }
   };
 
@@ -360,7 +365,8 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
               {notifications.map((notification) => {
                 const isLikeNotification = notification.type === 'like';
                 const isMessageNotification = notification.type === 'message';
-                const isClickable = isLikeNotification || isMessageNotification;
+                const isPostNotification = notification.type === 'post';
+                const isClickable = isLikeNotification || isMessageNotification || isPostNotification;
 
                 // Only format message for like notifications, keep original for others
                 const notificationMessage = isLikeNotification
