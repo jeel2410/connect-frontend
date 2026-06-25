@@ -174,6 +174,33 @@ const Step8 = ({ data, updateData, errors, touched }) => {
           )}
         </div>
       </div>
+
+      <div className="position-input-container" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <label className="step8-panel-label" style={{ fontWeight: '600', fontSize: '15px', color: '#1f2937' }}>
+          Position / Job Title
+        </label>
+        <input
+          type="text"
+          className="form-input"
+          placeholder="e.g. Software Engineer, Marketing Manager, Consultant"
+          value={data.position || ''}
+          onChange={(e) => updateData('position', e.target.value)}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            border: '1px solid #d1d5db',
+            fontSize: '14px',
+            outline: 'none',
+            transition: 'border-color 0.2s',
+          }}
+          onFocus={(e) => e.target.style.borderColor = '#ea580c'}
+          onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+        />
+        {touched?.position && errors?.position && (
+          <div className="field-error-message" style={{ color: '#dc2626', fontSize: '12px' }}>{errors.position}</div>
+        )}
+      </div>
     </div>
   );
 };

@@ -202,6 +202,26 @@ export default function ProfilepageCard({ profileData }) {
               </div>
             )}
 
+            {profileData.sports && profileData.sports.length > 0 && (
+              <div className="dating-profile-info-group">
+                <label>Sports</label>
+                <div className="dating-profile-tags">
+                  {profileData.sports.map((sport, index) => (
+                    <span key={index} className="dating-profile-tag">{sport}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {profileData.position && (
+              <div className="dating-profile-info-group">
+                <label>Position</label>
+                <div className="dating-profile-tags">
+                  <span className="dating-profile-tag">{profileData.position}</span>
+                </div>
+              </div>
+            )}
+
             {profileData.industry && (
               <div className="dating-profile-info-group">
                 <label>Industry</label>

@@ -45,7 +45,8 @@ export default function Home() {
     relationship: null,
     religion: null,
     company: null,
-    industry: null
+    industry: null,
+    sports: null
   });
 
   const technologies = [
@@ -122,7 +123,7 @@ export default function Home() {
         filters.language !== null || (filters.habits && filters.habits.length > 0) ||
         (filters.interests && filters.interests.length > 0) || filters.relationship !== null ||
         filters.religion !== null || filters.company !== null ||
-        filters.industry !== null ||
+        filters.industry !== null || (filters.sports && filters.sports.length > 0) ||
         (filters.gender !== null && filters.gender !== "Any") ||
         (isSearchActive && searchQuery.trim() !== "");
 
@@ -186,6 +187,9 @@ export default function Home() {
       }
       if (filters.religion) {
         queryParams.append("religion", filters.religion);
+      }
+      if (filters.sports && Array.isArray(filters.sports) && filters.sports.length > 0) {
+        queryParams.append("sports", filters.sports.join(","));
       }
 
       // Add search parameter if search is active
@@ -487,7 +491,8 @@ export default function Home() {
       relationship: appliedFilters.relationship || null,
       religion: appliedFilters.religion || null,
       company: appliedFilters.company || null,
-      industry: appliedFilters.industry || null
+      industry: appliedFilters.industry || null,
+      sports: appliedFilters.sports && appliedFilters.sports.length > 0 ? appliedFilters.sports : null
     };
 
     setFilters(newFilters);
@@ -505,7 +510,8 @@ export default function Home() {
       relationship: null,
       religion: null,
       company: null,
-      industry: null
+      industry: null,
+      sports: null
     });
     setIsFilterOpen(false);
   };

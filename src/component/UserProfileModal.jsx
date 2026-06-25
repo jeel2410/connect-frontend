@@ -634,6 +634,12 @@ export default function UserProfileModal({ userId }) {
               <label>Languages</label>
               <p>{profileData.preferredLanguage || "Not provided"}</p>
             </div>
+            {profileData.position && (
+              <div className="user-profile-detail-item">
+                <label>Position</label>
+                <p>{profileData.position}</p>
+              </div>
+            )}
             {industryName && (
               <div className="user-profile-detail-item">
                 <label>Industry</label>

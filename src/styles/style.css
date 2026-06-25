@@ -6132,6 +6132,16 @@ body {
 
 }
 
+.edit-profile-field-inline input {
+  border: none;
+  outline: none;
+  font-size: 16px;
+  color: #081332;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  background: transparent;
+}
+
 .edit-profile-select-arrow {
   position: absolute;
   right: 12px;

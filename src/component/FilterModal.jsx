@@ -26,6 +26,10 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
   const [loadingInterests, setLoadingInterests] = useState(false);
   const [loadingIndustries, setLoadingIndustries] = useState(false);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
+  
+  const [sports, setSports] = useState([]);
+  const [sportsList, setSportsList] = useState([]);
+  const [loadingSports, setLoadingSports] = useState(false);
   const handleAgeChange = (e, index) => {
     const newRange = [...ageRange];
     const newValue = parseInt(e.target.value);
@@ -135,6 +139,45 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
     };
 
     fetchHabits();
+  }, [isOpen]);
+
+  // Fetch sports from API
+  useEffect(() => {
+    const fetchSports = async () => {
+      if (!isOpen) return; // Only fetch when modal is open
+      
+      try {
+        setLoadingSports(true);
+        const token = getCookie("authToken");
+        if (!token) {
+          console.error("No auth token found");
+          return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/list/sport`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.sports) {
+            setSportsList(result.data.sports);
+          }
+        } else {
+          console.error("Failed to fetch sports");
+        }
+      } catch (err) {
+        console.error("Error fetching sports:", err);
+      } finally {
+        setLoadingSports(false);
+      }
+    };
+
+    fetchSports();
   }, [isOpen]);
 
   // Fetch industries from API
@@ -388,6 +431,40 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
             </div>
           </div>
 
+          {/* Sports */}
+          <div className="filter-section">
+            <label className="filter-label">Sports</label>
+            <div className="chip-group">
+              {loadingSports ? (
+                <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                  Loading sports...
+                </div>
+              ) : sportsList.length === 0 ? (
+                <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                  No sports available
+                </div>
+              ) : (
+                sportsList.map((sport) => (
+                  <button
+                    key={sport._id}
+                    className={`chip ${
+                      sports.includes(sport.name) ? "chip-active" : ""
+                    }`}
+                    onClick={() => {
+                      setSports((prev) =>
+                        prev.includes(sport.name)
+                          ? prev.filter((s) => s !== sport.name)
+                          : [...prev, sport.name]
+                      );
+                    }}
+                  >
+                    {sport.name}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+
           {/* Language */}
           <div className="filter-section">
             <label className="filter-label">Language</label>
@@ -517,6 +594,7 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
             setCompany("");
             setSelectedIndustryId("");
             setSelectedCompanyId("");
+            setSports([]);
             if (onClear) {
               onClear();
             } else {
@@ -536,7 +614,8 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
                 relationship,
                 religion,
                 industry: selectedIndustryId || null,
-                company: selectedCompanyId || null
+                company: selectedCompanyId || null,
+                sports: sports.length > 0 ? sports : null
               });
             } else {
               onClose();

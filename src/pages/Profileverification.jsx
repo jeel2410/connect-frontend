@@ -13,6 +13,7 @@ import Step5 from "../../src/component/StepForm/Step5";
 import Step6 from "../../src/component/StepForm/Step6";
 import Step7 from "../../src/component/StepForm/Step7";
 import Step8 from "../../src/component/StepForm/Step8";
+import StepSports from "../../src/component/StepForm/StepSports";
 import logo from "../../src/assets/image/connect_logo.png";
 import { getCookie, setCookie, isAuthenticated, hasToken } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
@@ -25,7 +26,7 @@ const Profileverification = () => {
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
-  const totalSteps = 8;
+  const totalSteps = 9;
 
   // Redirect if profile is already complete
   useEffect(() => {
@@ -156,8 +157,10 @@ const Profileverification = () => {
               habits: profile.habits || [],
               interest: profile.interests || [],
               skill: profile.skills || [],
+              sports: profile.sports || [],
               industry: profile.industry || "",
               company: profile.company || "",
+              position: profile.position || "",
               photo: profile.profileImage || null,
             });
 
@@ -165,9 +168,9 @@ const Profileverification = () => {
             // If lastCompletedStep is 8 but profile is not complete, stay on step 8
             // Otherwise, go to next step after lastCompletedStep
             let nextStep;
-            if (lastCompletedStep === 8 && !isProfileComplete) {
-              // Step 8 was saved but profile not marked complete, stay on step 8
-              nextStep = 8;
+            if (lastCompletedStep === 9 && !isProfileComplete) {
+              // Step 9 was saved but profile not marked complete, stay on step 9
+              nextStep = 9;
             } else if (lastCompletedStep >= totalSteps) {
               // All steps completed, should have been redirected above, but just in case
               nextStep = totalSteps;
@@ -227,8 +230,12 @@ const Profileverification = () => {
     skill: Yup.array()
       .min(1, "Please select at least one skill")
       .required("Please select at least one skill"),
+    sports: Yup.array()
+      .min(1, "Please select at least one sport")
+      .required("Please select at least one sport"),
     industry: Yup.string().required("Industry is required"),
     company: Yup.string(),
+    position: Yup.string(),
     photo: Yup.mixed()
       .nullable()
       .test("fileSize", "File size must be less than 5MB", (value) => {
@@ -254,8 +261,10 @@ const Profileverification = () => {
       habits: [],
       interest: [],
       skill: [],
+      sports: [],
       industry: "",
       company: "",
+      position: "",
       photo: null,
     },
     validationSchema: validationSchema,
@@ -289,10 +298,12 @@ const Profileverification = () => {
         formData.append("habits", (values.habits || []).join(","));
         formData.append("interests", (values.interest || []).join(","));
         formData.append("skills", (values.skill || []).join(","));
+        formData.append("sports", (values.sports || []).join(","));
         formData.append("preferredLanguage", Array.isArray(values.language) ? values.language.join(",") : (values.language || ""));
         formData.append("email", values.email);
         formData.append("industry", values.industry || "");
         formData.append("company", values.company || "");
+        formData.append("position", values.position || "");
 
         // Add profile image if it's a file
         if (values.photo) {
@@ -420,10 +431,16 @@ const Profileverification = () => {
         }
         break;
       case 7:
-        if (values.industry) stepData.industry = values.industry;
-        if (values.company) stepData.company = values.company;
+        if (values.sports && values.sports.length > 0) {
+          stepData.sports = values.sports;
+        }
         break;
       case 8:
+        if (values.industry) stepData.industry = values.industry;
+        if (values.company) stepData.company = values.company;
+        if (values.position) stepData.position = values.position;
+        break;
+      case 9:
         // Photo handled separately in saveStepData
         break;
       default:
@@ -460,8 +477,8 @@ const Profileverification = () => {
         }
       });
 
-      // Add photo if it's step 8
-      if (stepNumber === 8 && formik.values.photo) {
+      // Add photo if it's step 9
+      if (stepNumber === 9 && formik.values.photo) {
         if (formik.values.photo instanceof File) {
           formData.append("profileImage", formik.values.photo);
         } else if (typeof formik.values.photo === 'string' && formik.values.photo.startsWith('data:')) {
@@ -619,6 +636,7 @@ const Profileverification = () => {
               habits: (profile.habits && profile.habits.length > 0) ? profile.habits : (currentValues.habits || []),
               interest: (profile.interests && profile.interests.length > 0) ? profile.interests : (currentValues.interest || []),
               skill: (profile.skills && profile.skills.length > 0) ? profile.skills : (currentValues.skill || []),
+              sports: (profile.sports && profile.sports.length > 0) ? profile.sports : (currentValues.sports || []),
               industry: profile.industry || currentValues.industry || "",
               company: profile.company || currentValues.company || "",
               photo: profile.profileImage || currentValues.photo || null,
@@ -664,8 +682,10 @@ const Profileverification = () => {
       case 6:
         return ['skill'];
       case 7:
-        return ['industry', 'company'];
+        return ['sports'];
       case 8:
+        return ['industry', 'company', 'position'];
+      case 9:
         return ['photo'];
       default:
         return [];
@@ -691,8 +711,10 @@ const Profileverification = () => {
       case 6:
         return <Step6 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
       case 7:
-        return <Step8 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
+        return <StepSports data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
       case 8:
+        return <Step8 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
+      case 9:
         return <Step7 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
       default:
         return;

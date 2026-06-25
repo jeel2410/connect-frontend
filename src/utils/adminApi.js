@@ -183,6 +183,124 @@ export const deleteSkill = async (skillId) => {
   }
 };
 
+// Sports API
+export const getSports = async (page = 1, limit = 10, search = "", isActive = null) => {
+  try {
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    if (search) {
+      queryParams.append("search", search);
+    }
+    if (isActive !== null) {
+      queryParams.append("isActive", isActive.toString());
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/sports?${queryParams.toString()}`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch sports");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching sports:", error);
+    throw error;
+  }
+};
+
+export const createSport = async (sportData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/sports`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(sportData),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create sport");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error creating sport:", error);
+    throw error;
+  }
+};
+
+export const updateSport = async (sportId, sportData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/sports/${sportId}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(sportData),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to update sport");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error updating sport:", error);
+    throw error;
+  }
+};
+
+export const deleteSport = async (sportId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/sports/${sportId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to delete sport");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error deleting sport:", error);
+    throw error;
+  }
+};
+
 // Habits API
 export const getHabits = async (page = 1, limit = 10, search = "", isActive = null) => {
   try {

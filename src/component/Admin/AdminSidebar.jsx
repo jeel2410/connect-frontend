@@ -1,5 +1,5 @@
 import React from "react";
-import { Users, Briefcase, Heart, LayoutDashboard, MapPin, Activity, Building2, Factory, CreditCard, Bell, MessageSquare, Image, BarChart3, ShieldAlert } from "lucide-react";
+import { Users, Briefcase, Heart, LayoutDashboard, MapPin, Activity, Building2, Factory, CreditCard, Bell, MessageSquare, Image, BarChart3, ShieldAlert, Trophy } from "lucide-react";
 
 const AdminSidebar = ({ activeTab, setActiveTab }) => {
   const menuItems = [
@@ -10,6 +10,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
     { id: "skills", label: "Skills", icon: Briefcase },
     { id: "habits", label: "Hobbies", icon: Activity },
     { id: "interests", label: "Interests", icon: Heart },
+    { id: "sports", label: "Sports", icon: Trophy },
     { id: "companies", label: "Companies", icon: Building2 },
     { id: "industries", label: "Industries", icon: Factory },
     { id: "cards", label: "Offers", icon: CreditCard },

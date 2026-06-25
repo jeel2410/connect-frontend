@@ -15,6 +15,7 @@ import AuthBannerManagement from "../component/Admin/AuthBannerManagement";
 import Dashboard from "../component/Admin/Dashboard";
 import TrafficSourceStats from "../component/Admin/TrafficSourceStats";
 import PostApproval from "../component/Admin/PostApproval";
+import SportManagement from "../component/Admin/SportManagement";
 import "../styles/admin.css";
 
 const Admin = () => {
@@ -42,6 +43,7 @@ const Admin = () => {
               {activeTab === "inquiries" && "Inquiry Management"}
               {activeTab === "auth-banners" && "Auth Banner Management"}
               {activeTab === "traffic-sources" && "Traffic Sources"}
+              {activeTab === "sports" && "Sport Management"}
             </h1>
             <p className="admin-subtitle">
               {activeTab === "dashboard" && "Platform overview and core metrics snapshot"}
@@ -58,6 +60,7 @@ const Admin = () => {
               {activeTab === "inquiries" && "View all inquiries and import from CSV"}
               {activeTab === "auth-banners" && "Manage desktop and mobile banners for login, OTP, and profile verification screens"}
               {activeTab === "traffic-sources" && "View registered user counts by traffic source parameters"}
+              {activeTab === "sports" && "Add, edit, and delete sports"}
             </p>
           </div>
           <div className="admin-content-body">
@@ -75,6 +78,7 @@ const Admin = () => {
             {activeTab === "inquiries" && <InquiryManagement />}
             {activeTab === "auth-banners" && <AuthBannerManagement />}
             {activeTab === "traffic-sources" && <TrafficSourceStats />}
+            {activeTab === "sports" && <SportManagement />}
           </div>
         </div>
       </div>

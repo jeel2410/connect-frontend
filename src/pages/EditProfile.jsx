@@ -20,7 +20,7 @@ export default function EditProfile() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
-  
+
   const [data, setData] = useState({
     fullName: "",
     phoneNumber: "",
@@ -42,13 +42,14 @@ export default function EditProfile() {
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [industry, setIndustry] = useState("");
   const [company, setCompany] = useState("");
+  const [position, setPosition] = useState("");
   const [industriesList, setIndustriesList] = useState([]);
   const [companiesList, setCompaniesList] = useState([]);
   const [loadingIndustries, setLoadingIndustries] = useState(false);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
   const [citiesList, setCitiesList] = useState([]);
   const [loadingCities, setLoadingCities] = useState(false);
-  
+
   // Dropdown states for interests, habits, skills
   const [interestsList, setInterestsList] = useState([]);
   const [habitsList, setHabitsList] = useState([]);
@@ -60,29 +61,34 @@ export default function EditProfile() {
   const [loadingInterests, setLoadingInterests] = useState(false);
   const [loadingHabits, setLoadingHabits] = useState(false);
   const [loadingSkills, setLoadingSkills] = useState(false);
+  const [sports, setSports] = useState([]);
+  const [sportsList, setSportsList] = useState([]);
+  const [showSportsDropdown, setShowSportsDropdown] = useState(false);
+  const [loadingSports, setLoadingSports] = useState(false);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       const target = event.target;
       // Check if click is outside all dropdown containers
-      if (!target.closest('.edit-profile-tags-row') && 
-          !target.closest('.edit-profile-dropdown-menu')) {
+      if (!target.closest('.edit-profile-tags-row') &&
+        !target.closest('.edit-profile-dropdown-menu')) {
         setShowInterestsDropdown(false);
         setShowHabitsDropdown(false);
         setShowSkillsDropdown(false);
         setShowLanguagesDropdown(false);
+        setShowSportsDropdown(false);
       }
     };
 
-    if (showInterestsDropdown || showHabitsDropdown || showSkillsDropdown) {
+    if (showInterestsDropdown || showHabitsDropdown || showSkillsDropdown || showSportsDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showInterestsDropdown, showHabitsDropdown, showSkillsDropdown]);
+  }, [showInterestsDropdown, showHabitsDropdown, showSkillsDropdown, showSportsDropdown]);
 
   // Store raw profile data
   const [rawProfileData, setRawProfileData] = useState(null);
@@ -122,10 +128,10 @@ export default function EditProfile() {
 
         if (result.success && result.data && result.data.profile) {
           const profile = result.data.profile;
-          
+
           // Store raw profile data for later matching
           setRawProfileData(profile);
-          
+
           // Normalize religion value (handle both lowercase and capitalized)
           let normalizedReligion = profile.religion || "";
           if (normalizedReligion) {
@@ -147,7 +153,7 @@ export default function EditProfile() {
               normalizedReligion = normalizedReligion.charAt(0).toUpperCase() + normalizedReligion.slice(1).toLowerCase();
             }
           }
-          
+
           // Handle preferred language - can be string or array
           let languageArray = [];
           if (profile.preferredLanguage) {
@@ -158,12 +164,12 @@ export default function EditProfile() {
               languageArray = [profile.preferredLanguage];
             }
           }
-          
+
           let normalizedStatus = profile.status || "";
           if (normalizedStatus === "Unmarried") {
             normalizedStatus = "Single";
           }
-          
+
           setData({
             fullName: profile.fullName || "",
             phoneNumber: profile.phoneNumber || "",
@@ -176,13 +182,15 @@ export default function EditProfile() {
             preferredLanguage: [],
             fastConnect: profile.fastConnect || false,
           });
-          
+
           setInterests(profile.interests || []);
           setHabits(profile.habits || []);
           setSkills(profile.skills || []);
+          setSports(profile.sports || []);
           setLanguages(languageArray);
           setIndustry(""); // Will be set after industries list loads
           setCompany(""); // Will be set after companies list loads
+          setPosition(profile.position || "");
           if (profile.profileImage) {
             setProfileImage(profile.profileImage);
           }
@@ -211,7 +219,7 @@ export default function EditProfile() {
             "Content-Type": "application/json",
           },
         });
-        
+
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data && result.data.city) {
@@ -256,7 +264,7 @@ export default function EditProfile() {
             "Content-Type": "application/json",
           },
         });
-        
+
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data && result.data.industries) {
@@ -306,7 +314,7 @@ export default function EditProfile() {
             "Content-Type": "application/json",
           },
         });
-        
+
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data && result.data.companies) {
@@ -351,7 +359,7 @@ export default function EditProfile() {
             "Content-Type": "application/json",
           },
         });
-        
+
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data && result.data.interests) {
@@ -381,7 +389,7 @@ export default function EditProfile() {
             "Content-Type": "application/json",
           },
         });
-        
+
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data && result.data.habits) {
@@ -411,7 +419,7 @@ export default function EditProfile() {
             "Content-Type": "application/json",
           },
         });
-        
+
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data && result.data.skills) {
@@ -428,6 +436,36 @@ export default function EditProfile() {
     fetchSkillsList();
   }, []);
 
+  // Fetch sports list
+  useEffect(() => {
+    const fetchSportsList = async () => {
+      try {
+        setLoadingSports(true);
+        const token = getCookie("authToken");
+        const response = await fetch(`${API_BASE_URL}/api/list/sport`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.sports) {
+            setSportsList(result.data.sports);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching sports:", err);
+      } finally {
+        setLoadingSports(false);
+      }
+    };
+
+    fetchSportsList();
+  }, []);
+
   const updateData = (field, value) => {
     setData(prev => ({ ...prev, [field]: value }));
   };
@@ -442,6 +480,10 @@ export default function EditProfile() {
 
   const removeSkill = (index) => {
     setSkills(skills.filter((_, i) => i !== index));
+  };
+
+  const removeSport = (index) => {
+    setSports(sports.filter((_, i) => i !== index));
   };
 
   const removeLanguage = (index) => {
@@ -520,6 +562,22 @@ export default function EditProfile() {
     }
   };
 
+  const toggleSport = (sportName) => {
+    if (sports.includes(sportName)) {
+      setSports(sports.filter(s => s !== sportName));
+    } else {
+      setSports([...sports, sportName]);
+    }
+    // Clear error when user selects/deselects a sport
+    if (fieldErrors.sports) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.sports;
+        return newErrors;
+      });
+    }
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -535,7 +593,7 @@ export default function EditProfile() {
   // Function to clean up error message - remove quotes and format properly
   const cleanErrorMessage = (errorMessage) => {
     if (!errorMessage) return errorMessage;
-    
+
     // Remove escaped quotes and quotes around field names
     // Example: "\"city\" is not allowed to be empty" -> "City is not allowed to be empty"
     let cleaned = errorMessage.replace(/\\?"([^"]+)"\\?/g, (match, fieldName) => {
@@ -543,13 +601,13 @@ export default function EditProfile() {
       const capitalized = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
       return capitalized;
     });
-    
+
     // Also handle cases like "city" (without escaped quotes)
     cleaned = cleaned.replace(/"([^"]+)"/g, (match, fieldName) => {
       const capitalized = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
       return capitalized;
     });
-    
+
     // Handle common field name variations
     cleaned = cleaned.replace(/\bfullname\b/gi, 'Full name');
     cleaned = cleaned.replace(/\bfull name\b/gi, 'Full name');
@@ -557,17 +615,17 @@ export default function EditProfile() {
     cleaned = cleaned.replace(/\bdate of birth\b/gi, 'Date of birth');
     cleaned = cleaned.replace(/\bpreferredlanguage\b/gi, 'Preferred language');
     cleaned = cleaned.replace(/\bpreferred language\b/gi, 'Preferred language');
-    
+
     return cleaned;
   };
 
   // Function to parse error message and map to field
   const parseFieldError = (errorMessage) => {
     const fieldErrorMap = {};
-    
+
     // Clean the error message first
     const cleanedMessage = cleanErrorMessage(errorMessage);
-    
+
     // Check for common field-specific error patterns
     if (errorMessage.toLowerCase().includes("city")) {
       fieldErrorMap.city = cleanedMessage;
@@ -595,8 +653,10 @@ export default function EditProfile() {
       fieldErrorMap.interests = cleanedMessage;
     } else if (errorMessage.toLowerCase().includes("skill")) {
       fieldErrorMap.skills = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("sport")) {
+      fieldErrorMap.sports = cleanedMessage;
     }
-    
+
     return fieldErrorMap;
   };
 
@@ -614,7 +674,7 @@ export default function EditProfile() {
 
       // Prepare FormData for file upload
       const formData = new FormData();
-      
+
       // Add text fields
       formData.append("fullName", data.fullName);
       formData.append("city", data.city);
@@ -625,10 +685,12 @@ export default function EditProfile() {
       formData.append("habits", habits.join(","));
       formData.append("interests", interests.join(","));
       formData.append("skills", skills.join(","));
+      formData.append("sports", sports.join(","));
       formData.append("preferredLanguage", languages.join(","));
       formData.append("email", data.email);
       formData.append("industry", industry || "");
       formData.append("company", company || "");
+      formData.append("position", position || "");
       formData.append("fastConnect", data.fastConnect ? "true" : "false");
 
       // Add profile image if it's a new file
@@ -650,7 +712,7 @@ export default function EditProfile() {
         const errorMessage = result.message || "Failed to update profile. Please try again.";
         // Try to parse field-specific errors
         const parsedErrors = parseFieldError(errorMessage);
-        
+
         if (Object.keys(parsedErrors).length > 0) {
           // Field-specific error found
           setFieldErrors(parsedErrors);
@@ -673,13 +735,13 @@ export default function EditProfile() {
         if (result.data.profile.profileImage) {
           setCookie("userProfileImage", result.data.profile.profileImage, 7);
         }
-        
+
         // Dispatch custom event to notify Header to refresh
         window.dispatchEvent(new CustomEvent('profileUpdated'));
       }
 
       setSuccess("Profile updated successfully!");
-      
+
       // Redirect to profile page after a short delay
       setTimeout(() => {
         navigate("/profile");
@@ -725,7 +787,7 @@ export default function EditProfile() {
         <div className="edit-profile-container">
           <div className="edit-profile-card">
             {/* Header with Avatar */}
-            <ProfilecardHeader 
+            <ProfilecardHeader
               showChangePassword={false}
               profileData={data.fullName ? { fullName: data.fullName, profileImage, gender: data.gender, birthDate: data.birthDate } : null}
               onImageChange={handleImageChange}
@@ -930,7 +992,7 @@ export default function EditProfile() {
                         </span>
                       ))}
                     </div>
-                    <button 
+                    <button
                       className="edit-profile-dropdown-toggle"
                       onClick={() => setShowInterestsDropdown(!showInterestsDropdown)}
                     >
@@ -996,10 +1058,10 @@ export default function EditProfile() {
                 </div>
               </div>
               {fieldErrors.interests && (
-                <div style={{ 
-                  marginTop: "8px", 
+                <div style={{
+                  marginTop: "8px",
                   marginBottom: "16px",
-                  fontSize: "12px", 
+                  fontSize: "12px",
                   color: "#dc2626",
                   display: "block",
                   width: "100%",
@@ -1025,7 +1087,7 @@ export default function EditProfile() {
                         </span>
                       ))}
                     </div>
-                    <button 
+                    <button
                       className="edit-profile-dropdown-toggle"
                       onClick={() => setShowHabitsDropdown(!showHabitsDropdown)}
                     >
@@ -1091,10 +1153,10 @@ export default function EditProfile() {
                 </div>
               </div>
               {fieldErrors.habits && (
-                <div style={{ 
-                  marginTop: "8px", 
+                <div style={{
+                  marginTop: "8px",
                   marginBottom: "16px",
-                  fontSize: "12px", 
+                  fontSize: "12px",
                   color: "#dc2626",
                   display: "block",
                   width: "100%",
@@ -1121,7 +1183,7 @@ export default function EditProfile() {
                         </span>
                       ))}
                     </div>
-                    <button 
+                    <button
                       className="edit-profile-dropdown-toggle"
                       onClick={() => setShowSkillsDropdown(!showSkillsDropdown)}
                     >
@@ -1187,16 +1249,112 @@ export default function EditProfile() {
                 </div>
               </div>
               {fieldErrors.skills && (
-                <div style={{ 
-                  marginTop: "8px", 
+                <div style={{
+                  marginTop: "8px",
                   marginBottom: "16px",
-                  fontSize: "12px", 
+                  fontSize: "12px",
                   color: "#dc2626",
                   display: "block",
                   width: "100%",
                   paddingLeft: "0"
                 }}>
                   {fieldErrors.skills}
+                </div>
+              )}
+
+              <div className="edit-profile-section">
+                <div className="edit-profile-tags-container">
+                  <div className="edit-profile-label">Sports</div>
+                  <div className="edit-profile-tags-row" style={{ position: "relative" }}>
+                    <div className="edit-profile-tags">
+                      {sports.map((sport, index) => (
+                        <span key={index} className="edit-profile-tag">
+                          {sport}
+                          <button
+                            className="edit-profile-tag-remove"
+                            onClick={() => removeSport(index)}
+                          >
+                            <img src={removeIcom} alt="Remove"></img>
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <button
+                      className="edit-profile-dropdown-toggle"
+                      onClick={() => setShowSportsDropdown(!showSportsDropdown)}
+                    >
+                      <img src={dropdownIcon} alt="Dropdown"></img>
+                    </button>
+                    {showSportsDropdown && (
+                      <div className="edit-profile-dropdown-menu" style={{
+                        position: "absolute",
+                        top: "100%",
+                        right: 0,
+                        backgroundColor: "white",
+                        border: "1px solid #E8EDF3",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        maxHeight: "300px",
+                        overflowY: "auto",
+                        zIndex: 1000,
+                        minWidth: "200px",
+                        marginTop: "8px"
+                      }}>
+                        {loadingSports ? (
+                          <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                            Loading...
+                          </div>
+                        ) : sportsList.length === 0 ? (
+                          <div style={{ padding: "12px", textAlign: "center", color: "#666" }}>
+                            No sports available
+                          </div>
+                        ) : (
+                          sportsList.map((sport) => (
+                            <div
+                              key={sport._id}
+                              onClick={() => {
+                                toggleSport(sport.name);
+                              }}
+                              style={{
+                                padding: "10px 16px",
+                                cursor: "pointer",
+                                backgroundColor: sports.includes(sport.name) ? "#F0F4F8" : "white",
+                                borderBottom: "1px solid #E8EDF3"
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!sports.includes(sport.name)) {
+                                  e.target.style.backgroundColor = "#F9FBFE";
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!sports.includes(sport.name)) {
+                                  e.target.style.backgroundColor = "white";
+                                }
+                              }}
+                            >
+                              {sport.name}
+                              {sports.includes(sport.name) && (
+                                <span style={{ marginLeft: "8px", color: "#EA650A" }}>✓</span>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {fieldErrors.sports && (
+                <div style={{
+                  marginTop: "8px",
+                  marginBottom: "16px",
+                  fontSize: "12px",
+                  color: "#dc2626",
+                  display: "block",
+                  width: "100%",
+                  paddingLeft: "0"
+                }}>
+                  {fieldErrors.sports}
                 </div>
               )}
 
@@ -1419,26 +1577,46 @@ export default function EditProfile() {
                     </span>
                   </div>
                 )}
+                {industry && (
+                  <div className="edit-profile-field-inline">
+                    <label>Position</label>
+                    <input
+                      type="text"
+                      value={position || ""}
+                      onChange={(e) => setPosition(e.target.value)}
+                      style={{
+                        border: "none",
+                        outline: "none",
+                        fontSize: "16px",
+                        color: "#081332",
+                        fontFamily: "'Inter', sans-serif",
+                        fontWeight: 600,
+                        background: "transparent",
+                        width: "100%",
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
             </div>
 
             {/* Action Buttons */}
             <div className="edit-profile-actions">
-              <button 
+              <button
                 className="edit-profile-cancel-btn"
                 onClick={handleCancel}
                 disabled={saving}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className="edit-profile-save-btn"
                 onClick={handleSave}
                 disabled={saving}
               >
                 {saving ? "Saving..." : "Save"}
-</button>
+              </button>
             </div>
           </div>
         </div>
