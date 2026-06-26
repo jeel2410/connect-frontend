@@ -65,6 +65,58 @@ export const getUsers = async (page = 1, limit = 10, search = "", city = "", ind
   }
 };
 
+export const toggleUserStatus = async (userId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/toggle-status`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to toggle user status");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error toggling user status:", error);
+    throw error;
+  }
+};
+
+export const deleteUser = async (userId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to delete user");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    throw error;
+  }
+};
+
 // Skills API
 export const getSkills = async (page = 1, limit = 10, search = "", isActive = null) => {
   try {

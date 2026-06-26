@@ -27,7 +27,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { hasToken, getProfileStatus } from "./utils/auth";
+import { hasToken, getProfileStatus, useSessionGuard } from "./utils/auth";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -66,6 +66,8 @@ const TrafficSourceTracker = () => {
 };
 
 function App() {
+  // Polls /api/auth/status every 30 s — auto-logouts disabled/deleted accounts
+  useSessionGuard();
   return (
     <GoogleOAuthProvider clientId="891198943361-e6pu3ag403m4s97gvbiuasgljgfbvcda.apps.googleusercontent.com">
       <Router>

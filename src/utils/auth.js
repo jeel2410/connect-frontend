@@ -1,4 +1,7 @@
-// Cookie utility functions
+import { useEffect } from "react";
+import API_BASE_URL from "./config";
+
+// ─── Cookie utilities ─────────────────────────────────────────────────────────
 export const getCookie = (name) => {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
@@ -15,6 +18,8 @@ export const setCookie = (name, value, days = 7) => {
 export const deleteCookie = (name) => {
   document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
 };
+
+// ─── Auth helpers ─────────────────────────────────────────────────────────────
 
 // Check if user is authenticated and profile is complete
 export const isAuthenticated = () => {
@@ -67,7 +72,8 @@ export const isAdmin = () => {
   return profile && profile.role === 'admin';
 };
 
-// Logout function
+// ─── Logout ───────────────────────────────────────────────────────────────────
+// Central logout: clears all cookies/localStorage and redirects to login.
 export const logout = () => {
   deleteCookie("authToken");
   deleteCookie("isProfileComplete");
@@ -81,5 +87,78 @@ export const logout = () => {
   window.location.href = "/Login";
 };
 
-const token = getCookie("authToken");// Log it
-console.log("Auth Token:", token);
+// ─── Global Fetch Interceptor ─────────────────────────────────────────────────
+// Patches window.fetch so every API response is checked globally.
+// If the backend returns 401 with a "disabled" or "deleted" message,
+// the user is force-logged-out immediately — no matter which page they are on.
+const AUTH_BYPASS_PATHS = [
+  "/api/auth/send-otp",
+  "/api/auth/verify-otp",
+  "/api/auth/login-with-email",
+  "/api/auth/google-login",
+];
+
+const _originalFetch = window.fetch.bind(window);
+window.fetch = async (...args) => {
+  const response = await _originalFetch(...args);
+
+  if (response.status === 401) {
+    const url = typeof args[0] === "string" ? args[0] : args[0]?.url || "";
+    const isAuthBypass = AUTH_BYPASS_PATHS.some((p) => url.includes(p));
+
+    if (!isAuthBypass && getCookie("authToken")) {
+      // Clone before reading body so the original response stays consumable
+      const cloned = response.clone();
+      try {
+        const json = await cloned.json();
+        const msg = (json?.message || "").toLowerCase();
+        if (
+          msg.includes("disabled") ||
+          msg.includes("has been deleted")
+        ) {
+          logout();
+        }
+      } catch (_) {
+        // Non-JSON body — ignore
+      }
+    }
+  }
+
+  return response;
+};
+
+// ─── Session Guard Hook ───────────────────────────────────────────────────────
+// Mount this once in App.js. It polls /api/auth/status every 30 seconds.
+// When the admin disables or deletes the user's account, the NEXT poll will
+// receive a 401, the fetch interceptor above catches it, and logout() fires —
+// kicking the user out within at most 30 seconds, even if they made no other
+// API calls.
+const POLL_INTERVAL_MS = 30_000; // 30 seconds
+
+export const useSessionGuard = () => {
+  useEffect(() => {
+    if (!getCookie("authToken")) return; // not logged in, skip
+
+    const checkStatus = async () => {
+      if (!getCookie("authToken")) return; // token removed mid-interval
+      try {
+        await fetch(`${API_BASE_URL}/api/auth/status`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${getCookie("authToken")}`,
+            "Content-Type": "application/json",
+          },
+        });
+        // fetch interceptor handles the 401 automatically — nothing extra needed
+      } catch (_) {
+        // Network error — silently ignore, do NOT logout on network issues
+      }
+    };
+
+    // Check immediately on mount, then on every interval
+    checkStatus();
+    const interval = setInterval(checkStatus, POLL_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, []);
+};

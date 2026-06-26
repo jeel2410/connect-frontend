@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Search, Mail, Phone, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
-import { getUsers } from "../../utils/adminApi";
+import { getUsers, toggleUserStatus, deleteUser } from "../../utils/adminApi";
 import API_BASE_URL from "../../utils/config";
 import { getCookie } from "../../utils/auth";
+import { toast } from "react-toastify";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -137,6 +138,42 @@ const UserManagement = () => {
     }
   };
 
+  const handleToggleStatus = async (userId, currentStatus) => {
+    if (!window.confirm(`Are you sure you want to ${currentStatus ? "disable" : "enable"} this user?`)) {
+      return;
+    }
+    try {
+      setLoading(true);
+      const res = await toggleUserStatus(userId);
+      if (res.success) {
+        toast.success(res.message || "User status updated successfully");
+        setUsers(users.map(u => u._id === userId ? { ...u, isActive: !currentStatus } : u));
+      }
+    } catch (err) {
+      toast.error(err.message || "Failed to update user status");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm("Are you sure you want to permanently delete this user account? This action cannot be undone.")) {
+      return;
+    }
+    try {
+      setLoading(true);
+      const res = await deleteUser(userId);
+      if (res.success) {
+        toast.success(res.message || "User deleted successfully");
+        setUsers(users.filter(u => u._id !== userId));
+      }
+    } catch (err) {
+      toast.error(err.message || "Failed to delete user");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="admin-section">
       <div className="admin-section-header">
@@ -259,65 +296,125 @@ const UserManagement = () => {
               <th>Industry</th>
               <th>Religion</th>
               <th>Traffic Source</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="7" className="empty-state">
+                <td colSpan="9" className="empty-state">
                   Loading...
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan="7" className="empty-state" style={{ color: "red" }}>
+                <td colSpan="9" className="empty-state" style={{ color: "red" }}>
                   {error}
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan="7" className="empty-state">
+                <td colSpan="9" className="empty-state">
                   No users found
                 </td>
               </tr>
             ) : (
-              users.map((user) => (
-                <tr key={user._id}>
-                  <td>
-                    <span style={{ fontWeight: 600, color: "#09122E" }}>
-                      {user.userDetails?.fullName || "N/A"}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="table-cell-with-icon">
-                      <Mail size={16} />
-                      {user.userDetails?.email || "N/A"}
-                    </div>
-                  </td>
-                  <td>
-                    <div className="table-cell-with-icon">
-                      <Phone size={16} />
-                      {user.phoneNumber || "N/A"}
-                    </div>
-                  </td>
-                  <td>
-                    <span className="table-cell-badge badge-city">
-                      {user.userDetails?.city || "N/A"}
-                    </span>
-                  </td>
-                  <td>{user.userDetails?.industry || "N/A"}</td>
-                  <td>
-                    <span className="table-cell-badge badge-religion">
-                      {user.userDetails?.religion || "N/A"}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="table-cell-badge badge-source" style={{ backgroundColor: "#E2F0FD", color: "#0B63E5", textTransform: "capitalize" }}>
-                      {user.trafficSource || "direct"}
-                    </span>
-                  </td>
-                </tr>
-              ))
+              users.map((user) => {
+                const isActive = user.isActive !== false;
+                const isAdminUser = user.role === "admin";
+                return (
+                  <tr key={user._id}>
+                    <td>
+                      <span style={{ fontWeight: 600, color: "#09122E" }}>
+                        {user.userDetails?.fullName || "N/A"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="table-cell-with-icon">
+                        <Mail size={16} />
+                        {user.userDetails?.email || "N/A"}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="table-cell-with-icon">
+                        <Phone size={16} />
+                        {user.phoneNumber || "N/A"}
+                      </div>
+                    </td>
+                    <td>
+                      <span className="table-cell-badge badge-city">
+                        {user.userDetails?.city || "N/A"}
+                      </span>
+                    </td>
+                    <td>{user.userDetails?.industry || "N/A"}</td>
+                    <td>
+                      <span className="table-cell-badge badge-religion">
+                        {user.userDetails?.religion || "N/A"}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="table-cell-badge badge-source" style={{ backgroundColor: "#E2F0FD", color: "#0B63E5", textTransform: "capitalize" }}>
+                        {user.trafficSource || "direct"}
+                      </span>
+                    </td>
+                    <td>
+                      <span 
+                        className="table-cell-badge" 
+                        style={{ 
+                          backgroundColor: isActive ? "#E6F4EA" : "#FCE8E6", 
+                          color: isActive ? "#137333" : "#C5221F",
+                          fontWeight: "600"
+                        }}
+                      >
+                        {isActive ? "Active" : "Disabled"}
+                      </span>
+                    </td>
+                    <td>
+                      {!isAdminUser ? (
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <button
+                            onClick={() => handleToggleStatus(user._id, isActive)}
+                            style={{
+                              padding: "6px 12px",
+                              backgroundColor: isActive ? "#EA650A" : "#10B981",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              transition: "background-color 0.2s"
+                            }}
+                          >
+                            {isActive ? "Disable" : "Enable"}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user._id)}
+                            style={{
+                              padding: "6px 12px",
+                              backgroundColor: "#EF4444",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              transition: "background-color 0.2s"
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: "12px", color: "#718096", fontStyle: "italic" }}>
+                          Admin Profile
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
