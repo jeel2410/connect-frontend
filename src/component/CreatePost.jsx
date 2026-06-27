@@ -22,6 +22,11 @@ const CreatePost = ({ onPostCreated }) => {
   const [loadingPreview, setLoadingPreview] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Connection Groups states
+  const [connectionGroups, setConnectionGroups] = useState([]);
+  const [shareScope, setShareScope] = useState('all'); // 'all' or 'group'
+  const [selectedGroup, setSelectedGroup] = useState('');
+
   useEffect(() => {
     if (!shareLink) {
       setLinkPreview(null);
@@ -87,7 +92,30 @@ const CreatePost = ({ onPostCreated }) => {
         console.error('Error fetching industries:', err);
       }
     };
+
+    const fetchConnectionGroups = async () => {
+      try {
+        const token = getCookie('authToken');
+        const response = await fetch(`${API_BASE_URL}/api/connection/groups`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.groups) {
+            setConnectionGroups(result.data.groups);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching connection groups:', err);
+      }
+    };
+
     fetchIndustries();
+    fetchConnectionGroups();
   }, []);
 
   const handleFileChange = (e) => {
@@ -116,6 +144,8 @@ const CreatePost = ({ onPostCreated }) => {
     setLoadingPreview(false);
     setIsExpanded(false);
     setShowOptions(false);
+    setShareScope('all');
+    setSelectedGroup('');
   };
 
   const handleSubmit = async (e) => {
@@ -160,6 +190,10 @@ const CreatePost = ({ onPostCreated }) => {
     };
     formData.append('targetSegments', JSON.stringify(targetSegments));
 
+    if (shareScope === 'group' && selectedGroup) {
+      formData.append('connectionGroupId', selectedGroup);
+    }
+
     try {
       const token = getCookie('authToken');
       const response = await fetch(`${API_BASE_URL}/api/posts`, {
@@ -185,6 +219,8 @@ const CreatePost = ({ onPostCreated }) => {
         setLoadingPreview(false);
         setIsExpanded(false);
         setShowOptions(false);
+        setShareScope('all');
+        setSelectedGroup('');
         if (onPostCreated) onPostCreated(data.data);
       } else {
         toast.error(data.message || 'Failed to share post');
@@ -300,105 +336,164 @@ const CreatePost = ({ onPostCreated }) => {
 
           {/* Target Audience Segment Selection */}
           <div className="target-audience-section" style={{ borderTop: '1px solid #E8EDF3', paddingTop: '16px', marginTop: '16px', marginBottom: '16px' }}>
-            <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#09122E', marginBottom: '12px' }}>Target Audience</h4>
+            <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#09122E', marginBottom: '12px', textAlign: 'left' }}>Target Audience</h4>
             
-            <div className="target-segments-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-              
-              {/* Connections Target */}
-              <div className="target-segment-card" style={{ border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#F8F9FB' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#353945' }}>
-                  <input
-                    type="checkbox"
-                    checked={targetConnections}
-                    onChange={(e) => setTargetConnections(e.target.checked)}
-                    style={{ accentColor: '#EA650A' }}
-                  />
-                  My Connections
-                </label>
-                <p style={{ fontSize: '11px', color: '#777E90', margin: '4px 0 0 22px' }}>Share with your direct connections</p>
-              </div>
-
-              {/* Same City Target */}
-              <div className="target-segment-card" style={{ border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#F8F9FB' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#353945' }}>
-                  <input
-                    type="checkbox"
-                    checked={targetCity}
-                    onChange={(e) => setTargetCity(e.target.checked)}
-                    style={{ accentColor: '#EA650A' }}
-                  />
-                  People in my City
-                </label>
-                <p style={{ fontSize: '11px', color: '#777E90', margin: '4px 0 0 22px' }}>Share with people in your same city</p>
-              </div>
-
+            {/* Share Scope Selector */}
+            <div style={{ display: 'flex', gap: '20px', marginBottom: '16px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#353945' }}>
+                <input
+                  type="radio"
+                  name="shareScope"
+                  checked={shareScope === 'all'}
+                  onChange={() => setShareScope('all')}
+                  style={{ accentColor: '#EA650A' }}
+                />
+                All Connections & Segments
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#353945' }}>
+                <input
+                  type="radio"
+                  name="shareScope"
+                  checked={shareScope === 'group'}
+                  onChange={() => setShareScope('group')}
+                  style={{ accentColor: '#EA650A' }}
+                />
+                Specific Connection Group
+              </label>
             </div>
 
-            {/* Industry targeting */}
-            <div className="target-collapsible-section" style={{ marginTop: '16px', border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#ffffff' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: '#353945' }}>Target Specific Industries ({targetIndustries.length} selected)</span>
+            {shareScope === 'group' ? (
+              <div style={{ border: '1px solid #E8EDF3', borderRadius: '8px', padding: '16px', background: '#F8F9FB', textAlign: 'left' }}>
+                <label style={{ fontSize: '13px', fontWeight: '600', color: '#353945', marginBottom: '8px', display: 'block' }}>
+                  Select Connection Group
+                </label>
+                {connectionGroups.length === 0 ? (
+                  <p style={{ fontSize: '12px', color: '#777E90', margin: 0 }}>
+                    You haven't created any connection groups yet. You can create groups under the "Groups" tab on your <a href="/connections" style={{ color: '#EA650A', textDecoration: 'none', fontWeight: '600' }}>Connections page</a>.
+                  </p>
+                ) : (
+                  <select
+                    value={selectedGroup}
+                    onChange={(e) => setSelectedGroup(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      border: '1px solid #DDE2EE',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      color: '#09122E',
+                      outline: 'none',
+                      background: '#fff'
+                    }}
+                  >
+                    <option value="">-- Choose a group --</option>
+                    {connectionGroups.map(g => (
+                      <option key={g._id} value={g._id}>{g.name} ({g.connections?.length || 0} members)</option>
+                    ))}
+                  </select>
+                )}
               </div>
-              <div className="industries-multi-select" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px', maxHeight: '120px', overflowY: 'auto', padding: '4px' }}>
-                {industriesList.map((ind) => {
-                  const isSelected = targetIndustries.includes(ind.name);
-                  return (
-                    <button
-                      key={ind._id}
-                      type="button"
-                      onClick={() => {
-                        if (isSelected) {
-                          setTargetIndustries(targetIndustries.filter(name => name !== ind.name));
-                        } else {
-                          setTargetIndustries([...targetIndustries, ind.name]);
-                        }
-                      }}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: '20px',
-                        border: '1px solid',
-                        borderColor: isSelected ? '#EA650A' : '#E8EDF3',
-                        background: isSelected ? '#FFF1E6' : '#F8F9FB',
-                        color: isSelected ? '#EA650A' : '#353945',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      {ind.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Age bracket targeting */}
-            <div className="target-collapsible-section" style={{ marginTop: '16px', border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#ffffff' }}>
-              <span style={{ fontSize: '13px', fontWeight: '600', color: '#353945' }}>Target Specific Age Groups ({targetAgeGroups.length} selected)</span>
-              <div className="age-bracket-checkboxes" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '10px' }}>
-                {['20-25', '26-35', '36-50', '51-65', '65+'].map((bracket) => {
-                  const isSelected = targetAgeGroups.includes(bracket);
-                  return (
-                    <label key={bracket} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '500', color: '#353945' }}>
+            ) : (
+              <>
+                <div className="target-segments-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                  
+                  {/* Connections Target */}
+                  <div className="target-segment-card" style={{ border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#F8F9FB' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#353945' }}>
                       <input
                         type="checkbox"
-                        checked={isSelected}
-                        onChange={() => {
-                          if (isSelected) {
-                            setTargetAgeGroups(targetAgeGroups.filter(b => b !== bracket));
-                          } else {
-                            setTargetAgeGroups([...targetAgeGroups, bracket]);
-                          }
-                        }}
+                        checked={targetConnections}
+                        onChange={(e) => setTargetConnections(e.target.checked)}
                         style={{ accentColor: '#EA650A' }}
                       />
-                      {bracket}
+                      My Connections
                     </label>
-                  );
-                })}
-              </div>
-            </div>
+                    <p style={{ fontSize: '11px', color: '#777E90', margin: '4px 0 0 22px' }}>Share with your direct connections</p>
+                  </div>
+
+                  {/* Same City Target */}
+                  <div className="target-segment-card" style={{ border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#F8F9FB' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#353945' }}>
+                      <input
+                        type="checkbox"
+                        checked={targetCity}
+                        onChange={(e) => setTargetCity(e.target.checked)}
+                        style={{ accentColor: '#EA650A' }}
+                      />
+                      People in my City
+                    </label>
+                    <p style={{ fontSize: '11px', color: '#777E90', margin: '4px 0 0 22px' }}>Share with people in your same city</p>
+                  </div>
+
+                </div>
+
+                {/* Industry targeting */}
+                <div className="target-collapsible-section" style={{ marginTop: '16px', border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#ffffff', textAlign: 'left' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#353945' }}>Target Specific Industries ({targetIndustries.length} selected)</span>
+                  </div>
+                  <div className="industries-multi-select" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px', maxHeight: '120px', overflowY: 'auto', padding: '4px' }}>
+                    {industriesList.map((ind) => {
+                      const isSelected = targetIndustries.includes(ind.name);
+                      return (
+                        <button
+                          key={ind._id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setTargetIndustries(targetIndustries.filter(name => name !== ind.name));
+                            } else {
+                              setTargetIndustries([...targetIndustries, ind.name]);
+                            }
+                          }}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '20px',
+                            border: '1px solid',
+                            borderColor: isSelected ? '#EA650A' : '#E8EDF3',
+                            background: isSelected ? '#FFF1E6' : '#F8F9FB',
+                            color: isSelected ? '#EA650A' : '#353945',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {ind.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Age bracket targeting */}
+                <div className="target-collapsible-section" style={{ marginTop: '16px', border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#ffffff', textAlign: 'left' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#353945' }}>Target Specific Age Groups ({targetAgeGroups.length} selected)</span>
+                  <div className="age-bracket-checkboxes" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '10px' }}>
+                    {['20-25', '26-35', '36-50', '51-65', '65+'].map((bracket) => {
+                      const isSelected = targetAgeGroups.includes(bracket);
+                      return (
+                        <label key={bracket} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '500', color: '#353945' }}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {
+                              if (isSelected) {
+                                setTargetAgeGroups(targetAgeGroups.filter(b => b !== bracket));
+                              } else {
+                                setTargetAgeGroups([...targetAgeGroups, bracket]);
+                              }
+                            }}
+                            style={{ accentColor: '#EA650A' }}
+                          />
+                          {bracket}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
 
           </div>
 

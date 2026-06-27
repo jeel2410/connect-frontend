@@ -26,6 +26,15 @@ const Connection = () => {
   const [fastConnect, setFastConnect] = useState(false);
   const [loadingFastConnect, setLoadingFastConnect] = useState(false);
 
+  // Connection Groups states
+  const [connectionGroups, setConnectionGroups] = useState([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState(null);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [selectedConnections, setSelectedConnections] = useState([]);
+  const [groupSearchTerm, setGroupSearchTerm] = useState("");
+
   // Fetch active connections from API
   const fetchActiveConnections = async (search = "") => {
     try {
@@ -254,12 +263,126 @@ const Connection = () => {
     }
   };
 
+  const fetchGroups = async () => {
+    try {
+      setLoadingGroups(true);
+      const token = getCookie("authToken");
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/api/connection/groups`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data && data.data.groups) {
+          setConnectionGroups(data.data.groups);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching connection groups:", err);
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
+
+  const handleOpenCreateModal = () => {
+    setEditingGroup(null);
+    setNewGroupName("");
+    setSelectedConnections([]);
+    setGroupSearchTerm("");
+    setIsGroupModalOpen(true);
+  };
+
+  const handleOpenEditModal = (group) => {
+    setEditingGroup(group);
+    setNewGroupName(group.name);
+    setSelectedConnections(group.connections.map(c => c._id || c.id || c));
+    setGroupSearchTerm("");
+    setIsGroupModalOpen(true);
+  };
+
+  const handleSaveGroup = async (e) => {
+    e.preventDefault();
+    if (!newGroupName.trim()) {
+      alert("Group name is required");
+      return;
+    }
+
+    try {
+      const token = getCookie("authToken");
+      const url = editingGroup
+        ? `${API_BASE_URL}/api/connection/groups/${editingGroup._id}`
+        : `${API_BASE_URL}/api/connection/groups`;
+      const method = editingGroup ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: newGroupName.trim(),
+          connections: selectedConnections,
+        }),
+      });
+
+      if (response.ok) {
+        setIsGroupModalOpen(false);
+        fetchGroups();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || "Failed to save group");
+      }
+    } catch (err) {
+      console.error("Error saving group:", err);
+    }
+  };
+
+  const handleDeleteGroup = async (groupId) => {
+    if (!window.confirm("Are you sure you want to delete this group?")) return;
+
+    try {
+      const token = getCookie("authToken");
+      const response = await fetch(`${API_BASE_URL}/api/connection/groups/${groupId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        fetchGroups();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || "Failed to delete group");
+      }
+    } catch (err) {
+      console.error("Error deleting group:", err);
+    }
+  };
+
+  const toggleConnectionSelection = (connId) => {
+    if (selectedConnections.includes(connId)) {
+      setSelectedConnections(selectedConnections.filter(id => id !== connId));
+    } else {
+      setSelectedConnections([...selectedConnections, connId]);
+    }
+  };
+
   // Fetch all data when component mounts to show counts on all tabs
   useEffect(() => {
     fetchActiveConnections("");
     fetchPendingRequests("");
     fetchIncomingRequests("");
     fetchUserProfile();
+    fetchGroups();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -271,6 +394,8 @@ const Connection = () => {
       fetchPendingRequests(searchTerm);
     } else if (activeTab === "incoming") {
       fetchIncomingRequests(searchTerm);
+    } else if (activeTab === "groups") {
+      fetchGroups();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
@@ -302,6 +427,7 @@ const Connection = () => {
         fetchPendingRequests(searchTerm);
         fetchIncomingRequests(searchTerm);
         fetchUserProfile();
+        fetchGroups();
       }
     };
 
@@ -316,6 +442,7 @@ const Connection = () => {
       fetchPendingRequests(searchTerm);
       fetchIncomingRequests(searchTerm);
       fetchUserProfile();
+      fetchGroups();
     }, 100);
 
     return () => {
@@ -558,6 +685,15 @@ const Connection = () => {
                 }}
               >
                 Pending ({pendingRequests.length})
+              </button>
+              <button
+                className={`connections-page-tab ${activeTab === "groups" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveTab("groups");
+                  fetchGroups();
+                }}
+              >
+                Groups ({connectionGroups.length})
               </button>
             </div>
             <div className="connections-page-content-wrapper">
@@ -825,7 +961,372 @@ const Connection = () => {
                   )}
                 </div>
               )}
+              {activeTab === "groups" && (
+                <div className={`connections-tab-content ${loadingGroups ? 'loading' : ''}`}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <div style={{ textAlign: 'left' }}>
+                      <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#09122E' }}>Connection Groups</h3>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#6B7280' }}>Organize your connections into custom segments for targeted post sharing.</p>
+                    </div>
+                    <button 
+                      onClick={handleOpenCreateModal}
+                      style={{
+                        background: '#EA650A',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '10px 20px',
+                        fontWeight: '600',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'background 0.2s'
+                      }}
+                    >
+                      + Create Group
+                    </button>
+                  </div>
+
+                  {loadingGroups ? (
+                    <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
+                      Loading connection groups...
+                    </div>
+                  ) : connectionGroups.length === 0 ? (
+                    <div style={{
+                      textAlign: "center",
+                      padding: "60px 20px",
+                      background: '#fff',
+                      borderRadius: '12px',
+                      border: '1px solid #E8EDF3',
+                      color: "#666"
+                    }}>
+                      <div style={{ fontSize: "20px", fontWeight: "600", marginBottom: "8px", color: "#333" }}>
+                        No Connection Groups Yet
+                      </div>
+                      <div style={{ fontSize: "14px", color: "#999", marginBottom: '16px' }}>
+                        Create a group to share posts with specific connections.
+                      </div>
+                      <button 
+                        onClick={handleOpenCreateModal}
+                        style={{
+                          background: '#FFF1E6',
+                          color: '#EA650A',
+                          border: '1px solid #FFD8BE',
+                          borderRadius: '8px',
+                          padding: '8px 16px',
+                          fontWeight: '600',
+                          fontSize: '13px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Create Your First Group
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="connections-page-grid">
+                      {connectionGroups.map((group) => (
+                        <div key={group._id} className="connections-page-item" style={{ flexDirection: 'column', alignItems: 'stretch', padding: '20px', display: 'flex' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                            <div style={{ textAlign: 'left' }}>
+                              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#09122E' }}>
+                                {group.name}
+                              </h3>
+                              <span style={{ fontSize: '12px', color: '#777E90', fontWeight: '500' }}>
+                                {group.connections?.length || 0} members
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button
+                                onClick={() => handleOpenEditModal(group)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#EA650A',
+                                  fontSize: '13px',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                  padding: '4px'
+                                }}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteGroup(group._id)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#EF4444',
+                                  fontSize: '13px',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                  padding: '4px'
+                                }}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Member avatars */}
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px', flexGrow: 1, minHeight: '40px', justifyContent: 'flex-start' }}>
+                            {group.connections && group.connections.length > 0 ? (
+                              group.connections.map((member) => {
+                                const details = member.userDetailId || member;
+                                const avatarImg = details.profileImage || getAvatar(details.gender, details.dateOfBirth);
+                                const name = details.fullName || "User";
+                                return (
+                                  <img
+                                    key={member._id || member.id}
+                                    src={avatarImg}
+                                    alt={name}
+                                    title={name}
+                                    style={{
+                                      width: '32px',
+                                      height: '32px',
+                                      borderRadius: '50%',
+                                      objectFit: 'cover',
+                                      border: '2px solid #fff',
+                                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                    }}
+                                  />
+                                );
+                              })
+                            ) : (
+                              <span style={{ fontSize: '12px', color: '#B1B5C3', fontStyle: 'italic' }}>No members in group</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
+
+            {/* Group Modal */}
+            {isGroupModalOpen && (
+              <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(9, 18, 46, 0.6)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 9999,
+                padding: '20px'
+              }}>
+                <div style={{
+                  background: '#fff',
+                  borderRadius: '16px',
+                  width: '100%',
+                  maxWidth: '500px',
+                  maxHeight: '90vh',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    padding: '20px 24px',
+                    borderBottom: '1px solid #E8EDF3',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#09122E' }}>
+                      {editingGroup ? "Edit Connection Group" : "Create Connection Group"}
+                    </h3>
+                    <button 
+                      onClick={() => setIsGroupModalOpen(false)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        fontSize: '20px',
+                        color: '#777E90',
+                        cursor: 'pointer',
+                        lineHeight: '1',
+                        padding: '4px'
+                      }}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                  
+                  <form onSubmit={handleSaveGroup} style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'hidden' }}>
+                    <div style={{ padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', flexGrow: 1 }}>
+                      
+                      {/* Group Name Input */}
+                      <div>
+                        <label style={{ fontSize: '13px', fontWeight: '600', color: '#353945', marginBottom: '8px', display: 'block', textAlign: 'left' }}>
+                          Group Name <span style={{ color: '#EA650A' }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Football buddies, Coworkers"
+                          value={newGroupName}
+                          onChange={(e) => setNewGroupName(e.target.value)}
+                          required
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            border: '1px solid #DDE2EE',
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                            color: '#09122E',
+                            outline: 'none',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+
+                      {/* Connections Select List */}
+                      <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: '200px' }}>
+                        <label style={{ fontSize: '13px', fontWeight: '600', color: '#353945', marginBottom: '8px', display: 'block', textAlign: 'left' }}>
+                          Select Connections ({selectedConnections.length} selected)
+                        </label>
+                        
+                        {/* Modal Connection Search */}
+                        <input
+                          type="text"
+                          placeholder="Search connections..."
+                          value={groupSearchTerm}
+                          onChange={(e) => setGroupSearchTerm(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            border: '1px solid #DDE2EE',
+                            borderRadius: '8px',
+                            fontSize: '13px',
+                            color: '#09122E',
+                            outline: 'none',
+                            marginBottom: '12px',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+
+                        <div style={{
+                          border: '1px solid #E8EDF3',
+                          borderRadius: '8px',
+                          maxHeight: '220px',
+                          overflowY: 'auto',
+                          padding: '8px'
+                        }}>
+                          {activeConnections.filter(c => {
+                            const fullName = c.fullName || c.name || "";
+                            return fullName.toLowerCase().includes(groupSearchTerm.toLowerCase());
+                          }).length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '20px', color: '#777E90', fontSize: '13px' }}>
+                              No connections found
+                            </div>
+                          ) : (
+                            activeConnections.filter(c => {
+                              const fullName = c.fullName || c.name || "";
+                              return fullName.toLowerCase().includes(groupSearchTerm.toLowerCase());
+                            }).map((conn) => {
+                              const connId = conn._id || conn.id || conn.userId;
+                              const isSelected = selectedConnections.includes(connId);
+                              const details = conn.userDetailId || conn;
+                              const avatarImg = details.profileImage || getAvatar(details.gender, details.dateOfBirth);
+                              const name = details.fullName || "User";
+                              
+                              return (
+                                <div 
+                                  key={connId}
+                                  onClick={() => toggleConnectionSelection(connId)}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    padding: '8px 12px',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    background: isSelected ? '#FFF1E6' : 'transparent',
+                                    transition: 'background 0.15s',
+                                    marginBottom: '4px'
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    readOnly
+                                    style={{
+                                      accentColor: '#EA650A',
+                                      marginRight: '12px',
+                                      cursor: 'pointer'
+                                    }}
+                                  />
+                                  <img
+                                    src={avatarImg}
+                                    alt={name}
+                                    style={{
+                                      width: '32px',
+                                      height: '32px',
+                                      borderRadius: '50%',
+                                      objectFit: 'cover',
+                                      marginRight: '12px'
+                                    }}
+                                  />
+                                  <span style={{ fontSize: '13px', fontWeight: '500', color: '#09122E', textAlign: 'left' }}>
+                                    {name}
+                                  </span>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Modal Footer */}
+                    <div style={{
+                      padding: '16px 24px',
+                      borderTop: '1px solid #E8EDF3',
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                      gap: '12px',
+                      background: '#F8F9FB'
+                    }}>
+                      <button
+                        type="button"
+                        onClick={() => setIsGroupModalOpen(false)}
+                        style={{
+                          background: 'none',
+                          border: '1px solid #DDE2EE',
+                          color: '#353945',
+                          borderRadius: '8px',
+                          padding: '10px 18px',
+                          fontWeight: '600',
+                          fontSize: '13px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        style={{
+                          background: '#EA650A',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '10px 18px',
+                          fontWeight: '600',
+                          fontSize: '13px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {editingGroup ? "Save Changes" : "Create Group"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

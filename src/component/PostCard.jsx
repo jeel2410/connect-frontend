@@ -142,6 +142,11 @@ const PostCard = ({ post, onReact }) => {
             </h4>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <span className="post-date">{formatDate(createdAt)}</span>
+              {post.connectionGroupId && (
+                <span className="group-shared-badge" style={{ background: '#E6F4EA', border: '1px solid #CEEAD6', color: '#137333', fontSize: '11px', fontWeight: '600', padding: '2px 8px', borderRadius: '12px' }}>
+                  Shared with {post.connectionGroupId.name || post.connectionGroupId}
+                </span>
+              )}
               {post.isApproved === false && (
                 <span className="pending-badge" style={{ background: '#FFF3CD', border: '1px solid #FFEBAA', color: '#856404', fontSize: '11px', fontWeight: '600', padding: '2px 8px', borderRadius: '12px' }}>
                   Pending Admin Approval
