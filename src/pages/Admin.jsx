@@ -16,6 +16,7 @@ import Dashboard from "../component/Admin/Dashboard";
 import TrafficSourceStats from "../component/Admin/TrafficSourceStats";
 import PostApproval from "../component/Admin/PostApproval";
 import SportManagement from "../component/Admin/SportManagement";
+import SharedPostManagement from "../component/Admin/SharedPostManagement";
 import "../styles/admin.css";
 
 const Admin = () => {
@@ -32,6 +33,7 @@ const Admin = () => {
               {activeTab === "dashboard" && "Dashboard"}
               {activeTab === "users" && "User Management"}
               {activeTab === "post-approvals" && "Post Approvals"}
+              {activeTab === "shared-posts" && "Shared Post Management"}
               {activeTab === "skills" && "Skill Management"}
               {activeTab === "habits" && "Hobby Management"}
               {activeTab === "companies" && "Company Management"}
@@ -49,6 +51,7 @@ const Admin = () => {
               {activeTab === "dashboard" && "Platform overview and core metrics snapshot"}
               {activeTab === "users" && "View and manage all users"}
               {activeTab === "post-approvals" && "Review and approve/reject newly shared posts or links"}
+              {activeTab === "shared-posts" && "View, disable, or permanently delete live shared posts"}
               {activeTab === "skills" && "Add, edit, and delete skills"}
               {activeTab === "habits" && "Add, edit, and delete hobbies"}
               {activeTab === "interests" && "Add, edit, and delete interests"}
@@ -67,6 +70,7 @@ const Admin = () => {
             {activeTab === "dashboard" && <Dashboard />}
             {activeTab === "users" && <UserManagement />}
             {activeTab === "post-approvals" && <PostApproval />}
+            {activeTab === "shared-posts" && <SharedPostManagement />}
             {activeTab === "skills" && <SkillManagement />}
             {activeTab === "habits" && <HabitManagement />}
             {activeTab === "interests" && <InterestManagement />}

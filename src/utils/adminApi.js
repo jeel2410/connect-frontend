@@ -117,6 +117,62 @@ export const deleteUser = async (userId) => {
   }
 };
 
+// Shared Posts API
+export const getPosts = async (page = 1, limit = 15, search = "") => {
+  try {
+    const queryParams = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
+    if (search) queryParams.append("search", search);
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/posts?${queryParams.toString()}`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch posts");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    throw error;
+  }
+};
+
+export const togglePostVisibility = async (postId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/posts/${postId}/toggle-visibility`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to toggle post visibility");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error toggling post visibility:", error);
+    throw error;
+  }
+};
+
+export const deletePost = async (postId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/posts/${postId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to delete post");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error deleting post:", error);
+    throw error;
+  }
+};
+
 // Skills API
 export const getSkills = async (page = 1, limit = 10, search = "", isActive = null) => {
   try {
