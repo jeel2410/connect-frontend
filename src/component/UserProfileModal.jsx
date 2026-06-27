@@ -488,6 +488,7 @@ export default function UserProfileModal({ userId }) {
   const age = calculateAge(profileData.dateOfBirth);
   const interests = profileData.interests || [];
   const habits = profileData.habits || [];
+  const skills = profileData.skills || [];
   const defaultAvatar = getAvatar(profileData.gender, age || profileData.dateOfBirth);
 
   return (
@@ -599,6 +600,16 @@ export default function UserProfileModal({ userId }) {
               </div>
             </div>
           )}
+          {skills.length > 0 && (
+            <div className="user-profile-detail-section">
+              <h3 className="user-profile-section-title">Skills</h3>
+              <div className="user-profile-pill-group">
+                {skills.map((skill, index) => (
+                  <span key={index} className="user-profile-pill">{skill}</span>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="user-profile-details-grid">
             {/* <div className="user-profile-detail-item">
               <label>Mobile Number</label>
@@ -632,7 +643,13 @@ export default function UserProfileModal({ userId }) {
             </div>
             <div className="user-profile-detail-item">
               <label>Languages</label>
-              <p>{profileData.preferredLanguage || "Not provided"}</p>
+              <p>
+                {Array.isArray(profileData.preferredLanguage)
+                  ? profileData.preferredLanguage.join(", ") || "Not provided"
+                  : profileData.preferredLanguage
+                    ? profileData.preferredLanguage.split(",").map(l => l.trim()).join(", ")
+                    : "Not provided"}
+              </p>
             </div>
             {profileData.position && (
               <div className="user-profile-detail-item">
@@ -646,12 +663,10 @@ export default function UserProfileModal({ userId }) {
                 <p>{industryName}</p>
               </div>
             )}
-            {companyName && (
-              <div className="user-profile-detail-item">
-                <label>Company</label>
-                <p>{companyName}</p>
-              </div>
-            )}
+            <div className="user-profile-detail-item">
+              <label>Company</label>
+              <p>{companyName || "NA"}</p>
+            </div>
           </div>
         </div>
       </div>
