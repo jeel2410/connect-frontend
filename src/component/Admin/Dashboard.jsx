@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Users, ArrowLeftRight, Heart, CreditCard, Share2, MessageSquare, RefreshCw, Loader2, ArrowUpRight, Activity, Smile, TrendingUp } from "lucide-react";
-import { getDashboardStats } from "../../utils/adminApi";
+import { getDashboardStats, getStatsTrend } from "../../utils/adminApi";
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
+  const [selectedStat, setSelectedStat] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -156,7 +157,12 @@ const Dashboard = () => {
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
-            <div key={card.id} className={`dashboard-stat-card card-theme-${card.color}`}>
+            <div 
+              key={card.id} 
+              className={`dashboard-stat-card card-theme-${card.color}`}
+              onClick={() => setSelectedStat(card)}
+              style={{ cursor: "pointer" }}
+            >
               <div className="card-top">
                 <div 
                   className="card-icon-container" 
@@ -178,6 +184,142 @@ const Dashboard = () => {
             </div>
           );
         })}
+      </div>
+
+      {/* Trend Modal */}
+      {selectedStat && (
+        <TrendModal 
+          isOpen={selectedStat !== null}
+          onClose={() => setSelectedStat(null)}
+          statId={selectedStat.id}
+          statTitle={selectedStat.title}
+          statColor={selectedStat.color}
+          statIcon={selectedStat.icon}
+        />
+      )}
+    </div>
+  );
+};
+
+// TrendModal sub-component definition
+const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: Icon }) => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen || !statId) return;
+
+    const fetchTrend = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await getStatsTrend(statId);
+        if (response.success && response.data?.trend) {
+          setData(response.data.trend);
+        } else {
+          setError(response.message || "Failed to load trend data");
+        }
+      } catch (err) {
+        console.error("Error loading trend:", err);
+        setError(err.message || "Something went wrong while loading trend data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrend();
+  }, [isOpen, statId]);
+
+  if (!isOpen) return null;
+
+  // Color mapping matching Dashboard themes
+  const colorMap = {
+    blue: { main: "#0284C7", border: "#38BDF8", bgGradient: "linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)", stopColor: "#0284C7" },
+    emerald: { main: "#059669", border: "#34D399", bgGradient: "linear-gradient(135deg, #ECFDF5 0%, #A7F3D0 100%)", stopColor: "#059669" },
+    purple: { main: "#7E22CE", border: "#C084FC", bgGradient: "linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%)", stopColor: "#7E22CE" },
+    pink: { main: "#BE185D", border: "#F472B6", bgGradient: "linear-gradient(135deg, #FCE7F3 0%, #FBCFE8 100%)", stopColor: "#BE185D" },
+    amber: { main: "#B45309", border: "#FBBF24", bgGradient: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)", stopColor: "#B45309" },
+    indigo: { main: "#4338CA", border: "#818CF8", bgGradient: "linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%)", stopColor: "#4338CA" },
+  };
+
+  const currentTheme = colorMap[statColor] || colorMap.blue;
+
+  // Math insights
+  const totalCount = data.reduce((sum, d) => sum + d.count, 0);
+  const avgCount = (totalCount / (data.length || 1)).toFixed(1);
+  const maxPoint = data.length > 0 ? [...data].sort((a, b) => b.count - a.count)[0] : null;
+
+  return (
+    <div className="trend-modal-overlay" onClick={onClose}>
+      <div className="trend-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="trend-modal-header" style={{ borderLeft: `6px solid ${currentTheme.main}` }}>
+          <div className="trend-header-left">
+            <div className="trend-header-icon" style={{ background: currentTheme.bgGradient, color: currentTheme.main }}>
+              <Icon size={20} />
+            </div>
+            <div>
+              <h3>{statTitle} Trend</h3>
+              <p className="trend-header-subtitle">Last 7 days performance</p>
+            </div>
+          </div>
+          <button className="trend-modal-close" onClick={onClose}>&times;</button>
+        </div>
+
+        <div className="trend-modal-body">
+          {loading ? (
+            <div className="trend-modal-loading">
+              <Loader2 className="spinner animate-spin" size={32} />
+              <p>Fetching latest trends...</p>
+            </div>
+          ) : error ? (
+            <div className="trend-modal-error">
+              <p>{error}</p>
+            </div>
+          ) : (
+            <>
+              {/* Summary Cards */}
+              <div className="trend-summary-row">
+                <div className="trend-summary-card">
+                  <span className="summary-label">7-Day Total</span>
+                  <span className="summary-val" style={{ color: currentTheme.main }}>{totalCount.toLocaleString()}</span>
+                </div>
+                <div className="trend-summary-card">
+                  <span className="summary-label">Daily Avg</span>
+                  <span className="summary-val">{avgCount}</span>
+                </div>
+                <div className="trend-summary-card">
+                  <span className="summary-label">Highest Day</span>
+                  <span className="summary-val">
+                    {maxPoint ? `${maxPoint.count} (${maxPoint.date})` : "-"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Table list */}
+              <div className="trend-table-container">
+                <table className="trend-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th style={{ textAlign: "right" }}>Count</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.slice().reverse().map((row, i) => (
+                      <tr key={i}>
+                        <td className="trend-td-date">{row.date}</td>
+                        <td className="trend-td-count" style={{ color: currentTheme.main, fontWeight: "600", textAlign: "right" }}>
+                          {row.count.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
