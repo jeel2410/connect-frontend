@@ -135,6 +135,42 @@ const Profileverification = () => {
               }
             }
 
+            // Fetch positions to match position name to ID
+            let positionId = "";
+            if (profile.position) {
+              try {
+                const positionsResponse = await fetch(`${API_BASE_URL}/api/list/positions`, {
+                  method: "GET",
+                  headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                if (positionsResponse.ok) {
+                  const positionsResult = await positionsResponse.json();
+                  if (positionsResult.success && positionsResult.data && positionsResult.data.positions) {
+                    const positions = positionsResult.data.positions;
+                    // Check if profile.position is already an ID (24 char hex string)
+                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.position);
+                    if (isObjectId) {
+                      positionId = profile.position;
+                    } else {
+                      // It's a position name, find matching ID
+                      const matchedPosition = positions.find(
+                        pos => pos.name.toLowerCase().trim() === profile.position.toLowerCase().trim()
+                      );
+                      if (matchedPosition) {
+                        positionId = matchedPosition._id;
+                      }
+                    }
+                  }
+                }
+              } catch (err) {
+                console.error("Error fetching positions for matching:", err);
+              }
+            }
+
             // Normalize marital status
             let maritalStatus = profile.status || "";
             if (maritalStatus === "Unmarried") {
@@ -160,7 +196,7 @@ const Profileverification = () => {
               sports: profile.sports || [],
               industry: profile.industry || "",
               company: profile.company || "",
-              position: profile.position || "",
+              position: positionId || profile.position || "",
               photo: profile.profileImage || null,
             });
 

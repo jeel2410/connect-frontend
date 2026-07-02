@@ -409,6 +409,124 @@ export const deleteSport = async (sportId) => {
   }
 };
 
+// Positions API
+export const getPositions = async (page = 1, limit = 10, search = "", isActive = null) => {
+  try {
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    if (search) {
+      queryParams.append("search", search);
+    }
+    if (isActive !== null) {
+      queryParams.append("isActive", isActive.toString());
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/positions?${queryParams.toString()}`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch positions");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching positions:", error);
+    throw error;
+  }
+};
+
+export const createPosition = async (positionData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/positions`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(positionData),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create position");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error creating position:", error);
+    throw error;
+  }
+};
+
+export const updatePosition = async (positionId, positionData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/positions/${positionId}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(positionData),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to update position");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error updating position:", error);
+    throw error;
+  }
+};
+
+export const deletePosition = async (positionId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/positions/${positionId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to delete position");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error deleting position:", error);
+    throw error;
+  }
+};
+
 // Habits API
 export const getHabits = async (page = 1, limit = 10, search = "", isActive = null) => {
   try {

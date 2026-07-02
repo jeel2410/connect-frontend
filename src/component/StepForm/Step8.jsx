@@ -10,6 +10,9 @@ const Step8 = ({ data, updateData, errors, touched }) => {
   const [loadingCompanies, setLoadingCompanies] = useState(false);
   const [industriesError, setIndustriesError] = useState("");
   const [companiesError, setCompaniesError] = useState("");
+  const [positions, setPositions] = useState([]);
+  const [loadingPositions, setLoadingPositions] = useState(false);
+  const [positionsError, setPositionsError] = useState("");
   const selectedIndustry = data.industry || '';
   const selectedCompany = data.company || '';
 
@@ -45,6 +48,40 @@ const Step8 = ({ data, updateData, errors, touched }) => {
     };
 
     fetchIndustries();
+  }, []);
+
+  useEffect(() => {
+    const fetchPositions = async () => {
+      try {
+        setLoadingPositions(true);
+        setPositionsError("");
+        const token = getCookie("authToken");
+        const response = await fetch(`${API_BASE_URL}/api/list/positions`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch positions");
+
+        const result = await response.json();
+        if (result.success && result.data && result.data.positions) {
+          setPositions(result.data.positions);
+        } else {
+          setPositions([]);
+        }
+      } catch (err) {
+        console.error("Error fetching positions:", err);
+        setPositionsError("Failed to load positions");
+        setPositions([]);
+      } finally {
+        setLoadingPositions(false);
+      }
+    };
+
+    fetchPositions();
   }, []);
 
   useEffect(() => {
@@ -139,7 +176,7 @@ const Step8 = ({ data, updateData, errors, touched }) => {
         </div>
 
         {/* Right panel: Companies */}
-        <div className="step8-panel">
+        <div className={`step8-panel${selectedIndustry ? ' step8-panel--active' : ''}`}>
           <div className="step8-panel-header">
             <span className="step8-panel-label">Company</span>
           </div>
@@ -177,26 +214,39 @@ const Step8 = ({ data, updateData, errors, touched }) => {
 
       <div className="position-input-container" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <label className="step8-panel-label" style={{ fontWeight: '600', fontSize: '15px', color: '#1f2937' }}>
-          Position / Job Title
+          Position / Job Title <span className="required">*</span>
         </label>
-        <input
-          type="text"
-          className="form-input"
-          placeholder="e.g. Software Engineer, Marketing Manager, Consultant"
-          value={data.position || ''}
-          onChange={(e) => updateData('position', e.target.value)}
-          style={{
-            width: '100%',
-            padding: '12px 16px',
-            borderRadius: '8px',
-            border: '1px solid #d1d5db',
-            fontSize: '14px',
-            outline: 'none',
-            transition: 'border-color 0.2s',
-          }}
-          onFocus={(e) => e.target.style.borderColor = '#ea580c'}
-          onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-        />
+        {loadingPositions ? (
+          <div style={{ fontSize: '14px', color: '#6b7280' }}>Loading positions...</div>
+        ) : positionsError ? (
+          <div style={{ fontSize: '14px', color: '#dc2626' }}>{positionsError}</div>
+        ) : (
+          <select
+            className="form-input"
+            value={data.position || ''}
+            onChange={(e) => updateData('position', e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              border: '1px solid #d1d5db',
+              fontSize: '14px',
+              outline: 'none',
+              backgroundColor: '#fff',
+              cursor: 'pointer',
+              transition: 'border-color 0.2s',
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#ea580c'}
+            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+          >
+            <option value="">Select a position...</option>
+            {positions.map((pos) => (
+              <option key={pos._id} value={pos._id}>
+                {pos.name}
+              </option>
+            ))}
+          </select>
+        )}
         {touched?.position && errors?.position && (
           <div className="field-error-message" style={{ color: '#dc2626', fontSize: '12px' }}>{errors.position}</div>
         )}

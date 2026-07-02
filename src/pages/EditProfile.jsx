@@ -95,6 +95,9 @@ export default function EditProfile() {
   const [cityMatched, setCityMatched] = useState(false);
   const [industryMatched, setIndustryMatched] = useState(false);
   const [companyMatched, setCompanyMatched] = useState(false);
+  const [positionsList, setPositionsList] = useState([]);
+  const [loadingPositions, setLoadingPositions] = useState(false);
+  const [positionMatched, setPositionMatched] = useState(false);
 
   // Load current profile data
   useEffect(() => {
@@ -295,6 +298,58 @@ export default function EditProfile() {
       }
     }
   }, [industriesList, rawProfileData, industryMatched]);
+
+  // Fetch positions on component mount
+  useEffect(() => {
+    const fetchPositions = async () => {
+      try {
+        setLoadingPositions(true);
+        const token = getCookie("authToken");
+        const response = await fetch(`${API_BASE_URL}/api/list/positions`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.positions) {
+            setPositionsList(result.data.positions);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching positions:", err);
+      } finally {
+        setLoadingPositions(false);
+      }
+    };
+
+    fetchPositions();
+  }, []);
+
+  // Match position name to ID after positions list loads
+  useEffect(() => {
+    if (rawProfileData && rawProfileData.position && positionsList.length > 0 && !positionMatched) {
+      const positionName = rawProfileData.position;
+      // Check if rawProfileData.position is already an ID (24 char hex string)
+      const isObjectId = /^[0-9a-fA-F]{24}$/.test(positionName);
+      if (isObjectId) {
+        setPosition(positionName);
+        setPositionMatched(true);
+      } else {
+        // Find position by name (case-insensitive)
+        const matchedPosition = positionsList.find(
+          pos => pos.name.toLowerCase() === positionName.toLowerCase()
+        );
+        if (matchedPosition) {
+          setPosition(matchedPosition._id);
+          setPositionMatched(true);
+        }
+      }
+    }
+  }, [positionsList, rawProfileData, positionMatched]);
 
   // Fetch companies when industry is selected
   useEffect(() => {
@@ -1580,21 +1635,21 @@ export default function EditProfile() {
                 {industry && (
                   <div className="edit-profile-field-inline">
                     <label>Position</label>
-                    <input
-                      type="text"
+                    <select
                       value={position || ""}
                       onChange={(e) => setPosition(e.target.value)}
-                      style={{
-                        border: "none",
-                        outline: "none",
-                        fontSize: "16px",
-                        color: "#081332",
-                        fontFamily: "'Inter', sans-serif",
-                        fontWeight: 600,
-                        background: "transparent",
-                        width: "100%",
-                      }}
-                    />
+                      disabled={loadingPositions}
+                    >
+                      <option value="">Select Position</option>
+                      {positionsList.map((pos) => (
+                        <option key={pos._id} value={pos._id}>
+                          {pos.name}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="edit-profile-select-arrow">
+                      <img src={dropdownIcon} alt="Dropdown"></img>
+                    </span>
                   </div>
                 )}
               </div>
