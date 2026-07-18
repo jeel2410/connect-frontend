@@ -97,7 +97,23 @@ export default function OfferCard({ searchQuery = "" }) {
     );
   }
 
+  const handleCheckNowClick = async (cardId) => {
+    try {
+      const token = getCookie("authToken");
+      await fetch(`${API_BASE_URL}/api/list/cards/${cardId}/click`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (err) {
+      console.error("Error tracking click:", err);
+    }
+  };
+
   const offers = cards.map(mapCardToOffer);
+
   return (
     <div>
       <div className="offers-page-grid">
@@ -129,8 +145,9 @@ export default function OfferCard({ searchQuery = "" }) {
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="offers-page-apply-btn"
+                onClick={() => handleCheckNowClick(offer.id)}
               >
-                Apply Now
+                Check Now
               </a>
             </div>
 
@@ -142,7 +159,8 @@ export default function OfferCard({ searchQuery = "" }) {
                 features & benefits
               </button>
 
-              {offer.eligibles && offer.eligibles.length > 0 && (
+              {/* Temporarily commented out eligibility criteria */}
+              {/* {offer.eligibles && offer.eligibles.length > 0 && (
                 <div className="offers-page-eligibility">
                   <span 
                     className={`offers-page-eligibility-link ${activeTab[offer.id] === 'eligibility' ? 'active' : ''}`}
@@ -152,11 +170,11 @@ export default function OfferCard({ searchQuery = "" }) {
                     Eligibility & Documents
                   </span>
                 </div>
-              )}
+              )} */}
             </div>
 
             {/* Display Features or Eligibilities based on active tab */}
-            {activeTab[offer.id] === 'eligibility' && offer.eligibles && offer.eligibles.length > 0 ? (
+            {/* {activeTab[offer.id] === 'eligibility' && offer.eligibles && offer.eligibles.length > 0 ? (
               <div className="offers-page-features">
                 <h4>Eligibility & Documents</h4>
                 <ul>
@@ -174,7 +192,16 @@ export default function OfferCard({ searchQuery = "" }) {
                   ))}
                 </ul>
               </div>
-            )}
+            )} */}
+            
+            <div className="offers-page-features">
+              <h4>Key Features</h4>
+              <ul>
+                {offer.features.map((feature, index) => (
+                  <li key={index}>{feature}</li>
+                ))}
+              </ul>
+            </div>
           </div>
         ))}
       </div>

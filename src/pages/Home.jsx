@@ -35,6 +35,8 @@ export default function Home() {
   const [likedProfiles, setLikedProfiles] = useState(new Set());
   const [connectedProfiles, setConnectedProfiles] = useState(new Set());
   const [isSearchActive, setIsSearchActive] = useState(false);
+  const [popupOffer, setPopupOffer] = useState(null);
+  const [showOfferPopup, setShowOfferPopup] = useState(false);
   const [filters, setFilters] = useState({
     ageMin: null,
     ageMax: null,
@@ -516,6 +518,50 @@ export default function Home() {
     setIsFilterOpen(false);
   };
 
+  useEffect(() => {
+    const checkPopupOffer = async () => {
+      try {
+        const token = getCookie("authToken");
+        if (!token) return;
+
+        const response = await fetch(`${API_BASE_URL}/api/list/popup-offer`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.showPopup && result.data.offer) {
+            setPopupOffer(result.data.offer);
+            setShowOfferPopup(true);
+          }
+        }
+      } catch (err) {
+        console.error("Error checking popup offer:", err);
+      }
+    };
+
+    checkPopupOffer();
+  }, []);
+
+  const handlePopupCheckNow = async (cardId) => {
+    try {
+      const token = getCookie("authToken");
+      await fetch(`${API_BASE_URL}/api/list/cards/${cardId}/click`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+    } catch (err) {
+      console.error("Error tracking popup click:", err);
+    }
+  };
+
   return (
     <div>
       <Header></Header>
@@ -654,6 +700,217 @@ export default function Home() {
 
 
       <Footer></Footer>
+
+      {/* Daily Offer Popup */}
+      {showOfferPopup && popupOffer && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backgroundColor: "rgba(0,0,0,0.6)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 9999,
+          backdropFilter: "blur(5px)"
+        }}>
+          <div style={{
+            backgroundColor: "#fff",
+            borderRadius: "16px",
+            width: "90%",
+            maxWidth: "450px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+            padding: "24px",
+            position: "relative",
+            animation: "slideUp 0.3s ease-out",
+            overflow: "hidden"
+          }}>
+            <button 
+              onClick={() => setShowOfferPopup(false)}
+              style={{
+                position: "absolute",
+                top: "12px",
+                right: "12px",
+                background: "rgba(0,0,0,0.05)",
+                border: "none",
+                borderRadius: "50%",
+                width: "30px",
+                height: "30px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "18px",
+                color: "#666",
+                transition: "background 0.2s"
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = "rgba(0,0,0,0.1)"}
+              onMouseLeave={(e) => e.target.style.backgroundColor = "rgba(0,0,0,0.05)"}
+            >
+              <X size={18} />
+            </button>
+
+            {popupOffer.offer_image ? (
+              <div style={{
+                width: "100%",
+                height: "200px",
+                borderRadius: "12px",
+                overflow: "hidden",
+                marginBottom: "16px",
+                backgroundColor: "#f5f5f5",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}>
+                <img 
+                  src={popupOffer.offer_image} 
+                  alt={popupOffer.name} 
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover"
+                  }}
+                />
+              </div>
+            ) : popupOffer.logo_image ? (
+              <div style={{
+                width: "100%",
+                height: "150px",
+                borderRadius: "12px",
+                overflow: "hidden",
+                marginBottom: "16px",
+                backgroundColor: "#fff8f5",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "1px solid #ffe0d0"
+              }}>
+                <img 
+                  src={popupOffer.logo_image} 
+                  alt={popupOffer.name} 
+                  style={{
+                    maxWidth: "120px",
+                    maxHeight: "120px",
+                    objectFit: "contain"
+                  }}
+                />
+              </div>
+            ) : null}
+
+            <h3 style={{
+              fontSize: "20px",
+              fontWeight: "700",
+              color: "#333",
+              margin: "0 0 8px 0",
+              textAlign: "center"
+            }}>{popupOffer.name}</h3>
+
+            {popupOffer.description && (
+              <p style={{
+                fontSize: "14px",
+                color: "#666",
+                margin: "0 0 16px 0",
+                textAlign: "center",
+                lineHeight: "1.4"
+              }}>{popupOffer.description}</p>
+            )}
+
+            {popupOffer.features && popupOffer.features.length > 0 && (
+              <div style={{
+                backgroundColor: "#f9f9f9",
+                borderRadius: "12px",
+                padding: "16px",
+                marginBottom: "20px",
+                maxHeight: "150px",
+                overflowY: "auto"
+              }}>
+                <h4 style={{
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  color: "#ea650a",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                  margin: "0 0 8px 0"
+                }}>Key Features</h4>
+                <ul style={{
+                  margin: 0,
+                  paddingLeft: "20px",
+                  fontSize: "13px",
+                  color: "#444",
+                  lineHeight: "1.6"
+                }}>
+                  {popupOffer.features.map((feature, i) => (
+                    <li key={i} style={{ marginBottom: "4px" }}>{feature}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div style={{
+              display: "flex",
+              gap: "12px",
+              marginTop: "20px"
+            }}>
+              <button
+                onClick={() => setShowOfferPopup(false)}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "1px solid #ccc",
+                  backgroundColor: "#fff",
+                  color: "#666",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  transition: "background 0.2s"
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = "#f5f5f5"}
+                onMouseLeave={(e) => e.target.style.backgroundColor = "#fff"}
+              >
+                Dismiss
+              </button>
+              
+              <a
+                href={popupOffer.url || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  handlePopupCheckNow(popupOffer._id);
+                  setShowOfferPopup(false);
+                }}
+                style={{
+                  flex: 2,
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "none",
+                  backgroundColor: "#ea650a",
+                  color: "#fff",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  textAlign: "center",
+                  textDecoration: "none",
+                  boxShadow: "0 4px 12px rgba(234, 101, 10, 0.25)",
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = "#d35400";
+                  e.target.style.boxShadow = "0 6px 16px rgba(234, 101, 10, 0.35)";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = "#ea650a";
+                  e.target.style.boxShadow = "0 4px 12px rgba(234, 101, 10, 0.25)";
+                }}
+              >
+                Check Now
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

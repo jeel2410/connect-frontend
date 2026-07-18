@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Search, Plus, Edit2, Trash2, X, Save, ChevronLeft, ChevronRight, XCircle } from "lucide-react";
-import { getCards, createCard, updateCard, deleteCard } from "../../utils/adminApi";
+import { Search, Plus, Edit2, Trash2, X, Save, ChevronLeft, ChevronRight, XCircle, Users, Download, Mail } from "lucide-react";
+import { getCards, createCard, updateCard, deleteCard, getPopupSetting, updatePopupSetting, getCities, getPositions, getCardClicks, broadcastCardMailer } from "../../utils/adminApi";
 
 const CardManagement = () => {
   const [cards, setCards] = useState([]);
@@ -24,14 +24,34 @@ const CardManagement = () => {
     logo_image: null,
     logo_image_preview: null,
     features: [],
-    eligibles: []
+    eligibles: [],
+    targetAgeMin: "",
+    targetAgeMax: "",
+    targetCities: [],
+    targetPositions: [],
+    offer_image: null,
+    offer_image_preview: null
   });
   const [newFeature, setNewFeature] = useState("");
   const [newEligible, setNewEligible] = useState("");
+  const [newCity, setNewCity] = useState("");
+  const [newPosition, setNewPosition] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [isPopupEnabled, setIsPopupEnabled] = useState(true);
+  const [availableCities, setAvailableCities] = useState([]);
+  const [availablePositions, setAvailablePositions] = useState([]);
+  const [isClicksModalOpen, setIsClicksModalOpen] = useState(false);
+  const [selectedCardClicks, setSelectedCardClicks] = useState([]);
+  const [selectedCardForClicks, setSelectedCardForClicks] = useState(null);
+  const [loadingClicks, setLoadingClicks] = useState(false);
+  const [clicksError, setClicksError] = useState(null);
+  const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
+  const [broadcastSubject, setBroadcastSubject] = useState("");
+  const [broadcastHtml, setBroadcastHtml] = useState("");
+  const [sendingBroadcast, setSendingBroadcast] = useState(false);
   const itemsPerPage = 10;
 
-  // Fetch cards from API
+  // Fetch cards and settings from API
   const fetchCards = async () => {
     try {
       setLoading(true);
@@ -58,6 +78,45 @@ const CardManagement = () => {
   useEffect(() => {
     fetchCards();
   }, [currentPage]);
+
+  // Fetch popup setting, cities, and positions
+  useEffect(() => {
+    const fetchSettingAndDropdowns = async () => {
+      try {
+        const res = await getPopupSetting();
+        if (res.success) {
+          setIsPopupEnabled(res.data ? res.data.isPopupEnabled : res.isPopupEnabled);
+        }
+      } catch (err) {
+        console.error("Failed to fetch popup setting", err);
+      }
+
+      try {
+        const cityRes = await getCities(1, 1000, "", true);
+        if (cityRes.success && cityRes.data) {
+          setAvailableCities(cityRes.data.cities || []);
+        }
+        const posRes = await getPositions(1, 1000, "", true);
+        if (posRes.success && posRes.data) {
+          setAvailablePositions(posRes.data.positions || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch dropdown data", err);
+      }
+    };
+    fetchSettingAndDropdowns();
+  }, []);
+
+  const handleTogglePopupSetting = async (e) => {
+    const newValue = e.target.checked;
+    setIsPopupEnabled(newValue);
+    try {
+      await updatePopupSetting(newValue);
+    } catch (err) {
+      alert("Failed to update global popup setting: " + err.message);
+      setIsPopupEnabled(!newValue); // revert
+    }
+  };
 
   // Debounce search
   useEffect(() => {
@@ -86,6 +145,112 @@ const CardManagement = () => {
     }
   };
 
+  const handleViewClicks = async (card) => {
+    setSelectedCardForClicks(card);
+    setIsClicksModalOpen(true);
+    setLoadingClicks(true);
+    setClicksError(null);
+    try {
+      const response = await getCardClicks(card._id);
+      if (response.success && response.data) {
+        setSelectedCardClicks(response.data.clicks || []);
+      } else {
+        setSelectedCardClicks([]);
+      }
+    } catch (err) {
+      setClicksError(err.message || "Failed to load click logs");
+      console.error(err);
+    } finally {
+      setLoadingClicks(false);
+    }
+  };
+
+  const downloadClicksCSV = () => {
+    if (!selectedCardClicks.length) return;
+
+    // Create CSV content
+    const headers = ["Name", "Mobile", "Email ID", "Click Count", "Last Clicked At"];
+    const rows = selectedCardClicks.map(click => [
+      click.fullName || "N/A",
+      click.mobile || "N/A",
+      click.email || "N/A",
+      click.clickCount || 0,
+      click.lastClickedAt ? new Date(click.lastClickedAt).toLocaleString() : "N/A"
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `clicks_offer_${selectedCardForClicks?.name || "card"}_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleOpenBroadcast = () => {
+    setIsClicksModalOpen(false);
+    setBroadcastSubject(`Exclusive Offer: ${selectedCardForClicks?.name || "Special Offer"}`);
+    
+    // Set a premium styled HTML template pre-filled with the offer information
+    const defaultTemplate = `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+  <h2 style="color: #EC7523; margin-top: 0;">Hello {{name}},</h2>
+  <p>We noticed you were interested in our offer: <strong>${selectedCardForClicks?.name || ''}</strong>.</p>
+  
+  <div style="background-color: #fff7ed; border-left: 4px solid #EC7523; padding: 15px; margin: 20px 0; border-radius: 4px;">
+    <h3 style="margin-top: 0; color: #d45a09;">${selectedCardForClicks?.name || ''}</h3>
+    <p style="color: #4b5563; line-height: 1.5; font-size: 14px;">${selectedCardForClicks?.description || ''}</p>
+    
+    ${selectedCardForClicks?.features && selectedCardForClicks.features.length > 0 ? `
+      <h4 style="margin-bottom: 8px; color: #1f2937;">Key Features:</h4>
+      <ul style="margin: 0; padding-left: 20px; color: #4b5563; font-size: 14px;">
+        ${selectedCardForClicks.features.map(f => `<li style="margin-bottom: 4px;">${f}</li>`).join('')}
+      </ul>
+    ` : ''}
+  </div>
+
+  <p style="margin-bottom: 25px; line-height: 1.6;">Don't miss out on this opportunity! Click the button below to get started or view details now.</p>
+  
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="${selectedCardForClicks?.url || '#'}" target="_blank" style="background-color: #EC7523; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Check Offer Now</a>
+  </div>
+
+  <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
+  <p style="color: #9ca3af; font-size: 12px; text-align: center;">You received this email because you clicked on this offer in Connect.</p>
+</div>
+    `.trim();
+    
+    setBroadcastHtml(defaultTemplate);
+    setIsBroadcastModalOpen(true);
+  };
+
+  const handleSendBroadcast = async () => {
+    if (!broadcastSubject.trim() || !broadcastHtml.trim()) {
+      alert("Subject and body cannot be empty");
+      return;
+    }
+
+    setSendingBroadcast(true);
+    try {
+      const response = await broadcastCardMailer(selectedCardForClicks._id, broadcastSubject, broadcastHtml);
+      if (response.success) {
+        alert(`Mailer sent successfully to ${response.data.sent} users! (${response.data.skipped} skipped)`);
+        setIsBroadcastModalOpen(false);
+      }
+    } catch (err) {
+      alert(err.message || "Failed to send mailer broadcast");
+      console.error(err);
+    } finally {
+      setSendingBroadcast(false);
+    }
+  };
+
   const handleAdd = () => {
     setFormData({ 
       name: "", 
@@ -94,10 +259,18 @@ const CardManagement = () => {
       logo_image: null,
       logo_image_preview: null,
       features: [],
-      eligibles: []
+      eligibles: [],
+      targetAgeMin: "",
+      targetAgeMax: "",
+      targetCities: [],
+      targetPositions: [],
+      offer_image: null,
+      offer_image_preview: null
     });
     setNewFeature("");
     setNewEligible("");
+    setNewCity("");
+    setNewPosition("");
     setIsAddModalOpen(true);
   };
 
@@ -110,10 +283,18 @@ const CardManagement = () => {
       logo_image: null,
       logo_image_preview: card.logo_image || null,
       features: card.features && Array.isArray(card.features) ? [...card.features] : [],
-      eligibles: card.eligibles && Array.isArray(card.eligibles) ? [...card.eligibles] : []
+      eligibles: card.eligibles && Array.isArray(card.eligibles) ? [...card.eligibles] : [],
+      targetAgeMin: card.targetAgeMin !== null && card.targetAgeMin !== undefined ? card.targetAgeMin : "",
+      targetAgeMax: card.targetAgeMax !== null && card.targetAgeMax !== undefined ? card.targetAgeMax : "",
+      targetCities: card.targetCities && Array.isArray(card.targetCities) ? [...card.targetCities] : [],
+      targetPositions: card.targetPositions && Array.isArray(card.targetPositions) ? [...card.targetPositions] : [],
+      offer_image: null,
+      offer_image_preview: card.offer_image || null
     });
     setNewFeature("");
     setNewEligible("");
+    setNewCity("");
+    setNewPosition("");
     setIsEditModalOpen(true);
   };
 
@@ -147,6 +328,21 @@ const CardManagement = () => {
         ...formData,
         logo_image: file,
         logo_image_preview: URL.createObjectURL(file)
+      });
+    }
+  };
+
+  const handleOfferImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File size must be less than 5MB");
+        return;
+      }
+      setFormData({
+        ...formData,
+        offer_image: file,
+        offer_image_preview: URL.createObjectURL(file)
       });
     }
   };
@@ -195,26 +391,24 @@ const CardManagement = () => {
 
     try {
       setSubmitting(true);
+      const payload = {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        url: formData.url.trim(),
+        logo_image: formData.logo_image,
+        features: formData.features,
+        eligibles: formData.eligibles,
+        targetAgeMin: formData.targetAgeMin !== "" ? Number(formData.targetAgeMin) : null,
+        targetAgeMax: formData.targetAgeMax !== "" ? Number(formData.targetAgeMax) : null,
+        targetCities: formData.targetCities,
+        targetPositions: formData.targetPositions,
+        offer_image: formData.offer_image
+      };
+
       if (isEditModalOpen) {
-        // Update existing card
-        await updateCard(editingCard._id, {
-          name: formData.name.trim(),
-          description: formData.description.trim(),
-          url: formData.url.trim(),
-          logo_image: formData.logo_image,
-          features: formData.features,
-          eligibles: formData.eligibles
-        });
+        await updateCard(editingCard._id, payload);
       } else {
-        // Add new card
-        await createCard({
-          name: formData.name.trim(),
-          description: formData.description.trim(),
-          url: formData.url.trim(),
-          logo_image: formData.logo_image,
-          features: formData.features,
-          eligibles: formData.eligibles
-        });
+        await createCard(payload);
       }
 
       setIsAddModalOpen(false);
@@ -226,10 +420,18 @@ const CardManagement = () => {
         logo_image: null,
         logo_image_preview: null,
         features: [],
-        eligibles: []
+        eligibles: [],
+        targetAgeMin: "",
+        targetAgeMax: "",
+        targetCities: [],
+        targetPositions: [],
+        offer_image: null,
+        offer_image_preview: null
       });
       setNewFeature("");
       setNewEligible("");
+      setNewCity("");
+      setNewPosition("");
       setEditingCard(null);
       await fetchCards(); // Refresh the list
     } catch (err) {
@@ -241,9 +443,30 @@ const CardManagement = () => {
 
   return (
     <div className="admin-section">
-      <div className="admin-section-header">
-        <h2 className="section-title">Offer Management</h2>
-        <div className="admin-actions">
+      <div className="admin-section-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "15px" }}>
+        <h2 className="section-title" style={{ margin: 0 }}>Offer Management</h2>
+        <div className="admin-actions" style={{ display: "flex", alignItems: "center", gap: "15px", flexWrap: "wrap" }}>
+          <div className="popup-toggle-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '10px' }}>
+            <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px', margin: 0 }}>
+              <input 
+                type="checkbox" 
+                checked={isPopupEnabled} 
+                onChange={handleTogglePopupSetting}
+                style={{ opacity: 0, width: 0, height: 0 }}
+              />
+              <span className="slider round" style={{
+                position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                backgroundColor: isPopupEnabled ? '#ff6f00' : '#ccc', transition: '.4s', borderRadius: '34px'
+              }}>
+                <span style={{
+                  position: 'absolute', content: '""', height: '14px', width: '14px', left: isPopupEnabled ? '22px' : '4px', bottom: '3px',
+                  backgroundColor: 'white', transition: '.4s', borderRadius: '50%'
+                }} />
+              </span>
+            </label>
+            <span style={{ fontSize: '14px', fontWeight: '500', color: '#555' }}>Daily Popup Enabled</span>
+          </div>
+
           <div className="search-container">
             <Search size={20} className="search-icon" />
             <input
@@ -270,26 +493,28 @@ const CardManagement = () => {
               <th>Description</th>
               <th>URL</th>
               <th>Features</th>
-              <th>Eligibles</th>
+              {/* <th>Eligibles</th> */}
+              <th>Targeting</th>
+              <th>Clicks</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="7" className="empty-state">
+                <td colSpan="8" className="empty-state">
                   Loading...
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan="7" className="empty-state" style={{ color: "red" }}>
+                <td colSpan="8" className="empty-state" style={{ color: "red" }}>
                   {error}
                 </td>
               </tr>
             ) : cards.length === 0 ? (
               <tr>
-                <td colSpan="7" className="empty-state">
+                <td colSpan="8" className="empty-state">
                   No cards found
                 </td>
               </tr>
@@ -321,15 +546,48 @@ const CardManagement = () => {
                       "N/A"
                     )}
                   </td>
-                  <td>
+                  {/* <td>
                     {card.eligibles && Array.isArray(card.eligibles) && card.eligibles.length > 0 ? (
                       <span>{card.eligibles.length} eligible(s)</span>
                     ) : (
                       "N/A"
                     )}
+                  </td> */}
+                  <td>
+                    <div style={{ fontSize: '12px', lineHeight: '1.4' }}>
+                      <div><strong>Age:</strong> {card.targetAgeMin !== null && card.targetAgeMin !== undefined ? card.targetAgeMin : 'Any'} - {card.targetAgeMax !== null && card.targetAgeMax !== undefined ? card.targetAgeMax : 'Any'}</div>
+                      <div><strong>Cities:</strong> {card.targetCities && card.targetCities.length > 0 ? `${card.targetCities.length} targeted` : 'All'}</div>
+                      <div><strong>Positions:</strong> {card.targetPositions && card.targetPositions.length > 0 ? `${card.targetPositions.length} targeted` : 'All'}</div>
+                    </div>
+                  </td>
+                  <td>
+                    <button
+                      onClick={() => handleViewClicks(card)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: 0,
+                        textAlign: "left"
+                      }}
+                      title="View Click Details"
+                    >
+                      <span className="badge" style={{ backgroundColor: '#e3f2fd', color: '#0d47a1', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Users size={12} /> {card.clicks || 0}
+                      </span>
+                    </button>
                   </td>
                   <td>
                     <div className="action-buttons">
+                      <button
+                        className="action-btn"
+                        style={{ backgroundColor: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', cursor: 'pointer' }}
+                        onClick={() => handleViewClicks(card)}
+                        title="View Click Logs / Send Mailer"
+                        disabled={loading}
+                      >
+                        <Users size={16} />
+                      </button>
                       <button
                         className="action-btn edit-btn"
                         onClick={() => handleEdit(card)}
@@ -409,7 +667,7 @@ const CardManagement = () => {
         <div className="modal-overlay" onClick={() => setIsAddModalOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px", maxHeight: "90vh", overflowY: "auto" }}>
             <div className="modal-header">
-              <h3>Add New Card</h3>
+              <h3>Add New Offer</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setIsAddModalOpen(false)}
@@ -419,13 +677,13 @@ const CardManagement = () => {
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
               <div className="form-groups">
-                <label>Card Name *</label>
+                <label>Offer Name *</label>
                 <input
                   type="text"
                   className="form-input"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Enter card name"
+                  placeholder="Enter offer name"
                   required
                   disabled={submitting}
                 />
@@ -465,6 +723,24 @@ const CardManagement = () => {
                     <img 
                       src={formData.logo_image_preview} 
                       alt="Preview" 
+                      style={{ maxWidth: "200px", maxHeight: "200px", borderRadius: "4px" }}
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="form-groups">
+                <label>Offer Image (For Daily Popup)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleOfferImageChange}
+                  disabled={submitting}
+                />
+                {formData.offer_image_preview && (
+                  <div style={{ marginTop: "10px" }}>
+                    <img 
+                      src={formData.offer_image_preview} 
+                      alt="Offer Preview" 
                       style={{ maxWidth: "200px", maxHeight: "200px", borderRadius: "4px" }}
                     />
                   </div>
@@ -532,7 +808,167 @@ const CardManagement = () => {
                   </div>
                 )}
               </div>
-              <div className="form-groups">
+
+              {/* Targeting Criteria Section */}
+              <div style={{ borderTop: "1px solid #eee", paddingTop: "15px", marginTop: "15px" }}>
+                <h4 style={{ marginBottom: "10px", color: "#ff6f00" }}>Targeting Criteria (Optional)</h4>
+                
+                <div style={{ display: "flex", gap: "15px", marginBottom: "15px" }}>
+                  <div className="form-groups" style={{ flex: 1 }}>
+                    <label>Min Age</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={formData.targetAgeMin}
+                      onChange={(e) => setFormData({ ...formData, targetAgeMin: e.target.value })}
+                      placeholder="e.g. 18"
+                      min="0"
+                      disabled={submitting}
+                    />
+                  </div>
+                  <div className="form-groups" style={{ flex: 1 }}>
+                    <label>Max Age</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={formData.targetAgeMax}
+                      onChange={(e) => setFormData({ ...formData, targetAgeMax: e.target.value })}
+                      placeholder="e.g. 35"
+                      min="0"
+                      disabled={submitting}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-groups" style={{ marginBottom: "15px" }}>
+                  <label>Target Cities</label>
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+                    <select
+                      className="form-input"
+                      value={newCity}
+                      onChange={(e) => setNewCity(e.target.value)}
+                      disabled={submitting}
+                    >
+                      <option value="">-- Select City --</option>
+                      {availableCities.map(city => (
+                        <option key={city._id} value={city.name}>{city.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => {
+                        if (newCity && !formData.targetCities.includes(newCity)) {
+                          setFormData({ ...formData, targetCities: [...formData.targetCities, newCity] });
+                          setNewCity("");
+                        }
+                      }}
+                      disabled={submitting || !newCity}
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {formData.targetCities.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                      {formData.targetCities.map((city, index) => (
+                        <span
+                          key={index}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "4px 8px",
+                            backgroundColor: "#ffe0b2",
+                            color: "#e65100",
+                            borderRadius: "4px",
+                            fontSize: "14px",
+                            fontWeight: "500"
+                          }}
+                        >
+                          {city}
+                          <button
+                            type="button"
+                            onClick={() => setFormData({
+                              ...formData,
+                              targetCities: formData.targetCities.filter((_, i) => i !== index)
+                            })}
+                            disabled={submitting}
+                            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", color: "#e65100" }}
+                          >
+                            <XCircle size={14} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="form-groups" style={{ marginBottom: "15px" }}>
+                  <label>Target Positions</label>
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+                    <select
+                      className="form-input"
+                      value={newPosition}
+                      onChange={(e) => setNewPosition(e.target.value)}
+                      disabled={submitting}
+                    >
+                      <option value="">-- Select Position --</option>
+                      {availablePositions.map(pos => (
+                        <option key={pos._id} value={pos.name}>{pos.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => {
+                        if (newPosition && !formData.targetPositions.includes(newPosition)) {
+                          setFormData({ ...formData, targetPositions: [...formData.targetPositions, newPosition] });
+                          setNewPosition("");
+                        }
+                      }}
+                      disabled={submitting || !newPosition}
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {formData.targetPositions.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                      {formData.targetPositions.map((position, index) => (
+                        <span
+                          key={index}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "4px 8px",
+                            backgroundColor: "#e8f5e9",
+                            color: "#1b5e20",
+                            borderRadius: "4px",
+                            fontSize: "14px",
+                            fontWeight: "500"
+                          }}
+                        >
+                          {position}
+                          <button
+                            type="button"
+                            onClick={() => setFormData({
+                              ...formData,
+                              targetPositions: formData.targetPositions.filter((_, i) => i !== index)
+                            })}
+                            disabled={submitting}
+                            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", color: "#1b5e20" }}
+                          >
+                            <XCircle size={14} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Temporarily commented out eligibility criteria */}
+              {/* <div className="form-groups">
                 <label>Eligibles</label>
                 <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
                   <input
@@ -561,39 +997,17 @@ const CardManagement = () => {
                 {formData.eligibles.length > 0 && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                     {formData.eligibles.map((eligible, index) => (
-                      <span
-                        key={index}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          padding: "4px 8px",
-                          backgroundColor: "#f0f0f0",
-                          borderRadius: "4px",
-                          fontSize: "14px"
-                        }}
-                      >
+                      <span key={index} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "4px 8px", backgroundColor: "#f0f0f0", borderRadius: "4px", fontSize: "14px" }}>
                         {eligible}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveEligible(index)}
-                          disabled={submitting}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            padding: "0",
-                            display: "flex",
-                            alignItems: "center"
-                          }}
-                        >
+                        <button type="button" onClick={() => handleRemoveEligible(index)} disabled={submitting} style={{ background: "none", border: "none", cursor: "pointer", padding: "0", display: "flex", alignItems: "center" }}>
                           <XCircle size={14} />
                         </button>
                       </span>
                     ))}
                   </div>
                 )}
-              </div>
+              </div> */}
+
               <div className="modal-actions">
                 <button
                   type="button"
@@ -618,7 +1032,7 @@ const CardManagement = () => {
         <div className="modal-overlay" onClick={() => setIsEditModalOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px", maxHeight: "90vh", overflowY: "auto" }}>
             <div className="modal-header">
-              <h3>Edit Card</h3>
+              <h3>Edit Offer</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setIsEditModalOpen(false)}
@@ -628,13 +1042,13 @@ const CardManagement = () => {
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
               <div className="form-groups">
-                <label>Card Name *</label>
+                <label>Offer Name *</label>
                 <input
                   type="text"
                   className="form-input"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Enter card name"
+                  placeholder="Enter offer name"
                   required
                   disabled={submitting}
                 />
@@ -674,6 +1088,24 @@ const CardManagement = () => {
                     <img 
                       src={formData.logo_image_preview} 
                       alt="Preview" 
+                      style={{ maxWidth: "200px", maxHeight: "200px", borderRadius: "4px" }}
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="form-groups">
+                <label>Offer Image (For Daily Popup)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleOfferImageChange}
+                  disabled={submitting}
+                />
+                {formData.offer_image_preview && (
+                  <div style={{ marginTop: "10px" }}>
+                    <img 
+                      src={formData.offer_image_preview} 
+                      alt="Offer Preview" 
                       style={{ maxWidth: "200px", maxHeight: "200px", borderRadius: "4px" }}
                     />
                   </div>
@@ -741,7 +1173,167 @@ const CardManagement = () => {
                   </div>
                 )}
               </div>
-              <div className="form-groups">
+
+              {/* Targeting Criteria Section */}
+              <div style={{ borderTop: "1px solid #eee", paddingTop: "15px", marginTop: "15px" }}>
+                <h4 style={{ marginBottom: "10px", color: "#ff6f00" }}>Targeting Criteria (Optional)</h4>
+                
+                <div style={{ display: "flex", gap: "15px", marginBottom: "15px" }}>
+                  <div className="form-groups" style={{ flex: 1 }}>
+                    <label>Min Age</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={formData.targetAgeMin}
+                      onChange={(e) => setFormData({ ...formData, targetAgeMin: e.target.value })}
+                      placeholder="e.g. 18"
+                      min="0"
+                      disabled={submitting}
+                    />
+                  </div>
+                  <div className="form-groups" style={{ flex: 1 }}>
+                    <label>Max Age</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={formData.targetAgeMax}
+                      onChange={(e) => setFormData({ ...formData, targetAgeMax: e.target.value })}
+                      placeholder="e.g. 35"
+                      min="0"
+                      disabled={submitting}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-groups" style={{ marginBottom: "15px" }}>
+                  <label>Target Cities</label>
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+                    <select
+                      className="form-input"
+                      value={newCity}
+                      onChange={(e) => setNewCity(e.target.value)}
+                      disabled={submitting}
+                    >
+                      <option value="">-- Select City --</option>
+                      {availableCities.map(city => (
+                        <option key={city._id} value={city.name}>{city.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => {
+                        if (newCity && !formData.targetCities.includes(newCity)) {
+                          setFormData({ ...formData, targetCities: [...formData.targetCities, newCity] });
+                          setNewCity("");
+                        }
+                      }}
+                      disabled={submitting || !newCity}
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {formData.targetCities.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                      {formData.targetCities.map((city, index) => (
+                        <span
+                          key={index}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "4px 8px",
+                            backgroundColor: "#ffe0b2",
+                            color: "#e65100",
+                            borderRadius: "4px",
+                            fontSize: "14px",
+                            fontWeight: "500"
+                          }}
+                        >
+                          {city}
+                          <button
+                            type="button"
+                            onClick={() => setFormData({
+                              ...formData,
+                              targetCities: formData.targetCities.filter((_, i) => i !== index)
+                            })}
+                            disabled={submitting}
+                            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", color: "#e65100" }}
+                          >
+                            <XCircle size={14} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="form-groups" style={{ marginBottom: "15px" }}>
+                  <label>Target Positions</label>
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+                    <select
+                      className="form-input"
+                      value={newPosition}
+                      onChange={(e) => setNewPosition(e.target.value)}
+                      disabled={submitting}
+                    >
+                      <option value="">-- Select Position --</option>
+                      {availablePositions.map(pos => (
+                        <option key={pos._id} value={pos.name}>{pos.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => {
+                        if (newPosition && !formData.targetPositions.includes(newPosition)) {
+                          setFormData({ ...formData, targetPositions: [...formData.targetPositions, newPosition] });
+                          setNewPosition("");
+                        }
+                      }}
+                      disabled={submitting || !newPosition}
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {formData.targetPositions.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                      {formData.targetPositions.map((position, index) => (
+                        <span
+                          key={index}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "4px 8px",
+                            backgroundColor: "#e8f5e9",
+                            color: "#1b5e20",
+                            borderRadius: "4px",
+                            fontSize: "14px",
+                            fontWeight: "500"
+                          }}
+                        >
+                          {position}
+                          <button
+                            type="button"
+                            onClick={() => setFormData({
+                              ...formData,
+                              targetPositions: formData.targetPositions.filter((_, i) => i !== index)
+                            })}
+                            disabled={submitting}
+                            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", color: "#1b5e20" }}
+                          >
+                            <XCircle size={14} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Temporarily commented out eligibility criteria */}
+              {/* <div className="form-groups">
                 <label>Eligibles</label>
                 <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
                   <input
@@ -770,39 +1362,17 @@ const CardManagement = () => {
                 {formData.eligibles.length > 0 && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                     {formData.eligibles.map((eligible, index) => (
-                      <span
-                        key={index}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          padding: "4px 8px",
-                          backgroundColor: "#f0f0f0",
-                          borderRadius: "4px",
-                          fontSize: "14px"
-                        }}
-                      >
+                      <span key={index} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "4px 8px", backgroundColor: "#f0f0f0", borderRadius: "4px", fontSize: "14px" }}>
                         {eligible}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveEligible(index)}
-                          disabled={submitting}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            padding: "0",
-                            display: "flex",
-                            alignItems: "center"
-                          }}
-                        >
+                        <button type="button" onClick={() => handleRemoveEligible(index)} disabled={submitting} style={{ background: "none", border: "none", cursor: "pointer", padding: "0", display: "flex", alignItems: "center" }}>
                           <XCircle size={14} />
                         </button>
                       </span>
                     ))}
                   </div>
                 )}
-              </div>
+              </div> */}
+
               <div className="modal-actions">
                 <button
                   type="button"
@@ -818,6 +1388,174 @@ const CardManagement = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Click Tracking Modal */}
+      {isClicksModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsClicksModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "700px", maxHeight: "90vh", overflowY: "auto", display: "flex", flexDirection: "column" }}>
+            <div className="modal-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e5e7eb", paddingBottom: "12px" }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#1f2937" }}>Users Who Clicked</h3>
+                <p style={{ margin: "4px 0 0 0", fontSize: "0.875rem", color: "#6b7280" }}>
+                  Offer: <strong>{selectedCardForClicks?.name}</strong>
+                </p>
+              </div>
+              <button className="modal-close-btn" onClick={() => setIsClicksModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af" }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
+              {loadingClicks ? (
+                <div style={{ textAlign: "center", padding: "40px 0", color: "#6b7280" }}>Loading user clicks...</div>
+              ) : clicksError ? (
+                <div style={{ textAlign: "center", padding: "20px 0", color: "#dc2626" }}>{clicksError}</div>
+              ) : selectedCardClicks.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "45px 0" }}>
+                  <p style={{ margin: 0, color: "#6b7280", fontSize: "0.95rem" }}>No click logs found for this offer yet.</p>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+                  <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                    <button
+                      onClick={downloadClicksCSV}
+                      className="btn-secondary"
+                      style={{ display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151", padding: "8px 14px", borderRadius: "6px", fontSize: "14px", fontWeight: "500", cursor: "pointer" }}
+                    >
+                      <Download size={16} /> Download CSV
+                    </button>
+                    <button
+                      onClick={handleOpenBroadcast}
+                      className="btn-primary"
+                      style={{ display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "#EC7523", color: "white", border: "none", padding: "8px 14px", borderRadius: "6px", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}
+                    >
+                      <Mail size={16} /> Broadcast Mailer
+                    </button>
+                  </div>
+
+                  <div className="table-container" style={{ border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden", marginBottom: 0 }}>
+                    <table className="admin-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr style={{ backgroundColor: "#f9fafb" }}>
+                          <th style={{ padding: "10px 12px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "#374151" }}>Name</th>
+                          <th style={{ padding: "10px 12px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "#374151" }}>Mobile</th>
+                          <th style={{ padding: "10px 12px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "#374151" }}>Email ID</th>
+                          <th style={{ padding: "10px 12px", textAlign: "center", fontSize: "13px", fontWeight: "600", color: "#374151" }}>Click Count</th>
+                          <th style={{ padding: "10px 12px", textAlign: "left", fontSize: "13px", fontWeight: "600", color: "#374151" }}>Last Clicked At</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedCardClicks.map((click, index) => (
+                          <tr key={click._id || index} style={{ borderTop: "1px solid #e5e7eb" }}>
+                            <td style={{ padding: "10px 12px", fontSize: "14px", color: "#1f2937" }}>{click.fullName || "N/A"}</td>
+                            <td style={{ padding: "10px 12px", fontSize: "14px", color: "#4b5563" }}>{click.mobile || "N/A"}</td>
+                            <td style={{ padding: "10px 12px", fontSize: "14px", color: "#4b5563" }}>{click.email || "N/A"}</td>
+                            <td style={{ padding: "10px 12px", textAlign: "center", fontSize: "14px" }}>
+                              <span className="badge" style={{ backgroundColor: '#e3f2fd', color: '#0d47a1', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                                {click.clickCount}
+                              </span>
+                            </td>
+                            <td style={{ padding: "10px 12px", fontSize: "13px", color: "#6b7280" }}>
+                              {click.lastClickedAt ? new Date(click.lastClickedAt).toLocaleString() : "N/A"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              <div className="modal-actions" style={{ display: "flex", justifyContent: "flex-end", borderTop: "1px solid #e5e7eb", paddingTop: "16px", marginTop: 0 }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setIsClicksModalOpen(false)}
+                  style={{ padding: "8px 16px", borderRadius: "6px", fontSize: "14px", cursor: "pointer" }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Broadcast Mailer Modal */}
+      {isBroadcastModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsBroadcastModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "650px", maxHeight: "90vh", overflowY: "auto", display: "flex", flexDirection: "column" }}>
+            <div className="modal-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e5e7eb", paddingBottom: "12px" }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#1f2937" }}>Send Broadcast Mailer</h3>
+                <p style={{ margin: "4px 0 0 0", fontSize: "0.875rem", color: "#EC7523" }}>
+                  To users who clicked: <strong>{selectedCardForClicks?.name}</strong> ({selectedCardClicks.filter(c => !!c.email).length} users with email)
+                </p>
+              </div>
+              <button className="modal-close-btn" onClick={() => setIsBroadcastModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af" }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+                <div className="form-groups" style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: 0 }}>
+                  <label style={{ fontWeight: "600", fontSize: "14px", color: "#374151" }}>Email Subject</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={broadcastSubject}
+                    onChange={(e) => setBroadcastSubject(e.target.value)}
+                    placeholder="Enter email subject"
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: "6px", border: "1px solid #d1d5db" }}
+                    disabled={sendingBroadcast}
+                  />
+                </div>
+
+                <div className="form-groups" style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <label style={{ fontWeight: "600", fontSize: "14px", color: "#374151" }}>Email Body (HTML format)</label>
+                    <span style={{ fontSize: "12px", color: "#6b7280" }}>Use <code>{"{{name}}"}</code> to insert the user's full name</span>
+                  </div>
+                  <textarea
+                    className="form-input"
+                    value={broadcastHtml}
+                    onChange={(e) => setBroadcastHtml(e.target.value)}
+                    placeholder="Enter email HTML body content"
+                    rows="12"
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: "6px", border: "1px solid #d1d5db", fontFamily: "monospace", fontSize: "13px" }}
+                    disabled={sendingBroadcast}
+                  />
+                </div>
+              </div>
+
+              <div className="modal-actions" style={{ display: "flex", justifyContent: "flex-end", gap: "10px", borderTop: "1px solid #e5e7eb", paddingTop: "16px", marginTop: 0 }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    setIsBroadcastModalOpen(false);
+                    setIsClicksModalOpen(true); // go back to clicks modal
+                  }}
+                  disabled={sendingBroadcast}
+                  style={{ padding: "8px 16px", borderRadius: "6px", fontSize: "14px", cursor: "pointer" }}
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={handleSendBroadcast}
+                  disabled={sendingBroadcast}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "#EC7523", color: "white", border: "none", padding: "8px 20px", borderRadius: "6px", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}
+                >
+                  {sendingBroadcast ? "Sending Mailer..." : "Send Mailer Broadcast"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

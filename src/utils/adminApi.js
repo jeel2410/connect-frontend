@@ -1265,6 +1265,8 @@ export const createCard = async (cardData) => {
     formData.append("name", cardData.name);
     formData.append("description", cardData.description || "");
     formData.append("url", cardData.url || "");
+    formData.append("targetAgeMin", cardData.targetAgeMin !== undefined && cardData.targetAgeMin !== null ? cardData.targetAgeMin : "");
+    formData.append("targetAgeMax", cardData.targetAgeMax !== undefined && cardData.targetAgeMax !== null ? cardData.targetAgeMax : "");
     
     // Append features array
     if (cardData.features && Array.isArray(cardData.features)) {
@@ -1279,10 +1281,29 @@ export const createCard = async (cardData) => {
         formData.append("eligibles[]", eligible);
       });
     }
+
+    // Append targetCities array
+    if (cardData.targetCities && Array.isArray(cardData.targetCities)) {
+      cardData.targetCities.forEach((city) => {
+        formData.append("targetCities[]", city);
+      });
+    }
+
+    // Append targetPositions array
+    if (cardData.targetPositions && Array.isArray(cardData.targetPositions)) {
+      cardData.targetPositions.forEach((position) => {
+        formData.append("targetPositions[]", position);
+      });
+    }
     
     // Append logo image if it's a File
     if (cardData.logo_image instanceof File) {
       formData.append("logo_image", cardData.logo_image);
+    }
+
+    // Append offer image if it's a File
+    if (cardData.offer_image instanceof File) {
+      formData.append("offer_image", cardData.offer_image);
     }
 
     const response = await fetch(`${API_BASE_URL}/api/admin/cards`, {
@@ -1324,6 +1345,8 @@ export const updateCard = async (cardId, cardData) => {
     formData.append("name", cardData.name);
     formData.append("description", cardData.description || "");
     formData.append("url", cardData.url || "");
+    formData.append("targetAgeMin", cardData.targetAgeMin !== undefined && cardData.targetAgeMin !== null ? cardData.targetAgeMin : "");
+    formData.append("targetAgeMax", cardData.targetAgeMax !== undefined && cardData.targetAgeMax !== null ? cardData.targetAgeMax : "");
     
     // Append features array
     if (cardData.features && Array.isArray(cardData.features)) {
@@ -1338,10 +1361,29 @@ export const updateCard = async (cardId, cardData) => {
         formData.append("eligibles[]", eligible);
       });
     }
+
+    // Append targetCities array
+    if (cardData.targetCities && Array.isArray(cardData.targetCities)) {
+      cardData.targetCities.forEach((city) => {
+        formData.append("targetCities[]", city);
+      });
+    }
+
+    // Append targetPositions array
+    if (cardData.targetPositions && Array.isArray(cardData.targetPositions)) {
+      cardData.targetPositions.forEach((position) => {
+        formData.append("targetPositions[]", position);
+      });
+    }
     
     // Append logo image if it's a File (only if it's a new file)
     if (cardData.logo_image instanceof File) {
       formData.append("logo_image", cardData.logo_image);
+    }
+
+    // Append offer image if it's a File (only if it's a new file)
+    if (cardData.offer_image instanceof File) {
+      formData.append("offer_image", cardData.offer_image);
     }
 
     const response = await fetch(`${API_BASE_URL}/api/admin/cards/${cardId}`, {
@@ -1824,6 +1866,79 @@ export const getStatsTrend = async (statId) => {
     return data;
   } catch (error) {
     console.error("Error fetching stats trend:", error);
+    throw error;
+  }
+};
+
+export const getPopupSetting = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/settings/popup`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch popup setting");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching popup setting:", error);
+    throw error;
+  }
+};
+
+export const updatePopupSetting = async (isPopupEnabled) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/settings/popup`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ isPopupEnabled }),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to update popup setting");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating popup setting:", error);
+    throw error;
+  }
+};
+
+export const getCardClicks = async (cardId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/cards/${cardId}/clicks`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch card clicks");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching card clicks:", error);
+    throw error;
+  }
+};
+
+export const broadcastCardMailer = async (cardId, subject, htmlContent) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/cards/${cardId}/broadcast`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ subject, htmlContent }),
+    });
+    if (!response.ok) {
+      const errData = await response.json();
+      throw new Error(errData.message || "Failed to send card broadcast");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending card broadcast:", error);
     throw error;
   }
 };
