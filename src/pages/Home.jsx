@@ -755,7 +755,6 @@ export default function Home() {
             {popupOffer.offer_image ? (
               <div style={{
                 width: "100%",
-                height: "200px",
                 borderRadius: "12px",
                 overflow: "hidden",
                 marginBottom: "16px",
@@ -769,8 +768,9 @@ export default function Home() {
                   alt={popupOffer.name} 
                   style={{
                     width: "100%",
-                    height: "100%",
-                    objectFit: "cover"
+                    height: "auto",
+                    maxHeight: "350px",
+                    objectFit: "contain"
                   }}
                 />
               </div>
