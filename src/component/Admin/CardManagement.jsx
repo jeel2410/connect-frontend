@@ -495,6 +495,7 @@ const CardManagement = () => {
               <th>Features</th>
               {/* <th>Eligibles</th> */}
               <th>Targeting</th>
+              <th>Views</th>
               <th>Clicks</th>
               <th>Actions</th>
             </tr>
@@ -502,19 +503,19 @@ const CardManagement = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="8" className="empty-state">
+                <td colSpan="9" className="empty-state">
                   Loading...
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan="8" className="empty-state" style={{ color: "red" }}>
+                <td colSpan="9" className="empty-state" style={{ color: "red" }}>
                   {error}
                 </td>
               </tr>
             ) : cards.length === 0 ? (
               <tr>
-                <td colSpan="8" className="empty-state">
+                <td colSpan="9" className="empty-state">
                   No cards found
                 </td>
               </tr>
@@ -559,6 +560,11 @@ const CardManagement = () => {
                       <div><strong>Cities:</strong> {card.targetCities && card.targetCities.length > 0 ? `${card.targetCities.length} targeted` : 'All'}</div>
                       <div><strong>Positions:</strong> {card.targetPositions && card.targetPositions.length > 0 ? `${card.targetPositions.length} targeted` : 'All'}</div>
                     </div>
+                  </td>
+                  <td>
+                    <span className="badge" style={{ backgroundColor: '#f3e5f5', color: '#4a148c', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '13px', display: 'inline-flex', alignItems: 'center' }}>
+                      {card.views || 0}
+                    </span>
                   </td>
                   <td>
                     <button
