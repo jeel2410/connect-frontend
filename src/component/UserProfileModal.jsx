@@ -116,6 +116,26 @@ export default function UserProfileModal({ userId }) {
     const fetchIndustryAndCompanies = async () => {
       if (!profileData) return;
 
+      const bgElement = document.querySelector('.user-profile-bg');
+      const overlayElement = document.querySelector('.user-profile-overlay');
+      if (bgElement) {
+        if (profileData.coverImage) {
+          bgElement.style.backgroundImage = `url(${profileData.coverImage})`;
+          bgElement.style.backgroundSize = 'cover';
+          bgElement.style.backgroundPosition = 'center';
+          if (overlayElement) {
+            overlayElement.style.display = 'none';
+          }
+        } else {
+          bgElement.style.backgroundImage = '';
+          bgElement.style.backgroundSize = '';
+          bgElement.style.backgroundPosition = '';
+          if (overlayElement) {
+            overlayElement.style.display = '';
+          }
+        }
+      }
+
       try {
         const token = getCookie("authToken");
         if (!token) return;
@@ -504,7 +524,11 @@ export default function UserProfileModal({ userId }) {
           />
           <div className="user-profile-name-location">
             <h2>{profileData.fullName || "User"}</h2>
-            <p>{cityName || profileData.cityName || "Not provided"}</p>
+            <p>
+              {cityName || profileData.cityName
+                ? `${cityName || profileData.cityName}${profileData.pincode ? ` - ${profileData.pincode}` : ""}`
+                : "Not provided"}
+            </p>
           </div>
         </div>
         <div className="user-profile-social-btns">

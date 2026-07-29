@@ -28,10 +28,43 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString('en-US', options);
 };
 
-export default function ProfilepageCard({ profileData }) {
+export default function ProfilepageCard({ profileData: initialProfileData }) {
+  const [profileData, setProfileData] = React.useState(initialProfileData);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
+
+  React.useEffect(() => {
+    setProfileData(initialProfileData);
+  }, [initialProfileData]);
+
+  const handleCoverImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const token = getCookie("authToken");
+    if (!token) return;
+
+    const formData = new FormData();
+    formData.append("coverImage", file);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (response.ok && result.success && result.data && result.data.profile) {
+        setProfileData(result.data.profile);
+      }
+    } catch (err) {
+      console.error("Error uploading cover image:", err);
+    }
+  };
 
   const handleDeleteAccount = async () => {
     try {
@@ -94,6 +127,7 @@ export default function ProfilepageCard({ profileData }) {
           <ProfilecardHeader
             showChangePassword={true}
             profileData={profileData}
+            onCoverImageChange={handleCoverImageUpload}
           ></ProfilecardHeader>
 
           {/* Contact Info Row */}
@@ -131,7 +165,11 @@ export default function ProfilepageCard({ profileData }) {
               </span>
               <div>
                 <label>Location</label>
-                <p>{profileData.city || "Not provided"}</p>
+                <p>
+                  {profileData.city
+                    ? `${profileData.city}${profileData.pincode ? ` - ${profileData.pincode}` : ""}`
+                    : "Not provided"}
+                </p>
               </div>
             </div>
           </div>

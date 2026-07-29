@@ -3,6 +3,7 @@ import "../../styles/style.css";
 import mobileIcon from "../../assets/image/mobile.png";
 import fullnameIcon from "../../assets/image/firstname.png"
 import cityIcon from "../../assets/image/city.png"
+import locationIcon from "../../assets/image/location.png"
 import religionIcon from "../../assets/image/religion.png"
 import statusIcon from "../../assets/image/status.png"
 import API_BASE_URL from "../../utils/config";
@@ -123,6 +124,32 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
             )}
             {touched?.city && errors?.city && (
               <div className="field-error-message">{errors.city}</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="form-group">
+        <div className="input-wrapper">
+          <div className="input-icon">
+            <img src={locationIcon} alt="Pincode"></img>
+          </div>
+          <div className="input-content">
+            <label className="input-label">Pincode</label>
+            <input
+              type="text"
+              name="pincode"
+              value={data.pincode || ""}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                updateData("pincode", value);
+              }}
+              onBlur={() => updateData("_touched_pincode", true)}
+              className={`form-input ${touched?.pincode && errors?.pincode ? "input-error" : ""}`}
+              placeholder="Enter Pincode"
+            />
+            {touched?.pincode && errors?.pincode && (
+              <div className="field-error-message">{errors.pincode}</div>
             )}
           </div>
         </div>

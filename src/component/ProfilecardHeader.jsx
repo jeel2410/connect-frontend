@@ -4,22 +4,26 @@ import editIcon from "../../src/assets/image/edit (1).png";
 import passwordIcon from "../../src/assets/image/passwordIcon.png";
 import { useNavigate } from "react-router-dom";
 
-export default function ProfilecardHeader({ showChangePassword = true, profileData = null, onImageChange = null, showImageUpload = false }) {
+export default function ProfilecardHeader({ showChangePassword = true, profileData = null, onImageChange = null, showImageUpload = false, onCoverImageChange = null }) {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
-  
+  const coverInputRef = useRef(null);
+
   const displayName = profileData?.fullName || "User";
   const displayImage = profileData?.profileImage || getAvatar(profileData?.gender, profileData?.dateOfBirth || profileData?.age || profileData?.birthDate);
-  
+
   const handleImageClick = () => {
     if (fileInputRef.current && showImageUpload) {
       fileInputRef.current.click();
     }
   };
-  
+
   return (
     <div className="dating-profile-header">
-      <div className="dating-profile-header-background"></div>
+      <div
+        className="dating-profile-header-background"
+        style={profileData?.coverImage ? { backgroundImage: `url(${profileData.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+      ></div>
       <div className="dating-profile-header-content">
         <div className="dating-profile-header-avatar-wrapper">
           <div style={{ position: "relative", display: "inline-block" }}>
@@ -83,6 +87,31 @@ export default function ProfilecardHeader({ showChangePassword = true, profileDa
           <button className="dating-profile-edit-btn" onClick={() => navigate('/editProfile')}>
             <img src={editIcon} alt="Edit"></img> Edit Profile
           </button>
+          <button
+            className="dating-profile-edit-btn"
+            onClick={() => navigate('/userprofile', { state: { userId: profileData?.originalid || profileData?._id } })}
+            style={{ marginLeft: "10px" }}
+          >
+            Preview Profile
+          </button>
+          {onCoverImageChange && (
+            <div style={{ display: "inline-block" }}>
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                onChange={onCoverImageChange}
+                style={{ display: "none" }}
+              />
+              <button
+                className="dating-profile-edit-btn"
+                onClick={() => coverInputRef.current?.click()}
+                style={{ marginLeft: "10px" }}
+              >
+                Cover Image
+              </button>
+            </div>
+          )}
           {/* {showChangePassword && (
             <button className="dating-profile-password-btn">
               <img src={passwordIcon} alt="Password" /> Change Password

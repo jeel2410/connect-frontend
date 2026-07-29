@@ -182,6 +182,7 @@ const Profileverification = () => {
               mobileNumber: phoneNumber || "",
               fullName: profile.fullName || "",
               city: cityId, // Use matched city ID instead of name
+              pincode: profile.pincode || "",
               religion: profile.religion || "",
               maritalStatus: maritalStatus,
               email: profile.email || "",
@@ -235,6 +236,9 @@ const Profileverification = () => {
     mobileNumber: Yup.string().required("Mobile number is required"),
     fullName: Yup.string().required("Full name is required").min(2, "Full name must be at least 2 characters"),
     city: Yup.string().required("City is required"),
+    pincode: Yup.string()
+      .required("Pincode is required")
+      .matches(/^[1-9][0-9]{5}$/, "Please enter a valid 6-digit pincode"),
     religion: Yup.string().required("Religion is required"),
     maritalStatus: Yup.string().required("Status is required"),
     email: Yup.string()
@@ -288,6 +292,7 @@ const Profileverification = () => {
       mobileNumber: phoneNumber || "",
       fullName: "",
       city: "",
+      pincode: "",
       religion: "",
       maritalStatus: "",
       email: "",
@@ -327,6 +332,7 @@ const Profileverification = () => {
         if (values.city && values.city.trim() !== "" && /^[0-9a-fA-F]{24}$/.test(values.city)) {
           formData.append("city", values.city);
         }
+        formData.append("pincode", values.pincode);
         formData.append("religion", values.religion);
         formData.append("status", values.maritalStatus);
         formData.append("gender", values.gender);
@@ -438,6 +444,7 @@ const Profileverification = () => {
       case 1:
         if (values.fullName) stepData.fullName = values.fullName;
         if (values.city) stepData.city = values.city;
+        if (values.pincode) stepData.pincode = values.pincode;
         if (values.religion) stepData.religion = values.religion;
         if (values.maritalStatus) stepData.status = values.maritalStatus;
         break;
@@ -661,6 +668,7 @@ const Profileverification = () => {
               // Always use saved data if it exists (for backward navigation)
               fullName: profile.fullName || currentValues.fullName || "",
               city: cityId, // Use matched city ID instead of name
+              pincode: profile.pincode || currentValues.pincode || "",
               religion: profile.religion || currentValues.religion || "",
               maritalStatus: profile.status || currentValues.maritalStatus || "",
               email: profile.email || currentValues.email || "",
@@ -706,7 +714,7 @@ const Profileverification = () => {
   const getStepFields = (step) => {
     switch (step) {
       case 1:
-        return ['fullName', 'city', 'religion', 'maritalStatus'];
+        return ['fullName', 'city', 'pincode', 'religion', 'maritalStatus'];
       case 2:
         return ['email', 'gender', 'birthDate'];
       case 3:

@@ -8,6 +8,7 @@ import mobileIcon from "../../src/assets/image/mobile.png";
 import emailIcon from "../../src/assets/image/email.png";
 import calenderIcon from "../../src/assets/image/calender.png";
 import cityIcon from "../../src/assets/image/city.png";
+import locationIcon from "../../src/assets/image/location.png";
 import removeIcom from "../../src/assets/image/removeIcon.png";
 import dropdownIcon from "../../src/assets/image/dropdownIcon.png";
 import { getCookie, setCookie } from "../utils/auth";
@@ -27,6 +28,7 @@ export default function EditProfile() {
     email: "",
     birthDate: "",
     city: "",
+    pincode: "",
     gender: "",
     religion: "",
     status: "",
@@ -40,6 +42,9 @@ export default function EditProfile() {
   const [languages, setLanguages] = useState([]);
   const [profileImage, setProfileImage] = useState(null);
   const [profileImageFile, setProfileImageFile] = useState(null);
+  const [coverImage, setCoverImage] = useState(null);
+  const [coverImageFile, setCoverImageFile] = useState(null);
+  const [profileId, setProfileId] = useState(null);
   const [industry, setIndustry] = useState("");
   const [company, setCompany] = useState("");
   const [position, setPosition] = useState("");
@@ -179,6 +184,7 @@ export default function EditProfile() {
             email: profile.email || "",
             birthDate: profile.dateOfBirth ? new Date(profile.dateOfBirth).toISOString().split('T')[0] : "",
             city: "", // Will be set after cities list loads
+            pincode: profile.pincode || "",
             gender: profile.gender || "",
             religion: normalizedReligion,
             status: normalizedStatus,
@@ -197,6 +203,10 @@ export default function EditProfile() {
           if (profile.profileImage) {
             setProfileImage(profile.profileImage);
           }
+          if (profile.coverImage) {
+            setCoverImage(profile.coverImage);
+          }
+          setProfileId(profile.originalid || profile._id);
         }
       } catch (err) {
         console.error("Error fetching profile:", err);
@@ -645,6 +655,47 @@ export default function EditProfile() {
     }
   };
 
+  const handleCoverImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const token = getCookie("authToken");
+    if (!token) {
+      setError("Authentication required. Please login again.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("coverImage", file);
+
+    try {
+      setSaving(true);
+      setError("");
+      setSuccess("");
+      
+      const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (response.ok && result.success && result.data && result.data.profile) {
+        setCoverImage(result.data.profile.coverImage);
+        setSuccess("Cover image updated successfully!");
+      } else {
+        setError(result.message || "Failed to update cover image");
+      }
+    } catch (err) {
+      console.error("Error uploading cover image:", err);
+      setError("Error uploading cover image");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Function to clean up error message - remove quotes and format properly
   const cleanErrorMessage = (errorMessage) => {
     if (!errorMessage) return errorMessage;
@@ -684,6 +735,8 @@ export default function EditProfile() {
     // Check for common field-specific error patterns
     if (errorMessage.toLowerCase().includes("city")) {
       fieldErrorMap.city = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("pincode")) {
+      fieldErrorMap.pincode = cleanedMessage;
     } else if (errorMessage.toLowerCase().includes("email")) {
       fieldErrorMap.email = cleanedMessage;
     } else if (errorMessage.toLowerCase().includes("full name") || errorMessage.toLowerCase().includes("fullname")) {
@@ -733,6 +786,7 @@ export default function EditProfile() {
       // Add text fields
       formData.append("fullName", data.fullName);
       formData.append("city", data.city);
+      formData.append("pincode", data.pincode || "");
       formData.append("religion", data.religion);
       formData.append("status", data.status);
       formData.append("gender", data.gender);
@@ -844,8 +898,9 @@ export default function EditProfile() {
             {/* Header with Avatar */}
             <ProfilecardHeader
               showChangePassword={false}
-              profileData={data.fullName ? { fullName: data.fullName, profileImage, gender: data.gender, birthDate: data.birthDate } : null}
+              profileData={data.fullName ? { originalid: profileId, fullName: data.fullName, profileImage, coverImage, gender: data.gender, birthDate: data.birthDate } : null}
               onImageChange={handleImageChange}
+              onCoverImageChange={handleCoverImageChange}
               showImageUpload={true}
             ></ProfilecardHeader>
 
@@ -1021,6 +1076,39 @@ export default function EditProfile() {
                 {fieldErrors.city && (
                   <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
                     {fieldErrors.city}
+                  </div>
+                )}
+              </div>
+
+              <div className="edit-form-group">
+                <div className="edit-input-wrapper">
+                  <div className="input-icon">
+                    <img src={locationIcon} alt="Pincode"></img>
+                  </div>
+                  <div className="input-content">
+                    <label className="input-label">Pincode</label>
+                    <input
+                      type="text"
+                      value={data.pincode || ""}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                        updateData("pincode", val);
+                        if (fieldErrors.pincode) {
+                          setFieldErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.pincode;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      placeholder="Enter Pincode"
+                      className={`form-input ${fieldErrors.pincode ? "input-error" : ""}`}
+                    />
+                  </div>
+                </div>
+                {fieldErrors.pincode && (
+                  <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
+                    {fieldErrors.pincode}
                   </div>
                 )}
               </div>
