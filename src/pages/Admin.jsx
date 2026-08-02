@@ -18,6 +18,7 @@ import PostApproval from "../component/Admin/PostApproval";
 import SportManagement from "../component/Admin/SportManagement";
 import PositionManagement from "../component/Admin/PositionManagement";
 import SharedPostManagement from "../component/Admin/SharedPostManagement";
+import ScheduledMailers from "../component/Admin/ScheduledMailers";
 import "../styles/admin.css";
 
 const Admin = () => {
@@ -48,6 +49,7 @@ const Admin = () => {
               {activeTab === "traffic-sources" && "Traffic Sources"}
               {activeTab === "sports" && "Sport Management"}
               {activeTab === "positions" && "Position Management"}
+              {activeTab === "scheduled-mailers" && "Scheduled Mailers"}
             </h1>
             <p className="admin-subtitle">
               {activeTab === "dashboard" && "Platform overview and core metrics snapshot"}
@@ -67,6 +69,7 @@ const Admin = () => {
               {activeTab === "traffic-sources" && "View registered user counts by traffic source parameters"}
               {activeTab === "sports" && "Add, edit, and delete sports"}
               {activeTab === "positions" && "Add, edit, and delete positions"}
+              {activeTab === "scheduled-mailers" && "Monitor automated mail queues, view send logs, and manually trigger tasks"}
             </p>
           </div>
           <div className="admin-content-body">
@@ -87,6 +90,7 @@ const Admin = () => {
             {activeTab === "traffic-sources" && <TrafficSourceStats />}
             {activeTab === "sports" && <SportManagement />}
             {activeTab === "positions" && <PositionManagement />}
+            {activeTab === "scheduled-mailers" && <ScheduledMailers />}
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Users, Briefcase, Heart, LayoutDashboard, MapPin, Activity, Building2, Factory, CreditCard, Bell, MessageSquare, Image, BarChart3, ShieldAlert, Trophy, Newspaper, Award } from "lucide-react";
+import { Users, Briefcase, Heart, LayoutDashboard, MapPin, Activity, Building2, Factory, CreditCard, Bell, MessageSquare, Image, BarChart3, ShieldAlert, Trophy, Newspaper, Award, Mail } from "lucide-react";
 
 const AdminSidebar = ({ activeTab, setActiveTab }) => {
   const menuItems = [
@@ -20,6 +20,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
     { id: "auth-banners", label: "Auth Banners", icon: Image },
     { id: "broadcast", label: "Broadcast Notification", icon: Bell },
     { id: "inquiries", label: "Inquiries", icon: MessageSquare },
+    { id: "scheduled-mailers", label: "Scheduled Mailers", icon: Mail },
   ];
 
   return (

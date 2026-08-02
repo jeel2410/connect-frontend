@@ -1943,4 +1943,46 @@ export const broadcastCardMailer = async (cardId, subject, htmlContent) => {
   }
 };
 
+// Scheduled Mailers API
+export const getScheduledMailerStats = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/scheduled-mailers/stats`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch scheduled mailer stats");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching scheduled mailer stats:", error);
+    throw error;
+  }
+};
+
+export const getScheduledMailerLogs = async (page = 1, limit = 20, search = "", type = "") => {
+  try {
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    if (search) queryParams.append("search", search);
+    if (type) queryParams.append("type", type);
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/scheduled-mailers/logs?${queryParams.toString()}`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch scheduled mailer logs");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching scheduled mailer logs:", error);
+    throw error;
+  }
+};
+
+
+
 

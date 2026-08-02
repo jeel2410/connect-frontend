@@ -1685,3 +1685,317 @@
     padding: 20px;
   }
 }
+
+/* Scheduled Mailers Dashboard CSS */
+
+.mailer-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.mailer-stat-card {
+  background: #ffffff;
+  border: 1px solid #E4E6EB;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(9, 18, 46, 0.02);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mailer-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(9, 18, 46, 0.06);
+  border-color: #EA650A;
+}
+
+.stat-card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stat-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+}
+
+.stat-icon-wrapper.incomplete-icon {
+  background-color: #EEF2FF;
+  color: #4f46e5;
+}
+
+.stat-icon-wrapper.snapshot-icon {
+  background-color: #ECFDF5;
+  color: #10b981;
+}
+
+.stat-icon-wrapper.offer-icon {
+  background-color: #FFF7ED;
+  color: #f97316;
+}
+
+.stat-card-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #09122E;
+  margin: 0;
+  font-family: 'Basier Square', sans-serif;
+}
+
+.stat-card-header p {
+  font-size: 12px;
+  color: #777E90;
+  margin: 2px 0 0 0;
+}
+
+.stat-card-details {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background-color: #F8F9FA;
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+}
+
+.stat-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-detail-item:not(:last-child) {
+  border-right: 1px solid #E4E6EB;
+}
+
+.stat-detail-item .label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #777E90;
+  text-transform: uppercase;
+}
+
+.stat-detail-item .value {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'Basier Square', sans-serif;
+}
+
+.pending-color {
+  color: #f59e0b;
+}
+
+.sent-color {
+  color: #10b981;
+}
+
+.failed-color {
+  color: #ef4444;
+}
+
+/* Manual Trigger Section */
+.manual-trigger-section {
+  background: #F8F9FA;
+  border: 1px solid #E4E6EB;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 40px;
+}
+
+.section-subtitle-main {
+  font-size: 16px;
+  font-weight: 600;
+  color: #09122E;
+  margin: 0 0 16px 0;
+  font-family: 'Basier Square', sans-serif;
+}
+
+.trigger-buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.trigger-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border: 1px solid #E4E6EB;
+  border-radius: 12px;
+  color: #09122E;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+
+.trigger-btn:hover:not(:disabled) {
+  border-color: #EA650A;
+  color: #EA650A;
+  background-color: #FFF7ED;
+}
+
+.trigger-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.trigger-btn.process-queue-btn {
+  background-color: #EA650A;
+  color: #ffffff;
+  border: none;
+}
+
+.trigger-btn.process-queue-btn:hover:not(:disabled) {
+  background-color: #d45a09;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(234, 101, 10, 0.2);
+}
+
+/* Table Badges & Cells */
+.mailer-type-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-incomplete {
+  background-color: #EEF2FF;
+  color: #4f46e5;
+}
+
+.badge-snapshot {
+  background-color: #ECFDF5;
+  color: #059669;
+}
+
+.badge-offer {
+  background-color: #FFF7ED;
+  color: #ea580c;
+}
+
+.status-flex-center {
+  display: flex;
+  align-items: center;
+}
+
+.status-badge-wrapper {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.badge-status-sent {
+  background-color: #D1FAE5;
+  color: #065F46;
+}
+
+.badge-status-failed {
+  background-color: #FEE2E2;
+  color: #991B1B;
+}
+
+.badge-status-pending {
+  background-color: #FEF3C7;
+  color: #92400E;
+}
+
+.log-subject-cell {
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.error-details-cell {
+  max-width: 200px;
+}
+
+.text-truncate-custom {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.failed-color-text {
+  color: #ef4444;
+  font-size: 12px;
+}
+
+.sent-color-text {
+  color: #10b981;
+  font-size: 12px;
+}
+
+.pending-color-text {
+  color: #f59e0b;
+  font-size: 12px;
+}
+
+.refresh-logs-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #E4E6EB;
+  border-radius: 12px;
+  background-color: #ffffff;
+  color: #777E90;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.refresh-logs-btn:hover {
+  border-color: #EA650A;
+  color: #EA650A;
+  background-color: #FFF7ED;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+.mailer-filter-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.mailer-logs-header {
+  margin-top: 16px;
+}
+
+@media (max-width: 1024px) {
+  .mailer-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .trigger-buttons-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .trigger-buttons-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
