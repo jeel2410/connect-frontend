@@ -158,6 +158,7 @@ const Profileverification = () => {
       then: () => Yup.string().required("Position is required"),
       otherwise: () => Yup.string().notRequired(),
     }),
+    photo: Yup.mixed().nullable().notRequired(),
     
     // Business fields: required only when isBusinessProfile is true
     businessName: Yup.string().when("isBusinessProfile", {
