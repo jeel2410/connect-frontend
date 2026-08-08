@@ -379,153 +379,31 @@ const Profileverification = () => {
               localStorage.setItem("phoneNumber", profile.phoneNumber);
             }
 
-            let cityId = "";
-            if (profile.city) {
-              try {
-                const citiesResponse = await fetch(`${API_BASE_URL}/api/list/city`, {
-                  method: "GET",
-                  headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                  },
-                });
-
-                if (citiesResponse.ok) {
-                  const citiesResult = await citiesResponse.json();
-                  if (citiesResult.success && citiesResult.data && citiesResult.data.city) {
-                    const cities = citiesResult.data.city;
-                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.city);
-                    if (isObjectId) {
-                      cityId = profile.city;
-                    } else {
-                      const matchedCity = cities.find(
-                        city => city.name.toLowerCase().trim() === profile.city.toLowerCase().trim()
-                      );
-                      if (matchedCity) {
-                        cityId = matchedCity._id;
-                      }
-                    }
-                  }
-                }
-              } catch (err) {
-                console.error("Error fetching cities for matching:", err);
-              }
+            // Immediately set step so the page does not get stuck on Step 1 while lookups resolve
+            const currentTotalSteps = profile.isBusinessProfile ? 3 : 9;
+            let nextStep;
+            if (lastCompletedStep === currentTotalSteps && !isProfileComplete) {
+              nextStep = currentTotalSteps;
+            } else if (lastCompletedStep >= currentTotalSteps) {
+              nextStep = currentTotalSteps;
+            } else {
+              nextStep = Math.min((lastCompletedStep || 0) + 1, currentTotalSteps);
             }
-
-            let positionId = "";
-            if (profile.position) {
-              try {
-                const positionsResponse = await fetch(`${API_BASE_URL}/api/list/positions`, {
-                  method: "GET",
-                  headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                  },
-                });
-
-                if (positionsResponse.ok) {
-                  const positionsResult = await positionsResponse.json();
-                  if (positionsResult.success && positionsResult.data && positionsResult.data.positions) {
-                    const positions = positionsResult.data.positions;
-                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.position);
-                    if (isObjectId) {
-                      positionId = profile.position;
-                    } else {
-                      const matchedPosition = positions.find(
-                        pos => pos.name.toLowerCase().trim() === profile.position.toLowerCase().trim()
-                      );
-                      if (matchedPosition) {
-                        positionId = matchedPosition._id;
-                      }
-                    }
-                  }
-                }
-              } catch (err) {
-                console.error("Error fetching positions for matching:", err);
-              }
-            }
-
-            let industryId = "";
-            if (profile.industry) {
-              try {
-                const industriesResponse = await fetch(`${API_BASE_URL}/api/list/industries`, {
-                  method: "GET",
-                  headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                  },
-                });
-
-                if (industriesResponse.ok) {
-                  const industriesResult = await industriesResponse.json();
-                  if (industriesResult.success && industriesResult.data && industriesResult.data.industries) {
-                    const industries = industriesResult.data.industries;
-                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.industry);
-                    if (isObjectId) {
-                      industryId = profile.industry;
-                    } else {
-                      const matchedIndustry = industries.find(
-                        ind => ind.name.toLowerCase().trim() === profile.industry.toLowerCase().trim()
-                      );
-                      if (matchedIndustry) {
-                        industryId = matchedIndustry._id;
-                      }
-                    }
-                  }
-                }
-              } catch (err) {
-                console.error("Error fetching industries for matching:", err);
-              }
-            }
-
-            let companyId = "";
-            if (profile.company && (industryId || profile.industry)) {
-              try {
-                const companiesUrl = industryId 
-                  ? `${API_BASE_URL}/api/list/companies?industryId=${industryId}`
-                  : `${API_BASE_URL}/api/list/companies`;
-                
-                const companiesResponse = await fetch(companiesUrl, {
-                  method: "GET",
-                  headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                  },
-                });
-
-                if (companiesResponse.ok) {
-                  const companiesResult = await companiesResponse.json();
-                  if (companiesResult.success && companiesResult.data && companiesResult.data.companies) {
-                    const companies = companiesResult.data.companies;
-                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.company);
-                    if (isObjectId) {
-                      companyId = profile.company;
-                    } else {
-                      const matchedCompany = companies.find(
-                        comp => comp.name.toLowerCase().trim() === profile.company.toLowerCase().trim()
-                      );
-                      if (matchedCompany) {
-                        companyId = matchedCompany._id;
-                      }
-                    }
-                  }
-                }
-              } catch (err) {
-                console.error("Error fetching companies for matching:", err);
-              }
-            }
+            setCurrentStep(nextStep);
+            setPreviousStep(nextStep);
 
             let maritalStatus = profile.status || "";
             if (maritalStatus === "Unmarried") {
               maritalStatus = "Single";
             }
 
+            // Populate initial values synchronously
             if (profile.isBusinessProfile) {
               formik.setValues({
                 isBusinessProfile: true,
                 mobileNumber: profile.phoneNumber || phoneNumber || "",
                 businessName: profile.businessName || "",
-                city: cityId,
+                city: profile.city || "",
                 pincode: profile.pincode || "",
                 businessCategory: profile.businessCategory || profile.businessCategoryId || "",
                 contactPerson: profile.contactPerson || "",
@@ -562,7 +440,7 @@ const Profileverification = () => {
                 isBusinessProfile: false,
                 mobileNumber: profile.phoneNumber || phoneNumber || "",
                 fullName: profile.fullName || "",
-                city: cityId,
+                city: profile.city || "",
                 pincode: profile.pincode || "",
                 religion: profile.religion || "",
                 maritalStatus: maritalStatus,
@@ -574,9 +452,9 @@ const Profileverification = () => {
                 interest: profile.interests || [],
                 skill: profile.skills || [],
                 sports: profile.sports || [],
-                industry: industryId || "",
-                company: companyId || "",
-                position: positionId || "",
+                industry: profile.industry || "",
+                company: profile.company || "",
+                position: profile.position || "",
                 photo: profile.profileImage || null,
                 
                 businessName: "",
@@ -596,17 +474,156 @@ const Profileverification = () => {
               });
             }
 
-            const currentTotalSteps = profile.isBusinessProfile ? 3 : 9;
-            let nextStep;
-            if (lastCompletedStep === currentTotalSteps && !isProfileComplete) {
-              nextStep = currentTotalSteps;
-            } else if (lastCompletedStep >= currentTotalSteps) {
-              nextStep = currentTotalSteps;
-            } else {
-              nextStep = Math.min((lastCompletedStep || 0) + 1, currentTotalSteps);
-            }
-            setCurrentStep(nextStep);
-            setPreviousStep(nextStep);
+            // In the background, resolve names to ID strings for dropdowns
+            (async () => {
+              let resolvedCityId = "";
+              if (profile.city) {
+                try {
+                  const citiesResponse = await fetch(`${API_BASE_URL}/api/list/city`, {
+                    method: "GET",
+                    headers: {
+                      "Authorization": `Bearer ${token}`,
+                      "Content-Type": "application/json",
+                    },
+                  });
+
+                  if (citiesResponse.ok) {
+                    const citiesResult = await citiesResponse.json();
+                    if (citiesResult.success && citiesResult.data && citiesResult.data.city) {
+                      const cities = citiesResult.data.city;
+                      const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.city);
+                      if (isObjectId) {
+                        resolvedCityId = profile.city;
+                      } else {
+                        const matchedCity = cities.find(
+                          city => city.name && city.name.toLowerCase().trim() === profile.city.toLowerCase().trim()
+                        );
+                        if (matchedCity) {
+                          resolvedCityId = matchedCity._id;
+                        }
+                      }
+                      if (resolvedCityId) {
+                        formik.setFieldValue("city", resolvedCityId, false);
+                      }
+                    }
+                  }
+                } catch (err) {
+                  console.error("Error fetching cities for matching:", err);
+                }
+              }
+
+              let resolvedPositionId = "";
+              if (profile.position && !profile.isBusinessProfile) {
+                try {
+                  const positionsResponse = await fetch(`${API_BASE_URL}/api/list/positions`, {
+                    method: "GET",
+                    headers: {
+                      "Authorization": `Bearer ${token}`,
+                      "Content-Type": "application/json",
+                    },
+                  });
+
+                  if (positionsResponse.ok) {
+                    const positionsResult = await positionsResponse.json();
+                    if (positionsResult.success && positionsResult.data && positionsResult.data.positions) {
+                      const positions = positionsResult.data.positions;
+                      const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.position);
+                      if (isObjectId) {
+                        resolvedPositionId = profile.position;
+                      } else {
+                        const matchedPosition = positions.find(
+                          pos => pos.name && pos.name.toLowerCase().trim() === profile.position.toLowerCase().trim()
+                        );
+                        if (matchedPosition) {
+                          resolvedPositionId = matchedPosition._id;
+                        }
+                      }
+                      if (resolvedPositionId) {
+                        formik.setFieldValue("position", resolvedPositionId, false);
+                      }
+                    }
+                  }
+                } catch (err) {
+                  console.error("Error fetching positions for matching:", err);
+                }
+              }
+
+              let resolvedIndustryId = "";
+              if (profile.industry && !profile.isBusinessProfile) {
+                try {
+                  const industriesResponse = await fetch(`${API_BASE_URL}/api/list/industries`, {
+                    method: "GET",
+                    headers: {
+                      "Authorization": `Bearer ${token}`,
+                      "Content-Type": "application/json",
+                    },
+                  });
+
+                  if (industriesResponse.ok) {
+                    const industriesResult = await industriesResponse.json();
+                    if (industriesResult.success && industriesResult.data && industriesResult.data.industries) {
+                      const industries = industriesResult.data.industries;
+                      const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.industry);
+                      if (isObjectId) {
+                        resolvedIndustryId = profile.industry;
+                      } else {
+                        const matchedIndustry = industries.find(
+                          ind => ind.name && ind.name.toLowerCase().trim() === profile.industry.toLowerCase().trim()
+                        );
+                        if (matchedIndustry) {
+                          resolvedIndustryId = matchedIndustry._id;
+                        }
+                      }
+                      if (resolvedIndustryId) {
+                        formik.setFieldValue("industry", resolvedIndustryId, false);
+                      }
+                    }
+                  }
+                } catch (err) {
+                  console.error("Error fetching industries for matching:", err);
+                }
+              }
+
+              if (profile.company && (resolvedIndustryId || profile.industry) && !profile.isBusinessProfile) {
+                try {
+                  const companiesUrl = resolvedIndustryId 
+                    ? `${API_BASE_URL}/api/list/companies?industryId=${resolvedIndustryId}`
+                    : `${API_BASE_URL}/api/list/companies`;
+                  
+                  const companiesResponse = await fetch(companiesUrl, {
+                    method: "GET",
+                    headers: {
+                      "Authorization": `Bearer ${token}`,
+                      "Content-Type": "application/json",
+                    },
+                  });
+
+                  if (companiesResponse.ok) {
+                    const companiesResult = await companiesResponse.json();
+                    if (companiesResult.success && companiesResult.data && companiesResult.data.companies) {
+                      const companies = companiesResult.data.companies;
+                      const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.company);
+                      let resolvedCompanyId = "";
+                      if (isObjectId) {
+                        resolvedCompanyId = profile.company;
+                      } else {
+                        const matchedCompany = companies.find(
+                          comp => comp.name && comp.name.toLowerCase().trim() === profile.company.toLowerCase().trim()
+                        );
+                        if (matchedCompany) {
+                          resolvedCompanyId = matchedCompany._id;
+                        }
+                      }
+                      if (resolvedCompanyId) {
+                        formik.setFieldValue("company", resolvedCompanyId, false);
+                      }
+                    }
+                  }
+                } catch (err) {
+                  console.error("Error fetching companies for matching:", err);
+                }
+              }
+            })();
           }
         }
       } catch (error) {
@@ -894,7 +911,7 @@ const Profileverification = () => {
                       cityId = profile.city;
                     } else {
                       const matchedCity = cities.find(
-                        city => city.name.toLowerCase().trim() === profile.city.toLowerCase().trim()
+                        city => city.name && city.name.toLowerCase().trim() === profile.city.toLowerCase().trim()
                       );
                       if (matchedCity) {
                         cityId = matchedCity._id;
@@ -927,7 +944,7 @@ const Profileverification = () => {
                       positionId = profile.position;
                     } else {
                       const matchedPosition = positions.find(
-                        pos => pos.name.toLowerCase().trim() === profile.position.toLowerCase().trim()
+                        pos => pos.name && pos.name.toLowerCase().trim() === profile.position.toLowerCase().trim()
                       );
                       if (matchedPosition) {
                         positionId = matchedPosition._id;
@@ -960,7 +977,7 @@ const Profileverification = () => {
                       industryId = profile.industry;
                     } else {
                       const matchedIndustry = industries.find(
-                        ind => ind.name.toLowerCase().trim() === profile.industry.toLowerCase().trim()
+                        ind => ind.name && ind.name.toLowerCase().trim() === profile.industry.toLowerCase().trim()
                       );
                       if (matchedIndustry) {
                         industryId = matchedIndustry._id;
@@ -997,7 +1014,7 @@ const Profileverification = () => {
                       companyId = profile.company;
                     } else {
                       const matchedCompany = companies.find(
-                        comp => comp.name.toLowerCase().trim() === profile.company.toLowerCase().trim()
+                        comp => comp.name && comp.name.toLowerCase().trim() === profile.company.toLowerCase().trim()
                       );
                       if (matchedCompany) {
                         companyId = matchedCompany._id;
