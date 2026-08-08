@@ -23,8 +23,8 @@ export default function Sidebar({ profileData = null }) {
   // Get profile data from prop or from cookies
   const cachedProfile = profileData || getUserProfile();
 
-  const displayName = cachedProfile?.fullName || "User";
-  const displayImage = cachedProfile?.profileImage || getAvatar(cachedProfile?.gender, cachedProfile?.dateOfBirth || cachedProfile?.age);
+  const displayName = cachedProfile?.isBusinessProfile ? cachedProfile.businessName : (cachedProfile?.fullName || "User");
+  const displayImage = cachedProfile?.isBusinessProfile ? (cachedProfile.businessLogo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop") : (cachedProfile?.profileImage || getAvatar(cachedProfile?.gender, cachedProfile?.dateOfBirth || cachedProfile?.age));
 
   const handleDeleteAccount = async () => {
     try {
@@ -68,7 +68,11 @@ export default function Sidebar({ profileData = null }) {
       <div className="dating-profile-sidebar">
         <div className="dating-profile-image-container">
           <div className="dating-profile-sidebar-avatar">
-            <img src={displayImage} alt="Profile" />
+            <img 
+              src={displayImage} 
+              alt="Profile" 
+              style={{ objectFit: cachedProfile?.isBusinessProfile ? 'contain' : 'cover', backgroundColor: cachedProfile?.isBusinessProfile ? '#fff' : 'transparent' }}
+            />
           </div>
           <h3 className="dating-profile-sidebar-name">{displayName}</h3>
         </div>

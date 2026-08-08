@@ -164,74 +164,77 @@ const Header = () => {
           if (profileData.success && profileData.data && profileData.data.profile) {
             const profile = profileData.data.profile;
 
-            // Set user name
-            if (profile.fullName) {
-              setUserName(profile.fullName);
-            } else {
-              // Fallback to cookie if fullName not in API response
-              const userProfile = getUserProfile();
-              if (userProfile && userProfile.fullName) {
-                setUserName(userProfile.fullName);
-              } else {
-                setUserName("User");
-              }
-            }
-
-            // Keep city logic for potential future use
-            const city = profile.city;
-            if (city) {
-              // Check if city is an ID (ObjectId format) or a name
-              // ObjectIds are 24 character hex strings
-              const isObjectId = /^[0-9a-fA-F]{24}$/.test(city);
-              if (isObjectId) {
-                // If it's an ID, try to get from cookie as fallback, or show loading
-                const userProfile = getUserProfile();
-                if (userProfile && userProfile.city && !/^[0-9a-fA-F]{24}$/.test(userProfile.city)) {
-                  setUserCity(userProfile.city);
-                } else {
-                  setUserCity("Loading...");
-                }
-              } else {
-                // It's a name, use it directly
-                setUserCity(city);
-              }
-            }
-          }
-        } else {
-          // If API fails, try cookie as fallback
-          const userProfile = getUserProfile();
-          if (userProfile) {
-            if (userProfile.fullName) {
-              setUserName(userProfile.fullName);
-            } else {
-              setUserName("User");
-            }
-            if (userProfile.city) {
-              const isObjectId = /^[0-9a-fA-F]{24}$/.test(userProfile.city);
-              if (!isObjectId) {
-                setUserCity(userProfile.city);
-              }
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching user profile:", err);
-        // Fallback to cookie if API fails
-        const userProfile = getUserProfile();
-        if (userProfile) {
-          if (userProfile.fullName) {
-            setUserName(userProfile.fullName);
-          } else {
-            setUserName("User");
-          }
-          if (userProfile.city) {
-            const isObjectId = /^[0-9a-fA-F]{24}$/.test(userProfile.city);
-            if (!isObjectId) {
-              setUserCity(userProfile.city);
-            }
-          }
-        }
-      }
+             const resolvedName = profile.isBusinessProfile ? profile.businessName : profile.fullName;
+             if (resolvedName) {
+               setUserName(resolvedName);
+             } else {
+               // Fallback to cookie if name not in API response
+               const userProfile = getUserProfile();
+               const resolvedCookieName = userProfile?.isBusinessProfile ? userProfile.businessName : userProfile?.fullName;
+               if (resolvedCookieName) {
+                 setUserName(resolvedCookieName);
+               } else {
+                 setUserName("User");
+               }
+             }
+ 
+             // Keep city logic for potential future use
+             const city = profile.city;
+             if (city) {
+               // Check if city is an ID (ObjectId format) or a name
+               // ObjectIds are 24 character hex strings
+               const isObjectId = /^[0-9a-fA-F]{24}$/.test(city);
+               if (isObjectId) {
+                 // If it's an ID, try to get from cookie as fallback, or show loading
+                 const userProfile = getUserProfile();
+                 if (userProfile && userProfile.city && !/^[0-9a-fA-F]{24}$/.test(userProfile.city)) {
+                   setUserCity(userProfile.city);
+                 } else {
+                   setUserCity("Loading...");
+                 }
+               } else {
+                 // It's a name, use it directly
+                 setUserCity(city);
+               }
+             }
+           }
+         } else {
+           // If API fails, try cookie as fallback
+           const userProfile = getUserProfile();
+           if (userProfile) {
+             const resolvedCookieName = userProfile.isBusinessProfile ? userProfile.businessName : userProfile.fullName;
+             if (resolvedCookieName) {
+               setUserName(resolvedCookieName);
+             } else {
+               setUserName("User");
+             }
+             if (userProfile.city) {
+               const isObjectId = /^[0-9a-fA-F]{24}$/.test(userProfile.city);
+               if (!isObjectId) {
+                 setUserCity(userProfile.city);
+               }
+             }
+           }
+         }
+       } catch (err) {
+         console.error("Error fetching user profile:", err);
+         // Fallback to cookie if API fails
+         const userProfile = getUserProfile();
+         if (userProfile) {
+           const resolvedCookieName = userProfile.isBusinessProfile ? userProfile.businessName : userProfile.fullName;
+           if (resolvedCookieName) {
+             setUserName(resolvedCookieName);
+           } else {
+             setUserName("User");
+           }
+           if (userProfile.city) {
+             const isObjectId = /^[0-9a-fA-F]{24}$/.test(userProfile.city);
+             if (!isObjectId) {
+               setUserCity(userProfile.city);
+             }
+           }
+         }
+       }
     };
 
     fetchUserCity();

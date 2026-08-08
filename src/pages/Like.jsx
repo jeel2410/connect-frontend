@@ -20,6 +20,7 @@ const Likes = () => {
   const [loading, setLoading] = useState(false);
   const [loadingWhoLikedMe, setLoadingWhoLikedMe] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterBusinesses, setFilterBusinesses] = useState(false);
 
   // Fetch liked profiles from API
   const fetchLikedProfiles = useCallback(async (search = "") => {
@@ -32,7 +33,6 @@ const Likes = () => {
         return;
       }
 
-      // Build query parameters
       const queryParams = new URLSearchParams();
       if (search && search.trim() !== "") {
         queryParams.append("search", search.trim());
@@ -60,7 +60,6 @@ const Likes = () => {
       const data = await response.json();
 
       if (data.success && data.data) {
-        // Handle different possible response structures
         const profiles = Array.isArray(data.data)
           ? data.data
           : (data.data.liked || data.data.profiles || data.data.likes || []);
@@ -108,7 +107,6 @@ const Likes = () => {
       const data = await response.json();
 
       if (data.success && data.data) {
-        // Handle different possible response structures
         const profiles = Array.isArray(data.data)
           ? data.data
           : (data.data.liked || data.data.profiles || data.data.likes || data.data.whoLikedMe || []);
@@ -129,7 +127,6 @@ const Likes = () => {
   useEffect(() => {
     if (location.state?.activeTab) {
       setActiveTab(location.state.activeTab);
-      // Clear the state to prevent re-triggering on re-render
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -137,14 +134,12 @@ const Likes = () => {
   // Fetch liked profiles on component mount, when search changes, or when tab changes
   useEffect(() => {
     if (activeTab === "myFavorite") {
-      // Debounce search to avoid too many API calls
       const timeoutId = setTimeout(() => {
         fetchLikedProfiles(searchQuery);
-      }, 500); // Wait 500ms after user stops typing
+      }, 500);
 
       return () => clearTimeout(timeoutId);
     } else if (activeTab === "likes") {
-      // Fetch who liked me when "Likes" tab is active
       fetchWhoLikedMe();
     }
   }, [searchQuery, activeTab, fetchLikedProfiles, fetchWhoLikedMe]);
@@ -153,11 +148,39 @@ const Likes = () => {
     setSearchQuery(e.target.value);
   };
 
+  const getProfileImage = (user) => {
+    if (user.isBusinessProfile) {
+      return user.businessLogo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop";
+    }
+    return user.profileImage || user.image || getAvatar(user.gender, user.dateOfBirth || user.age);
+  };
+
+  const getProfileName = (user) => {
+    if (user.isBusinessProfile) {
+      return user.businessName || "Unknown Business";
+    }
+    return user.fullName || user.name || "Unknown";
+  };
+
+  const getProfileSubtitle = (user) => {
+    if (user.isBusinessProfile) {
+      return user.businessCategoryName || user.businessCategory || "Business";
+    }
+    return user.city || user.address || "Location not available";
+  };
+
+  const displayedLikedProfiles = filterBusinesses
+    ? likedProfiles.filter(p => p.isBusinessProfile === true)
+    : likedProfiles;
+
+  const displayedWhoLikedMe = filterBusinesses
+    ? whoLikedMe.filter(p => p.isBusinessProfile === true)
+    : whoLikedMe;
+
   return (
     <>
       <Header />
       <div className="dating-profile-wrapper">
-        {/* <Sidebar /> */}
         <div className="likes-page-wrapper">
           <div className="title-div">
             <h1 className="inner-page-title"><span>Profile</span><span className="title-highlight">Likes</span></h1>
@@ -178,28 +201,43 @@ const Likes = () => {
                 </div>
               )}
             </div>
-            <div className="likes-page-tabs">
-              <button
-                className={`likes-page-tab ${activeTab === "likes" ? "active" : ""}`}
-                onClick={() => setActiveTab("likes")}
-              >
-                <img src={outlineHeart} alt="Likes"></img>  Liked you
-              </button>
-              <button
-                className={`likes-page-tab ${activeTab === "myFavorite" ? "active" : ""}`}
-                onClick={() => setActiveTab("myFavorite")}
-              >
-                <img src={blackHeart} alt="You Liked"></img> You Liked
-              </button>
-
+            
+            <div className="likes-page-tabs" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button
+                  className={`likes-page-tab ${activeTab === "likes" ? "active" : ""}`}
+                  onClick={() => setActiveTab("likes")}
+                >
+                  <img src={outlineHeart} alt="Likes"></img>  Liked you
+                </button>
+                <button
+                  className={`likes-page-tab ${activeTab === "myFavorite" ? "active" : ""}`}
+                  onClick={() => setActiveTab("myFavorite")}
+                >
+                  <img src={blackHeart} alt="You Liked"></img> You Liked
+                </button>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginRight: "16px" }}>
+                <input
+                  type="checkbox"
+                  id="filterBusinesses"
+                  checked={filterBusinesses}
+                  onChange={(e) => setFilterBusinesses(e.target.checked)}
+                  style={{ width: "18px", height: "18px", accentColor: "#EA650A", cursor: "pointer" }}
+                />
+                <label htmlFor="filterBusinesses" style={{ fontSize: "14px", fontWeight: "600", color: "#4b5563", cursor: "pointer" }}>
+                  Filter by Businesses
+                </label>
+              </div>
             </div>
+
             {activeTab === "myFavorite" && (
               <>
-                {loading && likedProfiles.length === 0 ? (
+                {loading && displayedLikedProfiles.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
                     Loading profiles...
                   </div>
-                ) : likedProfiles.length === 0 ? (
+                ) : displayedLikedProfiles.length === 0 ? (
                   <div style={{
                     textAlign: "center",
                     padding: "60px 20px",
@@ -214,13 +252,12 @@ const Likes = () => {
                   </div>
                 ) : (
                   <div className="likes-grid">
-                    {likedProfiles.map((user) => (
+                    {displayedLikedProfiles.map((user) => (
                       <div key={user._id || user.id} className="like-card">
                         <button
                           className="heart-btn-container"
                           onClick={(e) => {
                             e.stopPropagation();
-                            // Optionally handle unlike functionality here
                           }}
                         >
                           <img
@@ -239,13 +276,14 @@ const Likes = () => {
                           style={{ cursor: "pointer" }}
                         >
                           <img
-                            src={user.profileImage || user.image || getAvatar(user.gender, user.dateOfBirth || user.age)}
-                            alt={user.fullName || user.name || "User"}
+                            src={getProfileImage(user)}
+                            alt={getProfileName(user)}
                             className="like-avatar"
+                            style={{ objectFit: user.isBusinessProfile ? 'contain' : 'cover', backgroundColor: user.isBusinessProfile ? '#fff' : 'transparent' }}
                           />
                           <div className="like-info">
-                            <h3>{user.fullName || user.name || "Unknown"}</h3>
-                            <p>{user.city || user.address || "Location not available"}</p>
+                            <h3>{getProfileName(user)}</h3>
+                            <p>{getProfileSubtitle(user)}</p>
                           </div>
                         </div>
                       </div>
@@ -256,11 +294,11 @@ const Likes = () => {
             )}
             {activeTab === "likes" && (
               <>
-                {loadingWhoLikedMe && whoLikedMe.length === 0 ? (
+                {loadingWhoLikedMe && displayedWhoLikedMe.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
                     Loading profiles...
                   </div>
-                ) : whoLikedMe.length === 0 ? (
+                ) : displayedWhoLikedMe.length === 0 ? (
                   <div style={{
                     textAlign: "center",
                     padding: "60px 20px",
@@ -275,13 +313,12 @@ const Likes = () => {
                   </div>
                 ) : (
                   <div className="likes-grid">
-                    {whoLikedMe.map((user) => (
+                    {displayedWhoLikedMe.map((user) => (
                       <div key={user._id || user.id} className="like-card">
                         <button
                           className="heart-btn-container"
                           onClick={(e) => {
                             e.stopPropagation();
-                            // Optionally handle like back functionality here
                           }}
                         >
                           <img
@@ -300,13 +337,14 @@ const Likes = () => {
                           style={{ cursor: "pointer" }}
                         >
                           <img
-                            src={user.profileImage || user.image || getAvatar(user.gender, user.dateOfBirth || user.age)}
-                            alt={user.fullName || user.name || "User"}
+                            src={getProfileImage(user)}
+                            alt={getProfileName(user)}
                             className="like-avatar"
+                            style={{ objectFit: user.isBusinessProfile ? 'contain' : 'cover', backgroundColor: user.isBusinessProfile ? '#fff' : 'transparent' }}
                           />
                           <div className="like-info">
-                            <h3>{user.fullName || user.name || "Unknown"}</h3>
-                            <p>{user.city || user.address || "Location not available"}</p>
+                            <h3>{getProfileName(user)}</h3>
+                            <p>{getProfileSubtitle(user)}</p>
                           </div>
                         </div>
                       </div>

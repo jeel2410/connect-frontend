@@ -9,8 +9,8 @@ import { toast } from 'react-toastify';
 const PostCard = ({ post, onReact }) => {
   const { _id: postId, userId, content, attachments, createdAt, reactions, linkPreview } = post;
   const userDetail = userId?.userDetailId;
-  const displayName = userDetail?.fullName || 'User';
-  const displayImage = userDetail?.profileImage || getAvatar(userDetail?.gender, userDetail?.dateOfBirth);
+  const displayName = userDetail?.isBusinessProfile ? userDetail?.businessName : userDetail?.fullName || 'User';
+  const displayImage = userDetail?.isBusinessProfile ? (userDetail?.businessLogo || '/default-avatar.png') : (userDetail?.profileImage || getAvatar(userDetail?.gender, userDetail?.dateOfBirth));
 
   const [showEmojiBar, setShowEmojiBar] = useState(false);
   const likeWrapperRef = useRef(null);
@@ -122,7 +122,13 @@ const PostCard = ({ post, onReact }) => {
   const totalReactionsCount = (reactions || []).length;
 
   const reactionsTooltipText = (reactions || [])
-    .map((r) => r.userId?.userDetailId?.fullName || 'Someone')
+    .map((r) => {
+      const detail = r.userId?.userDetailId;
+      if (detail?.isBusinessProfile) {
+        return detail.businessName || 'Someone';
+      }
+      return detail?.fullName || 'Someone';
+    })
     .slice(0, 10)
     .join(', ') + (totalReactionsCount > 10 ? ` and ${totalReactionsCount - 10} others` : '');
 
@@ -135,6 +141,7 @@ const PostCard = ({ post, onReact }) => {
             alt={displayName} 
             className="post-user-avatar" 
             onClick={handleProfileClick}
+            style={{ objectFit: userDetail?.isBusinessProfile ? 'contain' : 'cover', backgroundColor: userDetail?.isBusinessProfile ? '#fff' : 'transparent' }}
           />
           <div className="post-user-info">
             <h4 className="post-user-name" onClick={handleProfileClick}>

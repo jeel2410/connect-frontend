@@ -11,7 +11,14 @@ const FormNavigation = ({ currentStep, totalSteps, onNext, onPrevious, onSubmit,
       )}
       {currentStep < totalSteps ? (
         <button onClick={onNext} className="btn btn-primary" disabled={loading}>
-          Next
+          {loading ? (
+            <>
+              <span className="spinner"></span>
+              Saving...
+            </>
+          ) : (
+            "Next"
+          )}
         </button>
       ) : (
         <button onClick={onSubmit} className="btn btn-submit" disabled={loading}>

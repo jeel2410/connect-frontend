@@ -500,12 +500,17 @@ export default function Chat() {
                 <div className="chat-main-header">
                   <div className="chat-main-avatar">
                     <img 
-                      src={selectedUserProfile.profileImage || getAvatar(selectedUserProfile.gender, selectedUserProfile.dateOfBirth || selectedUserProfile.age || selectedUserProfile.birthDate)}
-                      alt={selectedUserProfile.fullName || "User"} 
+                      src={
+                        selectedUserProfile.isBusinessProfile 
+                          ? (selectedUserProfile.businessLogo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop")
+                          : (selectedUserProfile.profileImage || getAvatar(selectedUserProfile.gender, selectedUserProfile.dateOfBirth || selectedUserProfile.age || selectedUserProfile.birthDate))
+                      }
+                      alt={selectedUserProfile.isBusinessProfile ? selectedUserProfile.businessName : (selectedUserProfile.fullName || "User")} 
+                      style={{ objectFit: selectedUserProfile.isBusinessProfile ? 'contain' : 'cover', backgroundColor: selectedUserProfile.isBusinessProfile ? '#fff' : 'transparent' }}
                     />
                   </div>
                   <div className="chat-main-name">
-                    {selectedUserProfile.fullName || "User"}
+                    {selectedUserProfile.isBusinessProfile ? selectedUserProfile.businessName : (selectedUserProfile.fullName || "User")}
                   </div>
                 </div>
 

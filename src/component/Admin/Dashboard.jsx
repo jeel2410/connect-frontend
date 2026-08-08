@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Users, ArrowLeftRight, Heart, CreditCard, Share2, MessageSquare, RefreshCw, Loader2, ArrowUpRight, Activity, Smile, TrendingUp } from "lucide-react";
+import { Users, ArrowLeftRight, Heart, CreditCard, Share2, MessageSquare, RefreshCw, Loader2, ArrowUpRight, Activity, Smile, TrendingUp, Building2 } from "lucide-react";
 import { getDashboardStats, getStatsTrend } from "../../utils/adminApi";
 
 const Dashboard = () => {
@@ -81,6 +81,17 @@ const Dashboard = () => {
       accentBg: "linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)",
       iconColor: "#0284C7",
       borderColor: "#38BDF8",
+    },
+    {
+      id: "businesses",
+      title: "Registered Businesses",
+      value: stats?.totalBusinesses || 0,
+      icon: Building2,
+      color: "orange",
+      description: "Total businesses registered",
+      accentBg: "linear-gradient(135deg, #FFEDD5 0%, #FED7AA 100%)",
+      iconColor: "#EA650A",
+      borderColor: "#FDBA74",
     },
     {
       id: "complete-profiles",
@@ -241,6 +252,7 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
     pink: { main: "#BE185D", border: "#F472B6", bgGradient: "linear-gradient(135deg, #FCE7F3 0%, #FBCFE8 100%)", stopColor: "#BE185D" },
     amber: { main: "#B45309", border: "#FBBF24", bgGradient: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)", stopColor: "#B45309" },
     indigo: { main: "#4338CA", border: "#818CF8", bgGradient: "linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%)", stopColor: "#4338CA" },
+    orange: { main: "#EA650A", border: "#FDBA74", bgGradient: "linear-gradient(135deg, #FFEDD5 0%, #FED7AA 100%)", stopColor: "#EA650A" },
   };
 
   const currentTheme = colorMap[statColor] || colorMap.blue;
