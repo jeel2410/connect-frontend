@@ -107,6 +107,8 @@ const SharedPostManagement = () => {
         <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "16px" }}>
           {posts.map((post) => {
             const author = post.userId?.userDetailId || {};
+            const authorName = author.isBusinessProfile ? author.businessName : author.fullName;
+            const authorImage = author.isBusinessProfile ? author.businessLogo : author.profileImage;
             const isEnabled = post.isApproved === true;
             const hasLink = post.linkPreview?.url;
             const hasAttachments = post.attachments?.length > 0;
@@ -127,10 +129,10 @@ const SharedPostManagement = () => {
                 }}
               >
                 {/* Author Avatar */}
-                {author.profileImage ? (
+                {authorImage ? (
                   <img
-                    src={author.profileImage}
-                    alt={author.fullName || "User"}
+                    src={authorImage}
+                    alt={authorName || "User"}
                     style={{ width: "44px", height: "44px", borderRadius: "50%", objectFit: "cover", border: "2px solid #E8EDF3", flexShrink: 0 }}
                     onError={(e) => { e.target.style.display = "none"; }}
                   />
@@ -145,7 +147,7 @@ const SharedPostManagement = () => {
                   {/* Meta */}
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", marginBottom: "8px" }}>
                     <span style={{ fontSize: "14px", fontWeight: "700", color: "#09122E" }}>
-                      {author.fullName || "Unknown User"}
+                      {authorName || "Unknown User"}
                     </span>
                     <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#94A3B8" }}>
                       <Calendar size={12} />

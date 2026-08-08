@@ -1,26 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { X, Heart, MessageCircle } from "lucide-react";
+import { X } from "lucide-react";
 import { toast } from "react-toastify";
 import Header from "../component/Header";
-import heroImage from "../../src/assets/image/hero_man.png";
 import "../../src/styles/style.css";
-import avtar1 from "../../src/assets/image/review/review_avatar1.png";
-import avtar2 from "../../src/assets/image/review/review_avatar2.png";
-import avtar3 from "../../src/assets/image/review/review_avatar3.png";
-import avtar4 from "../../src/assets/image/review/review_avatar4.png";
-import avtar5 from "../../src/assets/image/review/review_avatar5.png";
-import floatchart from "../../src/assets/image/floatChart.png";
-import homebg from "../../src/assets/image/home_bg.png";
-import htmlIcom from "../../src/assets/image/language/html.png";
-import cssIcon from "../../src/assets/image/language/css.png";
-import jqueryIcon from "../../src/assets/image/language/jquery.png";
-import angularIcon from "../../src/assets/image/language/angular.png";
-import reactIcon from "../../src/assets/image/language/react.png";
-import bootstrapIcon from "../../src/assets/image/language/bootstrap.png";
 import Footer from "../component/Footer";
 import { useNavigate } from "react-router-dom";
 import Usercard from "../component/Usercard";
-import { getCookie, setCookie, getUserProfile } from "../utils/auth";
+import { getCookie, setCookie } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 import FilterModal from "../component/FilterModal";
 import filterIcon from "../../src/assets/image/filter.png";
@@ -37,6 +23,9 @@ export default function Home() {
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [popupOffer, setPopupOffer] = useState(null);
   const [showOfferPopup, setShowOfferPopup] = useState(false);
+  const [activeTab, setActiveTab] = useState("People");
+  const [businessCategories, setBusinessCategories] = useState([]);
+  const [selectedBusinessCategory, setSelectedBusinessCategory] = useState("");
   const [filters, setFilters] = useState({
     ageMin: null,
     ageMax: null,
@@ -51,25 +40,41 @@ export default function Home() {
     sports: null
   });
 
-  const technologies = [
-    { icon: htmlIcom },
-    { icon: cssIcon },
-    { icon: jqueryIcon },
-    { icon: bootstrapIcon },
-    { icon: angularIcon },
-    { icon: reactIcon },
-  ];
+  // Fetch business categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const token = getCookie("authToken");
+        if (!token) return;
+        const response = await fetch(`${API_BASE_URL}/api/list/business-categories`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (response.ok) {
+          const result = await response.json();
+          const categoryData = result.data?.categories || result.data?.businessCategories;
+          if (result.success && result.data && categoryData) {
+            setBusinessCategories(categoryData);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
-  // Function to fetch feed data (extracted for reuse after like)
+  // Function to fetch feed data
   const fetchFeedData = async () => {
     try {
-      // Check if user is authenticated
       const token = getCookie("authToken");
       if (!token) {
-        return; // User not authenticated, skip API call
+        return;
       }
 
-      // Get user profile from cookie
       const userProfileJson = getCookie("userProfile");
       let userProfile = null;
       if (userProfileJson) {
@@ -80,7 +85,6 @@ export default function Home() {
         }
       }
 
-      // If no profile in cookie, fetch it
       if (!userProfile) {
         const profileResponse = await fetch(`${API_BASE_URL}/api/user/profile`, {
           method: "GET",
@@ -106,103 +110,78 @@ export default function Home() {
         }
       }
 
-      // Now fetch feed data if profile is available
-      if (!userProfile || !userProfile.gender) {
-        console.warn("User profile or gender not found, skipping feed fetch");
-        return;
-      }
-
-      // Determine gender - use filter if set
-      let genderFilter = filters.gender;
-      if (genderFilter === "Any") {
-        genderFilter = null; // Show all genders
-      }
-
       setLoadingFeed(true);
 
-      // Check if any filters are applied or search is active
-      const hasFilters = filters.ageMin !== null || filters.ageMax !== null ||
-        filters.language !== null || (filters.habits && filters.habits.length > 0) ||
-        (filters.interests && filters.interests.length > 0) || filters.relationship !== null ||
-        filters.religion !== null || filters.company !== null ||
-        filters.industry !== null || (filters.sports && filters.sports.length > 0) ||
-        (filters.gender !== null && filters.gender !== "Any") ||
-        (isSearchActive && searchQuery.trim() !== "");
-
-      // Get location coordinates only if no filters are applied
-      let latitude = null;
-      let longitude = null;
-
-      if (!hasFilters) {
-        // First, check if user profile has currentLocation stored
-        if (userProfile.currentLocation && userProfile.currentLocation.coordinates) {
-          const coordinates = userProfile.currentLocation.coordinates;
-          // Check if coordinates are valid (not [0, 0])
-          if (coordinates.length >= 2 && (coordinates[0] !== 0 || coordinates[1] !== 0)) {
-            // Note: coordinates array is typically [longitude, latitude] in GeoJSON format
-            longitude = coordinates[0];
-            latitude = coordinates[1];
-          }
-        }
-      }
-
-      // Build query parameters
       const queryParams = new URLSearchParams();
       queryParams.append("page", "1");
       queryParams.append("limit", "5000");
 
-      // Add gender filter if it's set and not "Any"
-      if (genderFilter && genderFilter !== "Any" && genderFilter !== "any") {
-        queryParams.append("gender", genderFilter);
+      if (activeTab === "Businesses") {
+        if (selectedBusinessCategory) {
+          queryParams.append("category", selectedBusinessCategory);
+        }
+        if (isSearchActive && searchQuery.trim() !== "") {
+          queryParams.append("search", searchQuery.trim());
+        }
+      } else {
+        let genderFilter = filters.gender;
+        if (genderFilter === "Any") {
+          genderFilter = null;
+        }
+
+        const hasFilters = filters.ageMin !== null || filters.ageMax !== null ||
+          filters.language !== null || (filters.habits && filters.habits.length > 0) ||
+          (filters.interests && filters.interests.length > 0) || filters.relationship !== null ||
+          filters.religion !== null || filters.company !== null ||
+          filters.industry !== null || (filters.sports && filters.sports.length > 0) ||
+          (filters.gender !== null && filters.gender !== "Any") ||
+          (isSearchActive && searchQuery.trim() !== "");
+
+        if (genderFilter && genderFilter !== "Any" && genderFilter !== "any") {
+          queryParams.append("gender", genderFilter);
+        }
+
+        if (filters.ageMin !== null && filters.ageMin !== undefined) {
+          queryParams.append("ageMin", filters.ageMin.toString());
+        }
+        if (filters.ageMax !== null && filters.ageMax !== undefined) {
+          queryParams.append("ageMax", filters.ageMax.toString());
+        }
+        if (filters.language) {
+          queryParams.append("language", filters.language);
+        }
+        if (filters.habits && Array.isArray(filters.habits) && filters.habits.length > 0) {
+          queryParams.append("habits", filters.habits.join(","));
+        }
+        if (filters.relationship) {
+          queryParams.append("relationship", filters.relationship);
+        }
+        if (filters.company) {
+          queryParams.append("company", filters.company);
+        }
+        if (filters.industry) {
+          queryParams.append("industry", filters.industry);
+        }
+        if (filters.interests && Array.isArray(filters.interests) && filters.interests.length > 0) {
+          queryParams.append("interests", filters.interests.join(","));
+        }
+        if (filters.religion) {
+          queryParams.append("religion", filters.religion);
+        }
+        if (filters.sports && Array.isArray(filters.sports) && filters.sports.length > 0) {
+          queryParams.append("sports", filters.sports.join(","));
+        }
+
+        if (isSearchActive && searchQuery.trim() !== "") {
+          queryParams.append("search", searchQuery.trim());
+        }
       }
 
-      // Only add location if no filters are applied
-      if (!hasFilters && latitude !== null && longitude !== null) {
-        // queryParams.append("latitude", latitude.toString());
-        // queryParams.append("longitude", longitude.toString());
-      }
+      const feedUrl = activeTab === "Businesses"
+        ? `${API_BASE_URL}/api/feed/businesses`
+        : `${API_BASE_URL}/api/feed/web`;
 
-      // Add filter parameters if they exist
-      if (filters.ageMin !== null && filters.ageMin !== undefined) {
-        queryParams.append("ageMin", filters.ageMin.toString());
-      }
-      if (filters.ageMax !== null && filters.ageMax !== undefined) {
-        queryParams.append("ageMax", filters.ageMax.toString());
-      }
-      if (filters.language) {
-        queryParams.append("language", filters.language);
-      }
-      if (filters.habits && Array.isArray(filters.habits) && filters.habits.length > 0) {
-        queryParams.append("habits", filters.habits.join(","));
-      }
-      if (filters.relationship) {
-        queryParams.append("relationship", filters.relationship);
-      }
-      if (filters.company) {
-        queryParams.append("company", filters.company);
-      }
-      if (filters.industry) {
-        queryParams.append("industry", filters.industry);
-      }
-      if (filters.interests && Array.isArray(filters.interests) && filters.interests.length > 0) {
-        queryParams.append("interests", filters.interests.join(","));
-      }
-      if (filters.religion) {
-        queryParams.append("religion", filters.religion);
-      }
-      if (filters.sports && Array.isArray(filters.sports) && filters.sports.length > 0) {
-        queryParams.append("sports", filters.sports.join(","));
-      }
-
-      // Add search parameter if search is active
-      if (isSearchActive && searchQuery.trim() !== "") {
-        queryParams.append("search", searchQuery.trim());
-        // When searching, don't apply city filter - search across all cities
-        // This is handled by not passing userCityId to the backend when search is active
-      }
-
-      // Call the feed API
-      const feedResponse = await fetch(`${API_BASE_URL}/api/feed/web?${queryParams.toString()}`, {
+      const feedResponse = await fetch(`${feedUrl}?${queryParams.toString()}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -218,16 +197,14 @@ export default function Home() {
         throw new Error("Failed to fetch feed data");
       }
 
-      const feedData = await feedResponse.json();
+      const feedDataResult = await feedResponse.json();
 
-      // Check if response is successful and has feed data
-      if (feedData.success && feedData.data) {
-        // Handle different possible response structsetFeedDataures
-        const feed = Array.isArray(feedData.data) ? feedData.data : (feedData.data.profiles || feedData.data.feed || []);
+      if (feedDataResult.success && feedDataResult.data) {
+        const feed = Array.isArray(feedDataResult.data) 
+          ? feedDataResult.data 
+          : (feedDataResult.data.profiles || feedDataResult.data.feed || []);
         setFeedData(feed);
 
-        // Pre-populate liked / connected sets from API flags so button states
-        // are correct immediately on page load / reload.
         const newLiked = new Set(
           feed.filter(p => p.isLiked).map(p => String(p._id || p.id))
         );
@@ -239,7 +216,6 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Error fetching feed data:", error);
-      // Silently fail - don't disrupt user experience
     } finally {
       setLoadingFeed(false);
     }
@@ -257,7 +233,6 @@ export default function Home() {
       const isCurrentlyLiked = likedProfiles.has(String(likedUserId));
       const method = isCurrentlyLiked ? "DELETE" : "POST";
 
-      // Toggle like/unlike API (same behavior as UserProfileModal)
       const likeResponse = await fetch(`${API_BASE_URL}/api/connection/like/${likedUserId}`, {
         method,
         headers: {
@@ -297,7 +272,7 @@ export default function Home() {
     }
   };
 
-  // Handle connect/connection request action
+  // Handle connect action
   const handleConnect = async (receiverId) => {
     try {
       const token = getCookie("authToken");
@@ -306,7 +281,6 @@ export default function Home() {
         return;
       }
 
-      // Call the connection request API
       const connectResponse = await fetch(`${API_BASE_URL}/api/connection/connectionrequest/${receiverId}`, {
         method: "POST",
         headers: {
@@ -327,9 +301,7 @@ export default function Home() {
       const connectData = await connectResponse.json();
 
       if (connectData.success) {
-        // Show success toast notification
         toast.success("Connection request sent successfully!");
-        // Mark profile as connected without removing it from feed
         setConnectedProfiles(prev => new Set([...prev, String(receiverId)]));
       } else {
         throw new Error(connectData.message || "Failed to send connection request");
@@ -340,7 +312,7 @@ export default function Home() {
     }
   };
 
-  // Handle skip action - call API and remove profile from list
+  // Handle skip action
   const handleSkip = async (skippedUserId) => {
     try {
       const token = getCookie("authToken");
@@ -349,7 +321,6 @@ export default function Home() {
         return;
       }
 
-      // Call the skip API
       const skipResponse = await fetch(`${API_BASE_URL}/api/connection/skip/${skippedUserId}`, {
         method: "POST",
         headers: {
@@ -370,7 +341,6 @@ export default function Home() {
       const skipData = await skipResponse.json();
 
       if (skipData.success) {
-        // Remove the skipped profile from the list
         const newFeedData = feedData.filter(profile =>
           (profile._id || profile.id) !== skippedUserId
         );
@@ -380,21 +350,18 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Error skipping user:", error);
-      // Optionally show error message to user
     }
   };
 
-  // Fetch user profile data and then feed data when component mounts
+  // Fetch user profile and feed
   useEffect(() => {
     const fetchUserProfileAndFeed = async () => {
       try {
-        // Check if user is authenticated
         const token = getCookie("authToken");
         if (!token) {
-          return; // User not authenticated, skip API call
+          return;
         }
 
-        // First, fetch user profile
         const profileResponse = await fetch(`${API_BASE_URL}/api/user/profile`, {
           method: "GET",
           headers: {
@@ -404,7 +371,6 @@ export default function Home() {
         });
 
         if (!profileResponse.ok) {
-          // If unauthorized, user might need to login again
           if (profileResponse.status === 401) {
             console.error("Unauthorized: Please login again");
             return;
@@ -414,16 +380,10 @@ export default function Home() {
 
         const profileData = await profileResponse.json();
 
-        // Check if response is successful and has profile data
-        let userProfile = null;
         if (profileData.success && profileData.data && profileData.data.profile) {
           const profile = profileData.data.profile;
-
-          // Save entire profile data to cookie as JSON
           setCookie("userProfile", JSON.stringify(profile), 7);
-          userProfile = profile;
-
-          // Optionally save individual fields for easier access
+          
           if (profile.fullName) {
             setCookie("userFullName", profile.fullName, 7);
           }
@@ -436,37 +396,23 @@ export default function Home() {
           if (profile.phoneNumber) {
             setCookie("userPhoneNumber", profile.phoneNumber, 7);
           }
-
-          // Store currentLocation if available
-          if (profile.currentLocation && profile.currentLocation.coordinates) {
-            const coordinates = profile.currentLocation.coordinates;
-            // Only store if coordinates are valid (not [0, 0])
-            if (coordinates.length >= 2 && (coordinates[0] !== 0 || coordinates[1] !== 0)) {
-              setCookie("userCurrentLocation", JSON.stringify({
-                longitude: coordinates[0],
-                latitude: coordinates[1]
-              }), 7);
-            }
-          }
         }
 
-        // Now fetch feed data
         await fetchFeedData();
       } catch (error) {
         console.error("Error fetching user profile or feed data:", error);
-        // Silently fail - don't disrupt user experience
       }
     };
 
     fetchUserProfileAndFeed();
-  }, [filters, isSearchActive, searchQuery]); // Re-fetch when filters or search change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, isSearchActive, searchQuery, activeTab, selectedBusinessCategory]);
 
-  // Debounced search effect
+  // Debounced search
   useEffect(() => {
     if (searchQuery.trim() === "") {
       if (isSearchActive) {
         setIsSearchActive(false);
-        // Clear search and refetch
         setFilters(prev => ({ ...prev }));
       }
       return;
@@ -474,15 +420,14 @@ export default function Home() {
 
     const timeoutId = setTimeout(() => {
       setIsSearchActive(true);
-      // Trigger fetch by updating filters
       setFilters(prev => ({ ...prev }));
-    }, 500); // 500ms debounce
+    }, 500);
 
     return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   const handleApplyFilters = (appliedFilters) => {
-    // Convert ageRange to ageMin and ageMax
     const newFilters = {
       ageMin: appliedFilters.ageRange ? appliedFilters.ageRange[0] : null,
       ageMax: appliedFilters.ageRange ? appliedFilters.ageRange[1] : null,
@@ -572,14 +517,52 @@ export default function Home() {
         onClear={handleClearFilters}
       />
 
-      {/* second section */}
       <div className="profile-container">
         <div className="sec-header">
-          <div className="sec-header-left">
-
-            <h1 className="title">
+          <div className="sec-header-left" style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+            <h1 className="title" style={{ margin: 0 }}>
               Profiles <span className="title-highlight">Near You</span>
             </h1>
+            <div className="feed-tabs" style={{ display: "flex", gap: "8px", background: "#f3f4f6", padding: "4px", borderRadius: "8px" }}>
+              <button
+                onClick={() => {
+                  setActiveTab("People");
+                  setFeedData([]);
+                }}
+                style={{
+                  padding: "6px 16px",
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                  fontSize: "14px",
+                  backgroundColor: activeTab === "People" ? "#EA650A" : "transparent",
+                  color: activeTab === "People" ? "#fff" : "#4b5563",
+                  transition: "all 0.2s"
+                }}
+              >
+                People
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("Businesses");
+                  setFeedData([]);
+                }}
+                style={{
+                  padding: "6px 16px",
+                  borderRadius: "6px",
+                  border: "none",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                  fontSize: "14px",
+                  backgroundColor: activeTab === "Businesses" ? "#EA650A" : "transparent",
+                  color: activeTab === "Businesses" ? "#fff" : "#4b5563",
+                  transition: "all 0.2s"
+                }}
+              >
+                Businesses
+              </button>
+            </div>
           </div>
           <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "nowrap", justifyContent: "flex-end", minWidth: 0 }}>
             <div style={{ position: "relative", display: "flex", alignItems: "center", flex: "0 1 280px", width: "100%", maxWidth: "280px", minWidth: 0 }}>
@@ -597,7 +580,7 @@ export default function Home() {
               />
               <input
                 type="text"
-                placeholder="Search by name or username..."
+                placeholder={activeTab === "Businesses" ? "Search by business name..." : "Search by name or username..."}
                 value={searchQuery}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -611,12 +594,10 @@ export default function Home() {
                 onKeyPress={(e) => {
                   if (e.key === "Enter" && searchQuery.trim() !== "") {
                     setIsSearchActive(true);
-                    // Trigger search by updating filters dependency
                     setFilters(prev => ({ ...prev }));
                   }
                 }}
                 onBlur={() => {
-                  // Trigger search when user leaves the input field
                   if (searchQuery.trim() !== "") {
                     setIsSearchActive(true);
                     setFilters(prev => ({ ...prev }));
@@ -661,28 +642,53 @@ export default function Home() {
                 </button>
               )}
             </div>
-            <button
-              className="filter-btn"
-              onClick={() => setIsFilterOpen(true)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "10px 20px",
-                flexShrink: 0,
-                backgroundColor: "#fff",
-                border: "1px solid #EA650A",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#EA650A"
-              }}
-            >
-              <img src={filterIcon} alt="filter" className="filter-icon" style={{ width: "18px", height: "18px" }} />
-              Filter
-            </button>
-            {/* <button className="view-more-btn" onClick={() => navigate("/search")}>View More</button> */}
+
+            {activeTab === "Businesses" && (
+              <select
+                value={selectedBusinessCategory}
+                onChange={(e) => setSelectedBusinessCategory(e.target.value)}
+                style={{
+                  padding: "10px 16px",
+                  border: "1px solid #EA650A",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  color: "#4b5563",
+                  outline: "none",
+                  backgroundColor: "#fff",
+                  cursor: "pointer"
+                }}
+              >
+                <option value="">All Categories</option>
+                {businessCategories.map(cat => (
+                  <option key={cat._id} value={cat._id}>{cat.name}</option>
+                ))}
+              </select>
+            )}
+            
+            {activeTab === "People" && (
+              <button
+                className="filter-btn"
+                onClick={() => setIsFilterOpen(true)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "10px 20px",
+                  flexShrink: 0,
+                  backgroundColor: "#fff",
+                  border: "1px solid #EA650A",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  color: "#EA650A"
+                }}
+              >
+                <img src={filterIcon} alt="filter" className="filter-icon" style={{ width: "18px", height: "18px" }} />
+                Filter
+              </button>
+            )}
           </div>
         </div>
         <Usercard
@@ -696,12 +702,8 @@ export default function Home() {
         ></Usercard>
       </div>
 
-
-
-
       <Footer></Footer>
 
-      {/* Daily Offer Popup */}
       {showOfferPopup && popupOffer && (
         <div style={{
           position: "fixed",
@@ -746,8 +748,6 @@ export default function Home() {
                 color: "#666",
                 transition: "background 0.2s"
               }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = "rgba(0,0,0,0.1)"}
-              onMouseLeave={(e) => e.target.style.backgroundColor = "rgba(0,0,0,0.05)"}
             >
               <X size={18} />
             </button>
@@ -867,8 +867,6 @@ export default function Home() {
                   fontSize: "14px",
                   transition: "background 0.2s"
                 }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = "#f5f5f5"}
-                onMouseLeave={(e) => e.target.style.backgroundColor = "#fff"}
               >
                 Dismiss
               </button>
@@ -895,14 +893,6 @@ export default function Home() {
                   textDecoration: "none",
                   boxShadow: "0 4px 12px rgba(234, 101, 10, 0.25)",
                   transition: "all 0.2s"
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = "#d35400";
-                  e.target.style.boxShadow = "0 6px 16px rgba(234, 101, 10, 0.35)";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = "#ea650a";
-                  e.target.style.boxShadow = "0 4px 12px rgba(234, 101, 10, 0.25)";
                 }}
               >
                 Check Now

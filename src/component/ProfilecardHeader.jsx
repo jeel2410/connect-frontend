@@ -9,8 +9,13 @@ export default function ProfilecardHeader({ showChangePassword = true, profileDa
   const fileInputRef = useRef(null);
   const coverInputRef = useRef(null);
 
-  const displayName = profileData?.fullName || "User";
-  const displayImage = profileData?.profileImage || getAvatar(profileData?.gender, profileData?.dateOfBirth || profileData?.age || profileData?.birthDate);
+  const isBusiness = profileData?.isBusinessProfile === true;
+  const businessPlaceholderLogo = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop";
+  const defaultAvatar = isBusiness ? businessPlaceholderLogo : getAvatar(profileData?.gender, profileData?.dateOfBirth || profileData?.age || profileData?.birthDate);
+
+  const displayName = isBusiness ? (profileData?.businessName || "Business User") : (profileData?.fullName || "User");
+  const displayImage = isBusiness ? (profileData?.businessLogo || businessPlaceholderLogo) : (profileData?.profileImage || defaultAvatar);
+  const displayCover = isBusiness ? (profileData?.businessCoverImage || profileData?.coverImage) : profileData?.coverImage;
 
   const handleImageClick = () => {
     if (fileInputRef.current && showImageUpload) {
@@ -22,7 +27,7 @@ export default function ProfilecardHeader({ showChangePassword = true, profileDa
     <div className="dating-profile-header">
       <div
         className="dating-profile-header-background"
-        style={profileData?.coverImage ? { backgroundImage: `url(${profileData.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+        style={displayCover ? { backgroundImage: `url(${displayCover})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
       ></div>
       <div className="dating-profile-header-content">
         <div className="dating-profile-header-avatar-wrapper">
@@ -31,6 +36,7 @@ export default function ProfilecardHeader({ showChangePassword = true, profileDa
               src={displayImage}
               alt="Profile"
               className="dating-profile-header-avatar"
+              style={{ objectFit: isBusiness ? 'contain' : 'cover', backgroundColor: isBusiness ? '#fff' : 'transparent', border: isBusiness ? '1px solid #e5e7eb' : 'none' }}
             />
             {showImageUpload && onImageChange && (
               <>

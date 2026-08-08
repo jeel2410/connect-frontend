@@ -35,7 +35,22 @@ export default function Usercard({
     feedData && feedData.length > 0
       ? feedData.map((item, index) => {
         const userId = item._id || item.id;
-        // Use age from API if available, otherwise calculate it
+        const isBusiness = item.isBusinessProfile === true || !!item.businessName;
+
+        if (isBusiness) {
+          const businessLogoPlaceholder = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop";
+          return {
+            id: userId || index + 1,
+            userId: userId,
+            name: item.businessName || "Unknown Business",
+            industry: item.businessCategoryName || item.businessCategory || "Business",
+            image: item.businessLogo || businessLogoPlaceholder,
+            verified: item.verified || false,
+            featured: item.featured || false,
+            isBusiness: true,
+          };
+        }
+
         const age = item.age || calculateAge(item.dateOfBirth);
         const name = item.fullName || item.name || "Unknown";
         const defaultAvatar = getAvatar(item.gender, age || item.dateOfBirth);
@@ -47,6 +62,7 @@ export default function Usercard({
           image: item.profileImage || item.image || defaultAvatar,
           verified: item.verified || false,
           featured: item.featured || false,
+          isBusiness: false,
         };
       })
       : [];
@@ -137,6 +153,7 @@ export default function Usercard({
                   src={profile.image}
                   alt={profile.name}
                   className="profile-image"
+                  style={{ objectFit: profile.isBusiness ? 'contain' : 'cover', backgroundColor: profile.isBusiness ? '#fff' : 'transparent' }}
                 />
               </div>
 

@@ -62,7 +62,6 @@ export default function UserProfileModal({ userId }) {
           return;
         }
 
-        // Call the API to get user profile by ID
         const response = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`, {
           method: "GET",
           headers: {
@@ -82,18 +81,12 @@ export default function UserProfileModal({ userId }) {
 
         const data = await response.json();
 
-        // Check if response is successful and has profile data
         if (data.success && data.data) {
-          // Handle different possible response structures
           const profile = data.data.profile || data.data;
           setProfileData(profile);
-          // Set isLiked status from the profile response
           setIsLiked(profile.isLiked || profile.likedByMe || false);
-          // Set connection status - simple: connected or not
           setIsConnected(profile.isConnected || profile.alreadyConnect || false);
-          // Check if there's a pending request
           setHasPendingRequest(profile.hasSentRequest || profile.sendRequest || false);
-          // Set city name if available from backend
           if (profile.cityName) {
             setCityName(profile.cityName);
           }
@@ -111,7 +104,6 @@ export default function UserProfileModal({ userId }) {
     fetchUserProfile();
   }, [userId]);
 
-  // Fetch industry, company, and city names when profileData is loaded
   useEffect(() => {
     const fetchIndustryAndCompanies = async () => {
       if (!profileData) return;
@@ -119,8 +111,9 @@ export default function UserProfileModal({ userId }) {
       const bgElement = document.querySelector('.user-profile-bg');
       const overlayElement = document.querySelector('.user-profile-overlay');
       if (bgElement) {
-        if (profileData.coverImage) {
-          bgElement.style.backgroundImage = `url(${profileData.coverImage})`;
+        const coverImg = profileData.isBusinessProfile ? profileData.businessCoverImage : profileData.coverImage;
+        if (coverImg) {
+          bgElement.style.backgroundImage = `url(${coverImg})`;
           bgElement.style.backgroundSize = 'cover';
           bgElement.style.backgroundPosition = 'center';
           if (overlayElement) {
@@ -140,13 +133,10 @@ export default function UserProfileModal({ userId }) {
         const token = getCookie("authToken");
         if (!token) return;
 
-        // Fetch city name if not already set
         if (profileData.city && !cityName) {
-          // If city is an object with name, use it
           if (typeof profileData.city === 'object' && profileData.city.name) {
             setCityName(profileData.city.name);
           } else if (profileData.city && typeof profileData.city === 'string') {
-            // Fetch city name from API
             const citiesResponse = await fetch(`${API_BASE_URL}/api/list/city`, {
               method: "GET",
               headers: {
@@ -161,14 +151,13 @@ export default function UserProfileModal({ userId }) {
                 if (city) {
                   setCityName(city.name);
                 } else {
-                  setCityName(profileData.city); // Fallback to ID if not found
+                  setCityName(profileData.city);
                 }
               }
             }
           }
         }
 
-        // Fetch industry name
         if (profileData.industry) {
           const industriesResponse = await fetch(`${API_BASE_URL}/api/list/industries`, {
             method: "GET",
@@ -184,14 +173,12 @@ export default function UserProfileModal({ userId }) {
               if (industry) {
                 setIndustryName(industry.name);
               } else {
-                // If not found in list, use the ID as fallback or check if it's already a name
                 setIndustryName(profileData.industry);
               }
             }
           }
         }
 
-        // Fetch company name
         if (profileData.company && profileData.industry) {
           const companiesResponse = await fetch(`${API_BASE_URL}/api/list/companies?industryId=${profileData.industry}`, {
             method: "GET",
@@ -207,21 +194,17 @@ export default function UserProfileModal({ userId }) {
               if (company) {
                 setCompanyName(company.name);
               } else {
-                // If not found in list, use the value as fallback (might already be a name)
                 setCompanyName(profileData.company);
               }
             }
           } else {
-            // If API fails, use the value directly (might already be a name)
             setCompanyName(profileData.company);
           }
         } else if (profileData.company) {
-          // If company exists but no industry, use the value directly
           setCompanyName(profileData.company);
         }
       } catch (err) {
         console.error("Error fetching industry/companies:", err);
-        // Fallback: use the values directly if they exist and haven't been set yet
         if (profileData.industry) {
           setIndustryName(prev => prev || profileData.industry);
         }
@@ -235,7 +218,6 @@ export default function UserProfileModal({ userId }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileData, cityName]);
 
-  // Handle connect - send connection request
   const handleConnect = async () => {
     if (!userId || sendingConnect || isConnected || hasPendingRequest) {
       return;
@@ -249,7 +231,6 @@ export default function UserProfileModal({ userId }) {
         return;
       }
 
-      // Call the connection request API
       const response = await fetch(`${API_BASE_URL}/api/connection/connectionrequest/${userId}`, {
         method: "POST",
         headers: {
@@ -270,11 +251,7 @@ export default function UserProfileModal({ userId }) {
       const data = await response.json();
 
       if (data.success) {
-        // Show success toast notification
         toast.success("Connection request sent successfully!");
-
-        // After sending request, check if it was auto-accepted or refresh profile
-        // For now, just refresh the profile to get updated status
         const profileResponse = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`, {
           method: "GET",
           headers: {
@@ -303,7 +280,6 @@ export default function UserProfileModal({ userId }) {
     }
   };
 
-  // Handle remove connection
   const handleRemoveConnection = async () => {
     if (!userId || sendingConnect || !isConnected) {
       return;
@@ -317,7 +293,6 @@ export default function UserProfileModal({ userId }) {
         return;
       }
 
-      // Call the remove connection API
       const response = await fetch(`${API_BASE_URL}/api/connection/connection/${userId}`, {
         method: "DELETE",
         headers: {
@@ -339,7 +314,6 @@ export default function UserProfileModal({ userId }) {
 
       if (data.success) {
         setIsConnected(false);
-        // Refresh profile to get updated connection status
         const profileResponse = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`, {
           method: "GET",
           headers: {
@@ -367,7 +341,6 @@ export default function UserProfileModal({ userId }) {
     }
   };
 
-  // Handle like/unlike user (toggle)
   const handleLike = async () => {
     if (!userId || sendingLike) {
       return;
@@ -381,7 +354,6 @@ export default function UserProfileModal({ userId }) {
         return;
       }
 
-      // If already liked, call DELETE to unlike, otherwise call POST to like
       const method = isLiked ? "DELETE" : "POST";
       const response = await fetch(`${API_BASE_URL}/api/connection/like/${userId}`, {
         method: method,
@@ -403,9 +375,7 @@ export default function UserProfileModal({ userId }) {
       const data = await response.json();
 
       if (data.success) {
-        // Toggle the like status
         setIsLiked(!isLiked);
-        // Show success toast notification
         if (isLiked) {
           toast.success("Profile unliked successfully");
         } else {
@@ -423,7 +393,6 @@ export default function UserProfileModal({ userId }) {
     }
   };
 
-  // Handle message click - navigate to chat
   const handleMessage = async () => {
     if (!userId) {
       return;
@@ -436,7 +405,6 @@ export default function UserProfileModal({ userId }) {
         return;
       }
 
-      // Call the chat history API
       const response = await fetch(`${API_BASE_URL}/api/chat/history/${userId}`, {
         method: "GET",
         headers: {
@@ -456,7 +424,6 @@ export default function UserProfileModal({ userId }) {
 
       const data = await response.json();
 
-      // Navigate to chat page with userId and chat history data
       navigate("/chat", {
         state: {
           userId: userId,
@@ -465,7 +432,6 @@ export default function UserProfileModal({ userId }) {
       });
     } catch (error) {
       console.error("Error fetching chat history:", error);
-      // Still navigate to chat page even if API fails
       navigate("/chat", {
         state: {
           userId: userId
@@ -474,7 +440,6 @@ export default function UserProfileModal({ userId }) {
     }
   };
 
-  // Handle close button - navigate back
   const handleClose = () => {
     navigate(-1);
   };
@@ -505,25 +470,35 @@ export default function UserProfileModal({ userId }) {
     );
   }
 
-  const age = calculateAge(profileData.dateOfBirth);
-  const interests = profileData.interests || [];
-  const habits = profileData.habits || [];
-  const skills = profileData.skills || [];
-  const defaultAvatar = getAvatar(profileData.gender, age || profileData.dateOfBirth);
+  const isBusiness = profileData.isBusinessProfile === true;
+  const age = isBusiness ? null : calculateAge(profileData.dateOfBirth);
+  const interests = isBusiness ? [] : (profileData.interests || []);
+  const habits = isBusiness ? [] : (profileData.habits || []);
+  const skills = isBusiness ? [] : (profileData.skills || []);
+
+  const businessPlaceholderLogo = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop";
+  const defaultAvatar = isBusiness ? businessPlaceholderLogo : getAvatar(profileData.gender, age || profileData.dateOfBirth);
+
+  const displayLogo = isBusiness ? (profileData.businessLogo || businessPlaceholderLogo) : (profileData.profileImage || defaultAvatar);
+  const displayName = isBusiness ? profileData.businessName : (profileData.fullName || "User");
+  const displayTagline = isBusiness ? profileData.businessTagline : null;
 
   return (
     <div>
       <div className="user-profile-top-section">
         <div className="user-profile-avatar-section">
           <img
-            src={profileData.profileImage || defaultAvatar}
-            alt={profileData.fullName || "Profile"}
+            src={displayLogo}
+            alt={displayName}
             className="user-profile-avatar"
             onClick={() => setIsImagePopupOpen(true)}
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: 'pointer', objectFit: isBusiness ? 'contain' : 'cover', backgroundColor: isBusiness ? '#fff' : 'transparent', border: isBusiness ? '1px solid #e5e7eb' : 'none' }}
           />
           <div className="user-profile-name-location">
-            <h2>{profileData.fullName || "User"}</h2>
+            <h2>{displayName}</h2>
+            {displayTagline && (
+              <p style={{ fontStyle: "italic", fontSize: "14px", color: "#6b7280", margin: "4px 0" }}>{displayTagline}</p>
+            )}
             <p>
               {cityName || profileData.cityName
                 ? `${cityName || profileData.cityName}${profileData.pincode ? ` - ${profileData.pincode}` : ""}`
@@ -543,7 +518,7 @@ export default function UserProfileModal({ userId }) {
             className="user-profile-social-btn heartfill-btn"
             onClick={handleLike}
             disabled={sendingLike}
-            title={isLiked ? 'Unlike this user' : 'Like this user'}
+            title={isLiked ? 'Unlike this' : 'Like this'}
             style={{ opacity: sendingLike ? 0.6 : 1 }}
           >
             <img src={isLiked ? heartfillIcon : heartOutlineIcon} alt={isLiked ? "Unlike" : "Like"}></img>
@@ -604,98 +579,155 @@ export default function UserProfileModal({ userId }) {
       </div>
       <div className="user-profile-card">
         <div className="user-profile-card-content">
-          {interests.length > 0 && (
-            <div className="user-profile-detail-section">
-              <h3 className="user-profile-section-title">Interest</h3>
-              <div className="user-profile-pill-group">
-                {interests.map((interest, index) => (
-                  <span key={index} className="user-profile-pill">{interest}</span>
-                ))}
+          {isBusiness ? (
+            <>
+              {profileData.businessDescription && (
+                <div className="user-profile-detail-section" style={{ marginBottom: "24px" }}>
+                  <h3 className="user-profile-section-title">About the Business</h3>
+                  <p style={{ fontSize: "14px", color: "#4b5563", lineHeight: "1.6", whiteSpace: "pre-line" }}>
+                    {profileData.businessDescription}
+                  </p>
+                </div>
+              )}
+
+              <div className="user-profile-details-grid">
+                <div className="user-profile-detail-item">
+                  <label>Business Category</label>
+                  <p>{profileData.businessCategoryName || "Not provided"}</p>
+                </div>
+                <div className="user-profile-detail-item">
+                  <label>Contact Person</label>
+                  <p>{profileData.contactPerson || "Not provided"}</p>
+                </div>
+                {profileData.website && (
+                  <div className="user-profile-detail-item">
+                    <label>Website</label>
+                    <p>
+                      <a href={profileData.website.startsWith('http') ? profileData.website : `https://${profileData.website}`} target="_blank" rel="noopener noreferrer" style={{ color: "#EA650A", textDecoration: "underline", fontWeight: "600" }}>
+                        {profileData.website}
+                      </a>
+                    </p>
+                  </div>
+                )}
+                {profileData.facebook && (
+                  <div className="user-profile-detail-item">
+                    <label>Facebook</label>
+                    <p><a href={profileData.facebook} target="_blank" rel="noopener noreferrer" style={{ color: "#EA650A", fontWeight: "600" }}>View Profile</a></p>
+                  </div>
+                )}
+                {profileData.instagram && (
+                  <div className="user-profile-detail-item">
+                    <label>Instagram</label>
+                    <p><a href={profileData.instagram} target="_blank" rel="noopener noreferrer" style={{ color: "#EA650A", fontWeight: "600" }}>View Profile</a></p>
+                  </div>
+                )}
+                {profileData.linkedIn && (
+                  <div className="user-profile-detail-item">
+                    <label>LinkedIn</label>
+                    <p><a href={profileData.linkedIn} target="_blank" rel="noopener noreferrer" style={{ color: "#EA650A", fontWeight: "600" }}>View Profile</a></p>
+                  </div>
+                )}
+                {profileData.youtube && (
+                  <div className="user-profile-detail-item">
+                    <label>YouTube</label>
+                    <p><a href={profileData.youtube} target="_blank" rel="noopener noreferrer" style={{ color: "#EA650A", fontWeight: "600" }}>View Channel</a></p>
+                  </div>
+                )}
+                {profileData.twitter && (
+                  <div className="user-profile-detail-item">
+                    <label>Twitter</label>
+                    <p><a href={profileData.twitter} target="_blank" rel="noopener noreferrer" style={{ color: "#EA650A", fontWeight: "600" }}>View Profile</a></p>
+                  </div>
+                )}
               </div>
-            </div>
+            </>
+          ) : (
+            <>
+              {interests.length > 0 && (
+                <div className="user-profile-detail-section">
+                  <h3 className="user-profile-section-title">Interest</h3>
+                  <div className="user-profile-pill-group">
+                    {interests.map((interest, index) => (
+                      <span key={index} className="user-profile-pill">{interest}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {habits.length > 0 && (
+                <div className="user-profile-detail-section">
+                  <h3 className="user-profile-section-title">Habits</h3>
+                  <div className="user-profile-pill-group">
+                    {habits.map((habit, index) => (
+                      <span key={index} className="user-profile-pill">{habit}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {skills.length > 0 && (
+                <div className="user-profile-detail-section">
+                  <h3 className="user-profile-section-title">Skills</h3>
+                  <div className="user-profile-pill-group">
+                    {skills.map((skill, index) => (
+                      <span key={index} className="user-profile-pill">{skill}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="user-profile-details-grid">
+                {age && (
+                  <div className="user-profile-detail-item">
+                    <label>Age</label>
+                    <p>{age}</p>
+                  </div>
+                )}
+                <div className="user-profile-detail-item">
+                  <label>Gender</label>
+                  <p>{profileData.gender || "Not provided"}</p>
+                </div>
+                <div className="user-profile-detail-item">
+                  <label>Date of Birth</label>
+                  <p>{formatDate(profileData.dateOfBirth)}</p>
+                </div>
+                <div className="user-profile-detail-item">
+                  <label>Religion</label>
+                  <p>{profileData.religion || "Not provided"}</p>
+                </div>
+                <div className="user-profile-detail-item">
+                  <label>Status</label>
+                  <p>{profileData.status || "Not provided"}</p>
+                </div>
+                <div className="user-profile-detail-item">
+                  <label>Languages</label>
+                  <p>
+                    {Array.isArray(profileData.preferredLanguage)
+                      ? profileData.preferredLanguage.join(", ") || "Not provided"
+                      : profileData.preferredLanguage
+                        ? profileData.preferredLanguage.split(",").map(l => l.trim()).join(", ")
+                        : "Not provided"}
+                  </p>
+                </div>
+                {profileData.position && (
+                  <div className="user-profile-detail-item">
+                    <label>Position</label>
+                    <p>{profileData.position}</p>
+                  </div>
+                )}
+                {industryName && (
+                  <div className="user-profile-detail-item">
+                    <label>Industry</label>
+                    <p>{industryName}</p>
+                  </div>
+                )}
+                <div className="user-profile-detail-item">
+                  <label>Company</label>
+                  <p>{companyName || "NA"}</p>
+                </div>
+              </div>
+            </>
           )}
-          {habits.length > 0 && (
-            <div className="user-profile-detail-section">
-              <h3 className="user-profile-section-title">Habits</h3>
-              <div className="user-profile-pill-group">
-                {habits.map((habit, index) => (
-                  <span key={index} className="user-profile-pill">{habit}</span>
-                ))}
-              </div>
-            </div>
-          )}
-          {skills.length > 0 && (
-            <div className="user-profile-detail-section">
-              <h3 className="user-profile-section-title">Skills</h3>
-              <div className="user-profile-pill-group">
-                {skills.map((skill, index) => (
-                  <span key={index} className="user-profile-pill">{skill}</span>
-                ))}
-              </div>
-            </div>
-          )}
-          <div className="user-profile-details-grid">
-            {/* <div className="user-profile-detail-item">
-              <label>Mobile Number</label>
-              <p>{profileData.phoneNumber || "Not provided"}</p>
-            </div>
-            <div className="user-profile-detail-item">
-              <label>Email ID</label>
-              <p>{profileData.email || "Not provided"}</p>
-            </div> */}
-            {age && (
-              <div className="user-profile-detail-item">
-                <label>Age</label>
-                <p>{age}</p>
-              </div>
-            )}
-            <div className="user-profile-detail-item">
-              <label>Gender</label>
-              <p>{profileData.gender || "Not provided"}</p>
-            </div>
-            <div className="user-profile-detail-item">
-              <label>Date of Birth</label>
-              <p>{formatDate(profileData.dateOfBirth)}</p>
-            </div>
-            <div className="user-profile-detail-item">
-              <label>Religion</label>
-              <p>{profileData.religion || "Not provided"}</p>
-            </div>
-            <div className="user-profile-detail-item">
-              <label>Status</label>
-              <p>{profileData.status || "Not provided"}</p>
-            </div>
-            <div className="user-profile-detail-item">
-              <label>Languages</label>
-              <p>
-                {Array.isArray(profileData.preferredLanguage)
-                  ? profileData.preferredLanguage.join(", ") || "Not provided"
-                  : profileData.preferredLanguage
-                    ? profileData.preferredLanguage.split(",").map(l => l.trim()).join(", ")
-                    : "Not provided"}
-              </p>
-            </div>
-            {profileData.position && (
-              <div className="user-profile-detail-item">
-                <label>Position</label>
-                <p>{profileData.position}</p>
-              </div>
-            )}
-            {industryName && (
-              <div className="user-profile-detail-item">
-                <label>Industry</label>
-                <p>{industryName}</p>
-              </div>
-            )}
-            <div className="user-profile-detail-item">
-              <label>Company</label>
-              <p>{companyName || "NA"}</p>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Image Popup Modal */}
       {isImagePopupOpen && (
         <div className="image-popup-overlay" onClick={() => setIsImagePopupOpen(false)}>
           <div className="image-popup-content" onClick={(e) => e.stopPropagation()}>
@@ -707,9 +739,10 @@ export default function UserProfileModal({ userId }) {
               <img src={closeIcon} alt="Close" />
             </button>
             <img
-              src={profileData.profileImage || defaultAvatar}
-              alt={profileData.fullName || "Profile"}
+              src={displayLogo}
+              alt={displayName}
               className="image-popup-img"
+              style={{ objectFit: isBusiness ? 'contain' : 'cover', backgroundColor: isBusiness ? '#fff' : 'transparent' }}
             />
           </div>
         </div>

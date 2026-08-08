@@ -1,18 +1,24 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/style.css";
 import mobileIcon from "../../assets/image/mobile.png";
-import fullnameIcon from "../../assets/image/firstname.png"
-import cityIcon from "../../assets/image/city.png"
-import locationIcon from "../../assets/image/location.png"
-import religionIcon from "../../assets/image/religion.png"
-import statusIcon from "../../assets/image/status.png"
+import fullnameIcon from "../../assets/image/firstname.png";
+import cityIcon from "../../assets/image/city.png";
+import locationIcon from "../../assets/image/location.png";
+import statusIcon from "../../assets/image/status.png";
 import API_BASE_URL from "../../utils/config";
 import { getCookie } from "../../utils/auth";
 
-const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
+const BusinessStep2 = ({ data, updateData, errors, touched, phoneNumber }) => {
   const [cities, setCities] = useState([]);
   const [loadingCities, setLoadingCities] = useState(false);
   const [citiesError, setCitiesError] = useState("");
+
+  // Pre-fill WhatsApp number with verified mobile if empty
+  useEffect(() => {
+    if (phoneNumber && !data.whatsappNumber) {
+      updateData("whatsappNumber", phoneNumber);
+    }
+  }, [phoneNumber, data.whatsappNumber, updateData]);
 
   // Fetch cities from API
   useEffect(() => {
@@ -28,13 +34,13 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
             "Content-Type": "application/json",
           },
         });
-
+        
         if (!response.ok) {
           throw new Error("Failed to fetch cities");
         }
 
         const result = await response.json();
-
+        
         if (result.success && result.data && result.data.city) {
           setCities(result.data.city);
         } else {
@@ -51,22 +57,37 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
 
     fetchCities();
   }, []);
+
   return (
     <div className="step-content active">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-        <h2 className="step-title" style={{ margin: 0 }}>Tell us about yourself</h2>
-        <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "14px", fontWeight: "600", color: "#EA650A" }}>
-          <input
-            type="checkbox"
-            checked={data.isBusinessProfile || false}
-            onChange={(e) => updateData("isBusinessProfile", e.target.checked)}
-            style={{ width: "16px", height: "16px", accentColor: "#EA650A" }}
-          />
-          Switch to a Business Profile
-        </label>
-      </div>
-      <p className="step-description">Share a brief introduction so others can know you better.</p>
+      <h2 className="step-title">How can people reach you?</h2>
+      <p className="step-description">Provide your contact details so customers and partners can easily connect with your business.</p>
 
+      {/* Contact Person */}
+      <div className="form-group">
+        <div className="input-wrapper">
+          <div className="input-icon">
+            <img src={statusIcon} alt="Contact Person"></img>
+          </div>
+          <div className="input-content">
+            <label className="input-label">Contact Person</label>
+            <input
+              type="text"
+              name="contactPerson"
+              value={data.contactPerson || ""}
+              onChange={(e) => updateData("contactPerson", e.target.value)}
+              onBlur={() => updateData("_touched_contactPerson", true)}
+              className={`form-input ${touched?.contactPerson && errors?.contactPerson ? "input-error" : ""}`}
+              placeholder="Enter contact person name"
+            />
+            {touched?.contactPerson && errors?.contactPerson && (
+              <div className="field-error-message">{errors.contactPerson}</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Number */}
       <div className="form-group">
         <div className="input-wrapper">
           <div className="input-icon">
@@ -76,7 +97,7 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
             <label className="input-label">Mobile Number</label>
             <input
               type="text"
-              className={`form-input ${touched?.mobileNumber && errors?.mobileNumber ? "input-error" : ""}`}
+              className="form-input"
               value={phoneNumber || data.mobileNumber || ""}
               disabled={true}
               readOnly
@@ -85,28 +106,82 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
         </div>
       </div>
 
+      {/* WhatsApp Number */}
       <div className="form-group">
         <div className="input-wrapper">
           <div className="input-icon">
-            <img src={fullnameIcon} alt="Full Name"></img>
+            <img src={mobileIcon} alt="WhatsApp"></img>
           </div>
           <div className="input-content">
-            <label className="input-label">Full Name</label>
+            <label className="input-label">WhatsApp Number</label>
             <input
               type="text"
-              name="fullName"
-              value={data.fullName || ""}
-              onChange={(e) => updateData("fullName", e.target.value)}
-              onBlur={() => updateData("_touched_fullName", true)}
-              className={`form-input ${touched?.fullName && errors?.fullName ? "input-error" : ""}`}
+              name="whatsappNumber"
+              value={data.whatsappNumber || ""}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                updateData("whatsappNumber", value);
+              }}
+              onBlur={() => updateData("_touched_whatsappNumber", true)}
+              className={`form-input ${touched?.whatsappNumber && errors?.whatsappNumber ? "input-error" : ""}`}
+              placeholder="Enter WhatsApp number"
             />
-            {touched?.fullName && errors?.fullName && (
-              <div className="field-error-message">{errors.fullName}</div>
+            {touched?.whatsappNumber && errors?.whatsappNumber && (
+              <div className="field-error-message">{errors.whatsappNumber}</div>
             )}
           </div>
         </div>
       </div>
 
+      {/* Email Address */}
+      <div className="form-group">
+        <div className="input-wrapper">
+          <div className="input-icon">
+            <img src={fullnameIcon} alt="Email" style={{ opacity: 0.7 }}></img>
+          </div>
+          <div className="input-content">
+            <label className="input-label">Email Address</label>
+            <input
+              type="email"
+              name="email"
+              value={data.email || ""}
+              onChange={(e) => updateData("email", e.target.value)}
+              onBlur={() => updateData("_touched_email", true)}
+              className={`form-input ${touched?.email && errors?.email ? "input-error" : ""}`}
+              placeholder="business@example.com"
+            />
+            {touched?.email && errors?.email && (
+              <div className="field-error-message">{errors.email}</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Website */}
+      <div className="form-group">
+        <div className="input-wrapper">
+          <div className="input-icon">
+            <img src={fullnameIcon} alt="Website"></img>
+          </div>
+          <div className="input-content">
+            <label className="input-label">Website URL</label>
+            <input
+              type="text"
+              name="website"
+              value={data.website || ""}
+              onChange={(e) => updateData("website", e.target.value)}
+              onBlur={() => updateData("_touched_website", true)}
+              className={`form-input ${touched?.website && errors?.website ? "input-error" : ""}`}
+              placeholder="https://example.com"
+            />
+            {touched?.website && errors?.website && (
+              <div className="field-error-message">{errors.website}</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* City */}
       <div className="form-group">
         <div className="input-wrapper">
           <div className="input-icon">
@@ -140,6 +215,7 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
         </div>
       </div>
 
+      {/* Pincode */}
       <div className="form-group">
         <div className="input-wrapper">
           <div className="input-icon">
@@ -165,62 +241,8 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
           </div>
         </div>
       </div>
-      <div className="form-group">
-        <div className="input-wrapper">
-          <div className="input-icon">
-            <img src={religionIcon} alt="Religion"></img>
-          </div>
-          <div className="input-content">
-            <label className="input-label">Select Religion</label>
-            <select
-              value={data.religion || ""}
-              onChange={(e) => updateData("religion", e.target.value)}
-              onBlur={() => updateData("_touched_religion", true)}
-              className={touched?.religion && errors?.religion ? "input-error" : ""}
-            >
-              <option value="">Select Religion</option>
-
-              <option value="Hinduism">Hinduism</option>
-              <option value="Islam">Islam</option>
-              <option value="Christianity">Christianity</option>
-              <option value="Sikhism">Sikhism</option>
-              <option value="Buddhism">Buddhism</option>
-              <option value="Jainism">Jainism</option>
-            </select>
-            {touched?.religion && errors?.religion && (
-              <div className="field-error-message">{errors.religion}</div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="form-group">
-        <div className="input-wrapper">
-          <div className="input-icon">
-            <img src={statusIcon} alt="Status"></img>
-          </div>
-          <div className="input-content">
-            <label className="input-label">Select Status</label>
-            <select
-              value={data.maritalStatus || ""}
-              onChange={(e) => updateData("maritalStatus", e.target.value)}
-              onBlur={() => updateData("_touched_maritalStatus", true)}
-              className={touched?.maritalStatus && errors?.maritalStatus ? "input-error" : ""}
-            >
-              <option value="">Select Status</option>
-              <option value="Single">Single</option>
-              <option value="Married">Married</option>
-              <option value="Divorced">Divorced</option>
-              <option value="Prefer not to say">Prefer not to say</option>
-            </select>
-            {touched?.maritalStatus && errors?.maritalStatus && (
-              <div className="field-error-message">{errors.maritalStatus}</div>
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
 
-export default Step1;
+export default BusinessStep2;
