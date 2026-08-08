@@ -71,7 +71,7 @@ const Profileverification = () => {
   const validationSchema = Yup.object().shape({
     isBusinessProfile: Yup.boolean(),
     mobileNumber: Yup.string().required("Mobile number is required"),
-    
+
     // Individual fields: required only when isBusinessProfile is false
     fullName: Yup.string().when("isBusinessProfile", {
       is: (val) => !val,
@@ -159,7 +159,7 @@ const Profileverification = () => {
       otherwise: () => Yup.string().notRequired(),
     }),
     photo: Yup.mixed().nullable().notRequired(),
-    
+
     // Business fields: required only when isBusinessProfile is true
     businessName: Yup.string().when("isBusinessProfile", {
       is: true,
@@ -212,7 +212,7 @@ const Profileverification = () => {
       company: "",
       position: "",
       photo: null,
-      
+
       // Business fields
       businessName: "",
       businessCategory: "",
@@ -370,7 +370,6 @@ const Profileverification = () => {
           const { lastCompletedStep, profile, isProfileComplete } = data.data;
 
           if (isProfileComplete) {
-            setCookie("isProfileComplete", "true", 7);
             navigate("/", { replace: true });
             return;
           }
@@ -419,7 +418,7 @@ const Profileverification = () => {
                 businessCoverImage: profile.businessCoverImage || null,
                 businessTagline: profile.businessTagline || "",
                 businessDescription: profile.businessDescription || "",
-                
+
                 fullName: "",
                 religion: "",
                 maritalStatus: "",
@@ -457,7 +456,7 @@ const Profileverification = () => {
                 company: profile.company || "",
                 position: profile.position || "",
                 photo: profile.profileImage || null,
-                
+
                 businessName: "",
                 businessCategory: "",
                 contactPerson: "",
@@ -587,10 +586,10 @@ const Profileverification = () => {
 
               if (profile.company && (resolvedIndustryId || profile.industry) && !profile.isBusinessProfile) {
                 try {
-                  const companiesUrl = resolvedIndustryId 
+                  const companiesUrl = resolvedIndustryId
                     ? `${API_BASE_URL}/api/list/companies?industryId=${resolvedIndustryId}`
                     : `${API_BASE_URL}/api/list/companies`;
-                  
+
                   const companiesResponse = await fetch(companiesUrl, {
                     method: "GET",
                     headers: {
@@ -994,7 +993,7 @@ const Profileverification = () => {
             let companyId = currentValues.company || "";
             if (profile.company && (industryId || profile.industry)) {
               try {
-                const companiesUrl = industryId 
+                const companiesUrl = industryId
                   ? `${API_BASE_URL}/api/list/companies?industryId=${industryId}`
                   : `${API_BASE_URL}/api/list/companies`;
 
