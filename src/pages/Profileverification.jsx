@@ -370,6 +370,7 @@ const Profileverification = () => {
           const { lastCompletedStep, profile, isProfileComplete } = data.data;
 
           if (isProfileComplete) {
+            setCookie("isProfileComplete", "true", 7);
             navigate("/", { replace: true });
             return;
           }
