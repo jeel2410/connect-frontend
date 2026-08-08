@@ -282,7 +282,7 @@ const OtpVerification = () => {
   }, [location.state]);
 
   return (
-    <div>
+    <div className="auth-page-wrapper">
       <Header></Header>
       <div className="login-page">
         <DynamicAuthImage />

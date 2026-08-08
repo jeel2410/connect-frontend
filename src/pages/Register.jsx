@@ -118,7 +118,7 @@ const Register = () => {
   });
 
   return (
-    <div>
+    <div className="auth-page-wrapper">
       <Header></Header>
       <div className="login-page">
         <DynamicAuthImage />
@@ -129,6 +129,9 @@ const Register = () => {
 
           <div className="login-content">
             <h1 className="login-title">Register / Login</h1>
+            <p className="login-subtitle">
+              Join India's fastest growing professional and social network.
+            </p>
             <form className="login-form" onSubmit={formik.handleSubmit}>
               <div className="form-group">
                 <div className="input-wrapper">
