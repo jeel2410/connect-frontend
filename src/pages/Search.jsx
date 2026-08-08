@@ -394,7 +394,11 @@ const Search = () => {
             </button>
           </div>
           <Usercard
-            feedData={feedData.filter(u => !searchName || (u.fullName || u.name || "").toLowerCase().includes(searchName.toLowerCase()))}
+            feedData={feedData.filter(u => {
+              if (!searchName) return true;
+              const nameToSearch = u.isBusinessProfile ? u.businessName : (u.fullName || u.name || "");
+              return (nameToSearch || "").toLowerCase().includes(searchName.toLowerCase());
+            })}
             loading={loadingFeed}
             onLike={handleLike}
             onConnect={handleConnect}

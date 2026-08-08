@@ -245,18 +245,29 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
 
   // Get sender name from notification
   const getSenderName = (notification) => {
-    // Check data.senderName first (from notification service)
+    // Check fromUser first (returned by getNotifications service)
+    const fromUser = notification.fromUser;
+    if (fromUser) {
+      if (fromUser.isBusinessProfile || fromUser.isBusiness) {
+        return fromUser.businessName || fromUser.fullName;
+      }
+      return fromUser.fullName;
+    }
+
+    // Check data.senderName next (from websocket/real-time notification service)
     if (notification.data?.senderName) {
       return notification.data.senderName;
     }
-    // Check fromUser.fullName (returned by getNotifications service)
-    if (notification.fromUser?.fullName) {
-      return notification.fromUser.fullName;
+
+    // Check fromUserId (if populated directly)
+    const fromUserId = notification.fromUserId;
+    if (fromUserId) {
+      if (fromUserId.isBusinessProfile) {
+        return fromUserId.businessName || fromUserId.fullName;
+      }
+      return fromUserId.fullName;
     }
-    // Check fromUserId.fullName (if populated directly)
-    if (notification.fromUserId?.fullName) {
-      return notification.fromUserId.fullName;
-    }
+
     // Fallback: try to parse from body message (e.g., "John Doe liked your profile")
     if (notification.body) {
       const match = notification.body.match(/^(.+?)\s+liked your profile$/);

@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import Header from "../component/Header";
 import AdminSidebar from "../component/Admin/AdminSidebar";
 import UserManagement from "../component/Admin/UserManagement";
+import BusinessManagement from "../component/Admin/BusinessManagement";
+import BusinessCategoryManagement from "../component/Admin/BusinessCategoryManagement";
 import SkillManagement from "../component/Admin/SkillManagement";
 import HabitManagement from "../component/Admin/HabitManagement";
 import InterestManagement from "../component/Admin/InterestManagement";
@@ -34,6 +36,8 @@ const Admin = () => {
             <h1 className="admin-title">
               {activeTab === "dashboard" && "Dashboard"}
               {activeTab === "users" && "User Management"}
+              {activeTab === "businesses" && "Business Management"}
+              {activeTab === "business-categories" && "Business Category Management"}
               {activeTab === "post-approvals" && "Post Approvals"}
               {activeTab === "shared-posts" && "Shared Post Management"}
               {activeTab === "skills" && "Skill Management"}
@@ -54,6 +58,8 @@ const Admin = () => {
             <p className="admin-subtitle">
               {activeTab === "dashboard" && "Platform overview and core metrics snapshot"}
               {activeTab === "users" && "View and manage all users"}
+              {activeTab === "businesses" && "View and manage registered businesses"}
+              {activeTab === "business-categories" && "Add, deactivate, or delete business categories"}
               {activeTab === "post-approvals" && "Review and approve/reject newly shared posts or links"}
               {activeTab === "shared-posts" && "View, disable, or permanently delete live shared posts"}
               {activeTab === "skills" && "Add, edit, and delete skills"}
@@ -75,6 +81,8 @@ const Admin = () => {
           <div className="admin-content-body">
             {activeTab === "dashboard" && <Dashboard />}
             {activeTab === "users" && <UserManagement />}
+            {activeTab === "businesses" && <BusinessManagement />}
+            {activeTab === "business-categories" && <BusinessCategoryManagement />}
             {activeTab === "post-approvals" && <PostApproval />}
             {activeTab === "shared-posts" && <SharedPostManagement />}
             {activeTab === "skills" && <SkillManagement />}

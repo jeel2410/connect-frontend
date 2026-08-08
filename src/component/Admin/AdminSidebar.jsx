@@ -1,10 +1,12 @@
 import React from "react";
-import { Users, Briefcase, Heart, LayoutDashboard, MapPin, Activity, Building2, Factory, CreditCard, Bell, MessageSquare, Image, BarChart3, ShieldAlert, Trophy, Newspaper, Award, Mail } from "lucide-react";
+import { Users, Briefcase, Heart, LayoutDashboard, MapPin, Activity, Building2, Factory, CreditCard, Bell, MessageSquare, Image, BarChart3, ShieldAlert, Trophy, Newspaper, Award, Mail, Tags } from "lucide-react";
 
 const AdminSidebar = ({ activeTab, setActiveTab }) => {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "users", label: "Users", icon: Users },
+    { id: "businesses", label: "Businesses", icon: Building2 },
+    { id: "business-categories", label: "Business Categories", icon: Tags },
     { id: "post-approvals", label: "Post Approvals", icon: ShieldAlert },
     { id: "shared-posts", label: "Shared Posts", icon: Newspaper },
     { id: "traffic-sources", label: "Traffic Sources", icon: BarChart3 },

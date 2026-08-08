@@ -17,6 +17,28 @@ const Connection = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState("active");
   const [activeConnections, setActiveConnections] = useState([]);
+  const [filterBusinesses, setFilterBusinesses] = useState(false);
+
+  const getProfileImage = (user) => {
+    if (user.isBusinessProfile) {
+      return user.businessLogo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop";
+    }
+    return user.profileImage || user.image || getAvatar(user.gender, user.dateOfBirth || user.age);
+  };
+
+  const getProfileName = (user) => {
+    if (user.isBusinessProfile) {
+      return user.businessName || "Unknown Business";
+    }
+    return user.fullName || user.name || "Unknown";
+  };
+
+  const getProfileSubtitle = (user) => {
+    if (user.isBusinessProfile) {
+      return user.businessCategoryName || user.businessCategory || "Business";
+    }
+    return user.username || user.city || user.address || "";
+  };
   const [pendingRequests, setPendingRequests] = useState([]);
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [loadingActive, setLoadingActive] = useState(false);
@@ -624,6 +646,18 @@ const Connection = () => {
     }
   };
 
+  const displayedActiveConnections = filterBusinesses
+    ? activeConnections.filter(c => c.isBusinessProfile === true)
+    : activeConnections;
+
+  const displayedIncomingRequests = filterBusinesses
+    ? incomingRequests.filter(r => r.isBusinessProfile === true)
+    : incomingRequests;
+
+  const displayedPendingRequests = filterBusinesses
+    ? pendingRequests.filter(r => r.isBusinessProfile === true)
+    : pendingRequests;
+
   return (
     <>
       <Header />
@@ -655,46 +689,57 @@ const Connection = () => {
                 </button> */}
               </div>
             </div>
-            <div className="connections-page-tabs">
-              <button
-                className={`connections-page-tab ${activeTab === "active" ? "active" : ""}`}
-                onClick={() => {
-                  setActiveTab("active");
-                  // Always refresh when clicking active tab, even if already active
-                  fetchActiveConnections(searchTerm);
-                }}
-              >
-                Active ({activeConnections.length})
-              </button>
-              <button
-                className={`connections-page-tab ${activeTab === "incoming" ? "active" : ""}`}
-                onClick={() => {
-                  setActiveTab("incoming");
-                  // Always refresh when clicking incoming tab, even if already active
-                  fetchIncomingRequests(searchTerm);
-                }}
-              >
-                Incoming ({incomingRequests.length})
-              </button>
-              <button
-                className={`connections-page-tab ${activeTab === "pending" ? "active" : ""}`}
-                onClick={() => {
-                  setActiveTab("pending");
-                  // Always refresh when clicking pending tab, even if already active
-                  fetchPendingRequests(searchTerm);
-                }}
-              >
-                Pending ({pendingRequests.length})
-              </button>
-              <button
-                className={`connections-page-tab ${activeTab === "groups" ? "active" : ""}`}
-                onClick={() => {
-                  setActiveTab("groups");
-                  fetchGroups();
-                }}
-              >
-                Groups ({connectionGroups.length})
-              </button>
+            <div className="connections-page-tabs" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button
+                  className={`connections-page-tab ${activeTab === "active" ? "active" : ""}`}
+                  onClick={() => {
+                    setActiveTab("active");
+                    fetchActiveConnections(searchTerm);
+                  }}
+                >
+                  Active ({displayedActiveConnections.length})
+                </button>
+                <button
+                  className={`connections-page-tab ${activeTab === "incoming" ? "active" : ""}`}
+                  onClick={() => {
+                    setActiveTab("incoming");
+                    fetchIncomingRequests(searchTerm);
+                  }}
+                >
+                  Incoming ({displayedIncomingRequests.length})
+                </button>
+                <button
+                  className={`connections-page-tab ${activeTab === "pending" ? "active" : ""}`}
+                  onClick={() => {
+                    setActiveTab("pending");
+                    fetchPendingRequests(searchTerm);
+                  }}
+                >
+                  Pending ({displayedPendingRequests.length})
+                </button>
+                <button
+                  className={`connections-page-tab ${activeTab === "groups" ? "active" : ""}`}
+                  onClick={() => {
+                    setActiveTab("groups");
+                    fetchGroups();
+                  }}
+                >
+                  Groups ({connectionGroups.length})
+                </button>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginRight: "16px" }}>
+                <input
+                  type="checkbox"
+                  id="filterBusinesses"
+                  checked={filterBusinesses}
+                  onChange={(e) => setFilterBusinesses(e.target.checked)}
+                  style={{ width: "18px", height: "18px", accentColor: "#EA650A", cursor: "pointer" }}
+                />
+                <label htmlFor="filterBusinesses" style={{ fontSize: "14px", fontWeight: "600", color: "#4b5563", cursor: "pointer" }}>
+                  Filter by Businesses
+                </label>
+              </div>
             </div>
             <div className="connections-page-content-wrapper">
               {activeTab === "active" && (
@@ -703,7 +748,7 @@ const Connection = () => {
                     <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
                       Loading active connections...
                     </div>
-                  ) : activeConnections.length === 0 ? (
+                  ) : displayedActiveConnections.length === 0 ? (
                     <div style={{
                       textAlign: "center",
                       padding: "60px 20px",
@@ -718,7 +763,7 @@ const Connection = () => {
                     </div>
                   ) : (
                     <div className="connections-page-grid">
-                      {activeConnections.map((connection) => (
+                      {displayedActiveConnections.map((connection) => (
                         <div key={connection._id || connection.id} className="connections-page-item">
                           <div
                             className="connections-page-container"
@@ -731,15 +776,16 @@ const Connection = () => {
                             style={{ cursor: "pointer" }}
                           >
                             <img
-                              src={connection.profileImage || connection.image || getAvatar(connection.gender, connection.dateOfBirth || connection.age)}
-                              alt={connection.fullName || connection.name || "User"}
+                              src={getProfileImage(connection)}
+                              alt={getProfileName(connection)}
                               className="connections-page-avatar"
+                              style={{ objectFit: connection.isBusinessProfile ? 'contain' : 'cover', backgroundColor: connection.isBusinessProfile ? '#fff' : 'transparent' }}
                             />
                             <div className="connection-name-content">
                               <h3>
-                                {connection.fullName || connection.name || "Unknown"}
+                                {getProfileName(connection)}
                               </h3>
-                              <p>{connection.username || connection.city || connection.address || ""}</p>
+                              <p>{getProfileSubtitle(connection)}</p>
                             </div>
                           </div>
                           <button
@@ -822,7 +868,7 @@ const Connection = () => {
                     <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
                       Loading incoming requests...
                     </div>
-                  ) : incomingRequests.length === 0 ? (
+                  ) : displayedIncomingRequests.length === 0 ? (
                     <div style={{
                       textAlign: "center",
                       padding: "60px 20px",
@@ -837,7 +883,7 @@ const Connection = () => {
                     </div>
                   ) : (
                     <div className="connections-page-grid">
-                      {incomingRequests.map((request) => (
+                      {displayedIncomingRequests.map((request) => (
                         <div key={request.requestId || request._id || request.id} className="connections-page-item incoming-item">
                           <div
                             className="connections-page-container"
@@ -850,13 +896,14 @@ const Connection = () => {
                             style={{ cursor: "pointer" }}
                           >
                             <img
-                              src={request.profileImage || request.image || getAvatar(request.gender, request.dateOfBirth || request.age)}
-                              alt={request.fullName || request.name || "User"}
+                              src={getProfileImage(request)}
+                              alt={getProfileName(request)}
                               className="connections-page-avatar"
+                              style={{ objectFit: request.isBusinessProfile ? 'contain' : 'cover', backgroundColor: request.isBusinessProfile ? '#fff' : 'transparent' }}
                             />
                             <div className="connection-name-content">
-                              <h3>{request.fullName || request.name || "Unknown"}</h3>
-                              <p>{request.username || request.city || request.address || ""}</p>
+                              <h3>{getProfileName(request)}</h3>
+                              <p>{getProfileSubtitle(request)}</p>
                             </div>
                           </div>
                           <div className="incoming-actions">
@@ -891,7 +938,7 @@ const Connection = () => {
                     <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
                       Loading pending requests...
                     </div>
-                  ) : pendingRequests.length === 0 ? (
+                  ) : displayedPendingRequests.length === 0 ? (
                     <div style={{
                       textAlign: "center",
                       padding: "60px 20px",
@@ -906,7 +953,7 @@ const Connection = () => {
                     </div>
                   ) : (
                     <div className="connections-page-grid">
-                      {pendingRequests.map((request) => (
+                      {displayedPendingRequests.map((request) => (
                         <div key={request._id || request.id} className="connections-page-item pending-item" style={{ position: "relative" }}>
                           <div
                             className="connections-page-container"
@@ -919,13 +966,14 @@ const Connection = () => {
                             style={{ cursor: "pointer" }}
                           >
                             <img
-                              src={request.profileImage || request.image || getAvatar(request.gender, request.dateOfBirth || request.age)}
-                              alt={request.fullName || request.name || "User"}
+                              src={getProfileImage(request)}
+                              alt={getProfileName(request)}
                               className="connections-page-avatar"
+                              style={{ objectFit: request.isBusinessProfile ? 'contain' : 'cover', backgroundColor: request.isBusinessProfile ? '#fff' : 'transparent' }}
                             />
                             <div className="connection-name-content">
-                              <h3>{request.fullName || request.name || "Unknown"}</h3>
-                              <p>{request.username || request.city || request.address || ""}</p>
+                              <h3>{getProfileName(request)}</h3>
+                              <p>{getProfileSubtitle(request)}</p>
                             </div>
                           </div>
                           <button
@@ -1074,8 +1122,9 @@ const Connection = () => {
                             {group.connections && group.connections.length > 0 ? (
                               group.connections.map((member) => {
                                 const details = member.userDetailId || member;
-                                const avatarImg = details.profileImage || getAvatar(details.gender, details.dateOfBirth);
-                                const name = details.fullName || "User";
+                                const isBiz = details.isBusinessProfile === true;
+                                const avatarImg = isBiz ? (details.businessLogo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop") : (details.profileImage || getAvatar(details.gender, details.dateOfBirth));
+                                const name = isBiz ? details.businessName : (details.fullName || "User");
                                 return (
                                   <img
                                     key={member._id || member.id}
@@ -1086,8 +1135,9 @@ const Connection = () => {
                                       width: '32px',
                                       height: '32px',
                                       borderRadius: '50%',
-                                      objectFit: 'cover',
-                                      border: '2px solid #fff',
+                                      objectFit: isBiz ? 'contain' : 'cover',
+                                      backgroundColor: isBiz ? '#fff' : 'transparent',
+                                      border: isBiz ? '1px solid #e5e7eb' : '2px solid #fff',
                                       boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                                     }}
                                   />
@@ -1231,8 +1281,9 @@ const Connection = () => {
                               const connId = conn._id || conn.id || conn.userId;
                               const isSelected = selectedConnections.includes(connId);
                               const details = conn.userDetailId || conn;
-                              const avatarImg = details.profileImage || getAvatar(details.gender, details.dateOfBirth);
-                              const name = details.fullName || "User";
+                              const isBiz = details.isBusinessProfile === true;
+                              const avatarImg = isBiz ? (details.businessLogo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop") : (details.profileImage || getAvatar(details.gender, details.dateOfBirth));
+                              const name = isBiz ? details.businessName : (details.fullName || "User");
                               
                               return (
                                 <div 
@@ -1266,7 +1317,9 @@ const Connection = () => {
                                       width: '32px',
                                       height: '32px',
                                       borderRadius: '50%',
-                                      objectFit: 'cover',
+                                      objectFit: isBiz ? 'contain' : 'cover',
+                                      backgroundColor: isBiz ? '#fff' : 'transparent',
+                                      border: isBiz ? '1px solid #e5e7eb' : 'none',
                                       marginRight: '12px'
                                     }}
                                   />

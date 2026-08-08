@@ -70,6 +70,8 @@ export default function EditProfile() {
   const [sportsList, setSportsList] = useState([]);
   const [showSportsDropdown, setShowSportsDropdown] = useState(false);
   const [loadingSports, setLoadingSports] = useState(false);
+  const [businessCategories, setBusinessCategories] = useState([]);
+  const [loadingBusinessCategories, setLoadingBusinessCategories] = useState(false);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -190,6 +192,19 @@ export default function EditProfile() {
             status: normalizedStatus,
             preferredLanguage: [],
             fastConnect: profile.fastConnect || false,
+            isBusinessProfile: profile.isBusinessProfile || false,
+            businessName: profile.businessName || "",
+            contactPerson: profile.contactPerson || "",
+            whatsappNumber: profile.whatsappNumber || "",
+            website: profile.website || "",
+            businessTagline: profile.businessTagline || "",
+            businessDescription: profile.businessDescription || "",
+            businessCategory: profile.businessCategoryId || "",
+            facebook: profile.facebook || "",
+            instagram: profile.instagram || "",
+            linkedIn: profile.linkedIn || "",
+            youtube: profile.youtube || "",
+            twitter: profile.twitter || "",
           });
 
           setInterests(profile.interests || []);
@@ -247,6 +262,36 @@ export default function EditProfile() {
     };
 
     fetchCities();
+  }, []);
+
+  // Fetch business categories on component mount
+  useEffect(() => {
+    const fetchBusinessCategories = async () => {
+      try {
+        setLoadingBusinessCategories(true);
+        const token = getCookie("authToken");
+        const response = await fetch(`${API_BASE_URL}/api/list/business-categories`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.categories) {
+            setBusinessCategories(result.data.categories);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching business categories:", err);
+      } finally {
+        setLoadingBusinessCategories(false);
+      }
+    };
+
+    fetchBusinessCategories();
   }, []);
 
   // Match city name to ID after cities list loads
@@ -721,6 +766,16 @@ export default function EditProfile() {
     cleaned = cleaned.replace(/\bdate of birth\b/gi, 'Date of birth');
     cleaned = cleaned.replace(/\bpreferredlanguage\b/gi, 'Preferred language');
     cleaned = cleaned.replace(/\bpreferred language\b/gi, 'Preferred language');
+    cleaned = cleaned.replace(/\bbusinessname\b/gi, 'Business name');
+    cleaned = cleaned.replace(/\bbusiness name\b/gi, 'Business name');
+    cleaned = cleaned.replace(/\bcontactperson\b/gi, 'Contact person');
+    cleaned = cleaned.replace(/\bcontact person\b/gi, 'Contact person');
+    cleaned = cleaned.replace(/\bbusinesscategory\b/gi, 'Business category');
+    cleaned = cleaned.replace(/\bbusiness category\b/gi, 'Business category');
+    cleaned = cleaned.replace(/\bwhatsappnumber\b/gi, 'WhatsApp number');
+    cleaned = cleaned.replace(/\bwhatsapp number\b/gi, 'WhatsApp number');
+    cleaned = cleaned.replace(/\bbusinessdescription\b/gi, 'Business description');
+    cleaned = cleaned.replace(/\bbusiness description\b/gi, 'Business description');
 
     return cleaned;
   };
@@ -741,6 +796,18 @@ export default function EditProfile() {
       fieldErrorMap.email = cleanedMessage;
     } else if (errorMessage.toLowerCase().includes("full name") || errorMessage.toLowerCase().includes("fullname")) {
       fieldErrorMap.fullName = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("businessname") || errorMessage.toLowerCase().includes("business name")) {
+      fieldErrorMap.businessName = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("contactperson") || errorMessage.toLowerCase().includes("contact person")) {
+      fieldErrorMap.contactPerson = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("businesscategory") || errorMessage.toLowerCase().includes("business category")) {
+      fieldErrorMap.businessCategory = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("whatsapp")) {
+      fieldErrorMap.whatsappNumber = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("website")) {
+      fieldErrorMap.website = cleanedMessage;
+    } else if (errorMessage.toLowerCase().includes("businessdescription") || errorMessage.toLowerCase().includes("business description")) {
+      fieldErrorMap.businessDescription = cleanedMessage;
     } else if (errorMessage.toLowerCase().includes("gender")) {
       fieldErrorMap.gender = cleanedMessage;
     } else if (errorMessage.toLowerCase().includes("date of birth") || errorMessage.toLowerCase().includes("birthdate")) {
@@ -780,27 +847,85 @@ export default function EditProfile() {
         throw new Error("Authentication required. Please login again.");
       }
 
+      // Client-side validations
+      const errors = {};
+      if (data.isBusinessProfile) {
+        if (!data.businessName || data.businessName.trim().length < 2) {
+          errors.businessName = "Business name must be at least 2 characters";
+        }
+        if (!data.contactPerson || data.contactPerson.trim().length < 2) {
+          errors.contactPerson = "Contact person name must be at least 2 characters";
+        }
+        if (!data.businessCategory) {
+          errors.businessCategory = "Business category is required";
+        }
+      } else {
+        if (!data.fullName || data.fullName.trim().length < 2) {
+          errors.fullName = "Full name must be at least 2 characters";
+        }
+      }
+
+      if (!data.city) {
+        errors.city = "City is required";
+      }
+
+      if (!data.pincode) {
+        errors.pincode = "Pincode is required";
+      } else if (!/^[1-9][0-9]{5}$/.test(data.pincode)) {
+        errors.pincode = "Pincode must be a valid 6-digit number";
+      }
+
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        setSaving(false);
+        return;
+      }
+
       // Prepare FormData for file upload
       const formData = new FormData();
 
       // Add text fields
-      formData.append("fullName", data.fullName);
-      formData.append("city", data.city);
-      formData.append("pincode", data.pincode || "");
-      formData.append("religion", data.religion);
-      formData.append("status", data.status);
-      formData.append("gender", data.gender);
-      formData.append("dateOfBirth", data.birthDate || "");
-      formData.append("habits", habits.join(","));
-      formData.append("interests", interests.join(","));
-      formData.append("skills", skills.join(","));
-      formData.append("sports", sports.join(","));
-      formData.append("preferredLanguage", languages.join(","));
-      formData.append("email", data.email);
-      formData.append("industry", industry || "");
-      formData.append("company", company || "");
-      formData.append("position", position || "");
-      formData.append("fastConnect", data.fastConnect ? "true" : "false");
+      if (data.isBusinessProfile) {
+        formData.append("isBusinessProfile", "true");
+        formData.append("businessName", data.businessName || "");
+        formData.append("businessCategory", data.businessCategory || "");
+        formData.append("businessTagline", data.businessTagline || "");
+        formData.append("contactPerson", data.contactPerson || "");
+        formData.append("whatsappNumber", data.whatsappNumber || "");
+        formData.append("website", data.website || "");
+        formData.append("businessDescription", data.businessDescription || "");
+        formData.append("facebook", data.facebook || "");
+        formData.append("instagram", data.instagram || "");
+        formData.append("linkedIn", data.linkedIn || "");
+        formData.append("youtube", data.youtube || "");
+        formData.append("twitter", data.twitter || "");
+        if (data.fullName) {
+          formData.append("fullName", data.fullName);
+        }
+        if (data.city) formData.append("city", data.city);
+        if (data.pincode) formData.append("pincode", data.pincode);
+        if (data.email) formData.append("email", data.email);
+        formData.append("fastConnect", data.fastConnect ? "true" : "false");
+      } else {
+        formData.append("isBusinessProfile", "false");
+        if (data.fullName) formData.append("fullName", data.fullName);
+        if (data.city) formData.append("city", data.city);
+        if (data.pincode) formData.append("pincode", data.pincode);
+        if (data.religion) formData.append("religion", data.religion);
+        if (data.status) formData.append("status", data.status);
+        if (data.gender) formData.append("gender", data.gender);
+        if (data.birthDate) formData.append("dateOfBirth", data.birthDate);
+        formData.append("habits", habits.join(","));
+        formData.append("interests", interests.join(","));
+        formData.append("skills", skills.join(","));
+        formData.append("sports", sports.join(","));
+        formData.append("preferredLanguage", languages.join(","));
+        if (data.email) formData.append("email", data.email);
+        if (industry) formData.append("industry", industry);
+        if (company) formData.append("company", company);
+        if (position) formData.append("position", position);
+        formData.append("fastConnect", data.fastConnect ? "true" : "false");
+      }
 
       // Add profile image if it's a new file
       if (profileImageFile) {
@@ -898,7 +1023,18 @@ export default function EditProfile() {
             {/* Header with Avatar */}
             <ProfilecardHeader
               showChangePassword={false}
-              profileData={data.fullName ? { originalid: profileId, fullName: data.fullName, profileImage, coverImage, gender: data.gender, birthDate: data.birthDate } : null}
+              profileData={data.fullName ? {
+                originalid: profileId,
+                fullName: data.fullName,
+                profileImage,
+                coverImage,
+                gender: data.gender,
+                birthDate: data.birthDate,
+                isBusinessProfile: data.isBusinessProfile,
+                businessName: data.businessName,
+                businessLogo: profileImage,
+                businessCoverImage: coverImage
+              } : null}
               onImageChange={handleImageChange}
               onCoverImageChange={handleCoverImageChange}
               showImageUpload={true}
@@ -911,212 +1047,619 @@ export default function EditProfile() {
               </div>
             )}
 
-            {/* Contact Information */}
-            <div className="edit-profile-contact-grid">
-              <div className="edit-form-group">
-                <div className="edit-input-wrapper">
-                  <div className="input-icon">
-                    <img src={mobileIcon} alt="Mobile"></img>
-                  </div>
-                  <div className="input-content">
-                    <label className="input-label">Full Name</label>
-                    <input
-                      type="text"
-                      value={data.fullName || ""}
-                      onChange={(e) => {
-                        updateData("fullName", e.target.value);
-                        // Clear error when user starts typing
-                        if (fieldErrors.fullName) {
-                          setFieldErrors(prev => {
-                            const newErrors = { ...prev };
-                            delete newErrors.fullName;
-                            return newErrors;
-                          });
-                        }
-                      }}
-                      placeholder="Enter full name"
-                      className={`form-input ${fieldErrors.fullName ? "input-error" : ""}`}
-                    />
-                  </div>
-                </div>
-                {fieldErrors.fullName && (
-                  <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
-                    {fieldErrors.fullName}
-                  </div>
-                )}
+            {/* Profile Mode Toggle */}
+            <div className="profile-mode-toggle-container" style={{ margin: "20px", padding: "15px 20px", background: "#F5F7FB", borderRadius: "12px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid #E3E8F2" }}>
+              <div>
+                <h4 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#081332" }}>Profile Type</h4>
+                <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "#777E90" }}>Choose whether to show your personal details or represent a business.</p>
               </div>
-
-              <div className="edit-form-group">
-                <div className="edit-input-wrapper">
-                  <div className="input-icon">
-                    <img src={mobileIcon} alt="Mobile"></img>
-                  </div>
-                  <div className="input-content">
-                    <label className="input-label">Mobile Number</label>
-                    <input
-                      type="text"
-                      value={data.phoneNumber || ""}
-                      onChange={(e) => updateData("phoneNumber", e.target.value)}
-                      placeholder="+91 6789067890"
-                      className="form-input"
-                      disabled
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="edit-form-group">
-                <div className="edit-input-wrapper">
-                  <div className="input-icon">
-                    <img src={emailIcon} alt="Email"></img>
-                  </div>
-                  <div className="input-content">
-                    <label className="input-label">Email Id</label>
-                    <input
-                      type="email"
-                      value={data.email || ""}
-                      onChange={(e) => {
-                        updateData("email", e.target.value);
-                        if (fieldErrors.email) {
-                          setFieldErrors(prev => {
-                            const newErrors = { ...prev };
-                            delete newErrors.email;
-                            return newErrors;
-                          });
-                        }
-                      }}
-                      placeholder="example@email.com"
-                      className={`form-input ${fieldErrors.email ? "input-error" : ""}`}
-                    />
-                  </div>
-                </div>
-                {fieldErrors.email && (
-                  <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
-                    {fieldErrors.email}
-                  </div>
-                )}
-              </div>
-              <div className="edit-form-group">
-                <div className="edit-input-wrapper">
-                  <div className="input-icon">
-                    <img src={calenderIcon} alt="Calendar"></img>
-                  </div>
-                  <div className="input-content">
-                    <label className="input-label">Date of birth</label>
-                    <input
-                      type="date"
-                      value={data.birthDate || ""}
-                      onChange={(e) => {
-                        const selectedDate = e.target.value;
-                        // Validate 18+ on change
-                        if (selectedDate) {
-                          const birthDate = new Date(selectedDate);
-                          const today = new Date();
-                          let age = today.getFullYear() - birthDate.getFullYear();
-                          const monthDiff = today.getMonth() - birthDate.getMonth();
-                          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                            age--;
-                          }
-                          if (age < 18) {
-                            alert("You must be at least 18 years old");
-                            return;
-                          }
-                        }
-                        updateData("birthDate", selectedDate);
-                        if (fieldErrors.birthDate) {
-                          setFieldErrors(prev => {
-                            const newErrors = { ...prev };
-                            delete newErrors.birthDate;
-                            return newErrors;
-                          });
-                        }
-                      }}
-                      max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
-                      className={`form-input ${fieldErrors.birthDate ? "input-error" : ""}`}
-                    />
-                  </div>
-                </div>
-                {fieldErrors.birthDate && (
-                  <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
-                    {fieldErrors.birthDate}
-                  </div>
-                )}
-              </div>
-              <div className="edit-form-group">
-                <div className="edit-input-wrapper">
-                  <div className="input-icon">
-                    <img src={cityIcon} alt="City"></img>
-                  </div>
-                  <div className="input-content">
-                    <label className="input-label">City</label>
-                    <select
-                      value={data.city || ""}
-                      onChange={(e) => {
-                        updateData("city", e.target.value);
-                        if (fieldErrors.city) {
-                          setFieldErrors(prev => {
-                            const newErrors = { ...prev };
-                            delete newErrors.city;
-                            return newErrors;
-                          });
-                        }
-                      }}
-                      className={`form-input ${fieldErrors.city ? "input-error" : ""}`}
-                      disabled={loadingCities}
-                    >
-                      <option value="">{loadingCities ? "Loading cities..." : "Select City"}</option>
-                      {citiesList.map((city) => (
-                        <option key={city._id} value={city._id}>
-                          {city.name.charAt(0).toUpperCase() + city.name.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                {fieldErrors.city && (
-                  <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
-                    {fieldErrors.city}
-                  </div>
-                )}
-              </div>
-
-              <div className="edit-form-group">
-                <div className="edit-input-wrapper">
-                  <div className="input-icon">
-                    <img src={locationIcon} alt="Pincode"></img>
-                  </div>
-                  <div className="input-content">
-                    <label className="input-label">Pincode</label>
-                    <input
-                      type="text"
-                      value={data.pincode || ""}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, "").slice(0, 6);
-                        updateData("pincode", val);
-                        if (fieldErrors.pincode) {
-                          setFieldErrors(prev => {
-                            const newErrors = { ...prev };
-                            delete newErrors.pincode;
-                            return newErrors;
-                          });
-                        }
-                      }}
-                      placeholder="Enter Pincode"
-                      className={`form-input ${fieldErrors.pincode ? "input-error" : ""}`}
-                    />
-                  </div>
-                </div>
-                {fieldErrors.pincode && (
-                  <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
-                    {fieldErrors.pincode}
-                  </div>
-                )}
-              </div>
-
+              <label className="switch-label" style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", fontWeight: "600", color: "#EA650A" }}>
+                <input
+                  type="checkbox"
+                  checked={data.isBusinessProfile || false}
+                  onChange={(e) => {
+                    updateData("isBusinessProfile", e.target.checked);
+                  }}
+                  style={{ width: "20px", height: "20px", accentColor: "#EA650A", cursor: "pointer" }}
+                />
+                Business Profile
+              </label>
             </div>
 
+            {/* Contact Information */}
+            {data.isBusinessProfile ? (
+              <div className="edit-profile-contact-grid">
+                {/* Business Name */}
+                <div className="edit-form-group">
+                  <div className="edit-input-wrapper">
+                    <div className="input-icon">
+                      <img src={mobileIcon} alt="Business Name"></img>
+                    </div>
+                    <div className="input-content">
+                      <label className="input-label">Business Name <span style={{ color: "#dc2626" }}>*</span></label>
+                      <input
+                        type="text"
+                        value={data.businessName || ""}
+                        onChange={(e) => {
+                          updateData("businessName", e.target.value);
+                          if (fieldErrors.businessName) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.businessName;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        placeholder="Enter business name"
+                        className={`form-input ${fieldErrors.businessName ? "input-error" : ""}`}
+                      />
+                    </div>
+                  </div>
+                  {fieldErrors.businessName && (
+                    <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
+                      {fieldErrors.businessName}
+                    </div>
+                  )}
+                </div>
+
+                {/* Contact Person */}
+                <div className="edit-form-group">
+                  <div className="edit-input-wrapper">
+                    <div className="input-icon">
+                      <img src={mobileIcon} alt="Contact Person"></img>
+                    </div>
+                    <div className="input-content">
+                      <label className="input-label">Contact Person <span style={{ color: "#dc2626" }}>*</span></label>
+                      <input
+                        type="text"
+                        value={data.contactPerson || ""}
+                        onChange={(e) => {
+                          updateData("contactPerson", e.target.value);
+                          if (fieldErrors.contactPerson) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.contactPerson;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        placeholder="Enter contact person name"
+                        className={`form-input ${fieldErrors.contactPerson ? "input-error" : ""}`}
+                      />
+                    </div>
+                  </div>
+                  {fieldErrors.contactPerson && (
+                    <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
+                      {fieldErrors.contactPerson}
+                    </div>
+                  )}
+                </div>
+
+                {/* Mobile Number */}
+                <div className="edit-form-group">
+                  <div className="edit-input-wrapper">
+                    <div className="input-icon">
+                      <img src={mobileIcon} alt="Mobile"></img>
+                    </div>
+                    <div className="input-content">
+                      <label className="input-label">Mobile Number</label>
+                      <input
+                        type="text"
+                        value={data.phoneNumber || ""}
+                        placeholder="+91 6789067890"
+                        className="form-input"
+                        disabled
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Email Id */}
+                <div className="edit-form-group">
+                  <div className="edit-input-wrapper">
+                    <div className="input-icon">
+                      <img src={emailIcon} alt="Email"></img>
+                    </div>
+                    <div className="input-content">
+                      <label className="input-label">Email Id</label>
+                      <input
+                        type="email"
+                        value={data.email || ""}
+                        onChange={(e) => {
+                          updateData("email", e.target.value);
+                          if (fieldErrors.email) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.email;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        placeholder="example@email.com"
+                        className={`form-input ${fieldErrors.email ? "input-error" : ""}`}
+                      />
+                    </div>
+                  </div>
+                  {fieldErrors.email && (
+                    <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
+                      {fieldErrors.email}
+                    </div>
+                  )}
+                </div>
+
+                {/* Business Category */}
+                <div className="edit-form-group">
+                  <div className="edit-input-wrapper">
+                    <div className="input-icon">
+                      <img src={dropdownIcon} alt="Category" style={{ width: "16px", opacity: 0.5 }}></img>
+                    </div>
+                    <div className="input-content">
+                      <label className="input-label">Business Category <span style={{ color: "#dc2626" }}>*</span></label>
+                      <select
+                        value={data.businessCategory || ""}
+                        onChange={(e) => {
+                          updateData("businessCategory", e.target.value);
+                          if (fieldErrors.businessCategory) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.businessCategory;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        className={`form-input ${fieldErrors.businessCategory ? "input-error" : ""}`}
+                        disabled={loadingBusinessCategories}
+                      >
+                        <option value="">{loadingBusinessCategories ? "Loading categories..." : "Select Category"}</option>
+                        {businessCategories.map((cat) => (
+                          <option key={cat._id} value={cat._id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  {fieldErrors.businessCategory && (
+                    <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
+                      {fieldErrors.businessCategory}
+                    </div>
+                  )}
+                </div>
+
+                {/* City */}
+                <div className="edit-form-group">
+                  <div className="edit-input-wrapper">
+                    <div className="input-icon">
+                      <img src={cityIcon} alt="City"></img>
+                    </div>
+                    <div className="input-content">
+                      <label className="input-label">City</label>
+                      <select
+                        value={data.city || ""}
+                        onChange={(e) => {
+                          updateData("city", e.target.value);
+                          if (fieldErrors.city) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.city;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        className={`form-input ${fieldErrors.city ? "input-error" : ""}`}
+                        disabled={loadingCities}
+                      >
+                        <option value="">{loadingCities ? "Loading cities..." : "Select City"}</option>
+                        {citiesList.map((city) => (
+                          <option key={city._id} value={city._id}>
+                            {city.name.charAt(0).toUpperCase() + city.name.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  {fieldErrors.city && (
+                    <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
+                      {fieldErrors.city}
+                    </div>
+                  )}
+                </div>
+
+                {/* Pincode */}
+                <div className="edit-form-group">
+                  <div className="edit-input-wrapper">
+                    <div className="input-icon">
+                      <img src={locationIcon} alt="Pincode"></img>
+                    </div>
+                    <div className="input-content">
+                      <label className="input-label">Pincode</label>
+                      <input
+                        type="text"
+                        value={data.pincode || ""}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                          updateData("pincode", val);
+                          if (fieldErrors.pincode) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.pincode;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        placeholder="Enter Pincode"
+                        className={`form-input ${fieldErrors.pincode ? "input-error" : ""}`}
+                      />
+                    </div>
+                  </div>
+                  {fieldErrors.pincode && (
+                    <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
+                      {fieldErrors.pincode}
+                    </div>
+                  )}
+                </div>
+
+                {/* WhatsApp Number */}
+                <div className="edit-form-group">
+                  <div className="edit-input-wrapper">
+                    <div className="input-icon">
+                      <svg width="18" height="18" fill="#555" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.717-1.456L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.42 9.864-9.858.002-2.634-1.02-5.11-2.881-6.974-1.861-1.864-4.339-2.891-6.986-2.892-5.44 0-9.865 4.42-9.869 9.858-.001 1.699.453 3.359 1.314 4.816L1.879 21.05l4.768-1.25.001-.001-.001-.001zM18.06 14.7c-.327-.164-1.933-.954-2.231-1.063-.298-.11-.517-.164-.735.164-.218.328-.844 1.063-1.035 1.281-.19.219-.381.246-.708.082-1.296-.649-2.213-1.127-3.096-2.641-.237-.406-.237-.406.115-.811.238-.274.526-.642.668-.823.143-.182.164-.328.082-.492-.082-.164-.735-1.77-.923-2.231-.253-.615-.558-.508-.735-.515-.17-.006-.364-.007-.559-.007-.195 0-.514.073-.783.37-.269.296-1.027 1.006-1.027 2.454 0 1.448 1.054 2.846 1.202 3.044.148.197 2.073 3.167 5.023 4.444.702.304 1.25.485 1.678.621.705.224 1.347.193 1.854.117.565-.084 1.933-.791 2.205-1.556.272-.765.272-1.42.19-1.556-.081-.137-.298-.218-.625-.382z"/></svg>
+                    </div>
+                    <div className="input-content">
+                      <label className="input-label">WhatsApp Number</label>
+                      <input
+                        type="text"
+                        value={data.whatsappNumber || ""}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          updateData("whatsappNumber", val);
+                        }}
+                        placeholder="10 digit number"
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Website */}
+                <div className="edit-form-group">
+                  <div className="edit-input-wrapper">
+                    <div className="input-icon">
+                      <svg width="18" height="18" fill="#555" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                    </div>
+                    <div className="input-content">
+                      <label className="input-label">Website URL</label>
+                      <input
+                        type="text"
+                        value={data.website || ""}
+                        onChange={(e) => updateData("website", e.target.value)}
+                        placeholder="https://example.com"
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Business Tagline */}
+                <div className="edit-form-group" style={{ gridColumn: "span 2" }}>
+                  <div className="edit-input-wrapper">
+                    <div className="input-icon">
+                      <span style={{ fontSize: "18px", color: "#555", fontWeight: "bold" }}>“</span>
+                    </div>
+                    <div className="input-content">
+                      <label className="input-label">Business Tagline</label>
+                      <input
+                        type="text"
+                        value={data.businessTagline || ""}
+                        onChange={(e) => updateData("businessTagline", e.target.value)}
+                        placeholder="Enter a tagline for your business"
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="edit-profile-contact-grid">
+                <div className="edit-form-group">
+                  <div className="edit-input-wrapper">
+                    <div className="input-icon">
+                      <img src={mobileIcon} alt="Mobile"></img>
+                    </div>
+                    <div className="input-content">
+                      <label className="input-label">Full Name</label>
+                      <input
+                        type="text"
+                        value={data.fullName || ""}
+                        onChange={(e) => {
+                          updateData("fullName", e.target.value);
+                          // Clear error when user starts typing
+                          if (fieldErrors.fullName) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.fullName;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        placeholder="Enter full name"
+                        className={`form-input ${fieldErrors.fullName ? "input-error" : ""}`}
+                      />
+                    </div>
+                  </div>
+                  {fieldErrors.fullName && (
+                    <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
+                      {fieldErrors.fullName}
+                    </div>
+                  )}
+                </div>
+
+                <div className="edit-form-group">
+                  <div className="edit-input-wrapper">
+                    <div className="input-icon">
+                      <img src={mobileIcon} alt="Mobile"></img>
+                    </div>
+                    <div className="input-content">
+                      <label className="input-label">Mobile Number</label>
+                      <input
+                        type="text"
+                        value={data.phoneNumber || ""}
+                        onChange={(e) => updateData("phoneNumber", e.target.value)}
+                        placeholder="+91 6789067890"
+                        className="form-input"
+                        disabled
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="edit-form-group">
+                  <div className="edit-input-wrapper">
+                    <div className="input-icon">
+                      <img src={emailIcon} alt="Email"></img>
+                    </div>
+                    <div className="input-content">
+                      <label className="input-label">Email Id</label>
+                      <input
+                        type="email"
+                        value={data.email || ""}
+                        onChange={(e) => {
+                          updateData("email", e.target.value);
+                          if (fieldErrors.email) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.email;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        placeholder="example@email.com"
+                        className={`form-input ${fieldErrors.email ? "input-error" : ""}`}
+                      />
+                    </div>
+                  </div>
+                  {fieldErrors.email && (
+                    <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
+                      {fieldErrors.email}
+                    </div>
+                  )}
+                </div>
+                <div className="edit-form-group">
+                  <div className="edit-input-wrapper">
+                    <div className="input-icon">
+                      <img src={calenderIcon} alt="Calendar"></img>
+                    </div>
+                    <div className="input-content">
+                      <label className="input-label">Date of birth</label>
+                      <input
+                        type="date"
+                        value={data.birthDate || ""}
+                        onChange={(e) => {
+                          const selectedDate = e.target.value;
+                          // Validate 18+ on change
+                          if (selectedDate) {
+                            const birthDate = new Date(selectedDate);
+                            const today = new Date();
+                            let age = today.getFullYear() - birthDate.getFullYear();
+                            const monthDiff = today.getMonth() - birthDate.getMonth();
+                            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                              age--;
+                            }
+                            if (age < 18) {
+                              alert("You must be at least 18 years old");
+                              return;
+                            }
+                          }
+                          updateData("birthDate", selectedDate);
+                          if (fieldErrors.birthDate) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.birthDate;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+                        className={`form-input ${fieldErrors.birthDate ? "input-error" : ""}`}
+                      />
+                    </div>
+                  </div>
+                  {fieldErrors.birthDate && (
+                    <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
+                      {fieldErrors.birthDate}
+                    </div>
+                  )}
+                </div>
+                <div className="edit-form-group">
+                  <div className="edit-input-wrapper">
+                    <div className="input-icon">
+                      <img src={cityIcon} alt="City"></img>
+                    </div>
+                    <div className="input-content">
+                      <label className="input-label">City</label>
+                      <select
+                        value={data.city || ""}
+                        onChange={(e) => {
+                          updateData("city", e.target.value);
+                          if (fieldErrors.city) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.city;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        className={`form-input ${fieldErrors.city ? "input-error" : ""}`}
+                        disabled={loadingCities}
+                      >
+                        <option value="">{loadingCities ? "Loading cities..." : "Select City"}</option>
+                        {citiesList.map((city) => (
+                          <option key={city._id} value={city._id}>
+                            {city.name.charAt(0).toUpperCase() + city.name.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  {fieldErrors.city && (
+                    <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
+                      {fieldErrors.city}
+                    </div>
+                  )}
+                </div>
+
+                <div className="edit-form-group">
+                  <div className="edit-input-wrapper">
+                    <div className="input-icon">
+                      <img src={locationIcon} alt="Pincode"></img>
+                    </div>
+                    <div className="input-content">
+                      <label className="input-label">Pincode</label>
+                      <input
+                        type="text"
+                        value={data.pincode || ""}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                          updateData("pincode", val);
+                          if (fieldErrors.pincode) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.pincode;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        placeholder="Enter Pincode"
+                        className={`form-input ${fieldErrors.pincode ? "input-error" : ""}`}
+                      />
+                    </div>
+                  </div>
+                  {fieldErrors.pincode && (
+                    <div className="field-error-message" style={{ marginTop: "4px", fontSize: "12px", color: "#dc2626", paddingLeft: "60px" }}>
+                      {fieldErrors.pincode}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* More Information Section */}
-            <div className="edit-profile-more-info">
+            {data.isBusinessProfile ? (
+              <>
+                {/* Business Description */}
+                <div className="edit-profile-more-info" style={{ marginTop: "20px" }}>
+                  <h3>About the Business</h3>
+                  <div className="edit-profile-section" style={{ padding: "0" }}>
+                    <textarea
+                      value={data.businessDescription || ""}
+                      onChange={(e) => updateData("businessDescription", e.target.value)}
+                      placeholder="Describe your business, products, or services..."
+                      style={{
+                        width: "100%",
+                        minHeight: "120px",
+                        padding: "12px 16px",
+                        border: "1px solid #E8EDF3",
+                        borderRadius: "8px",
+                        fontSize: "14px",
+                        fontFamily: "Inter, sans-serif",
+                        lineHeight: "1.6",
+                        resize: "vertical",
+                        outline: "none"
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Business Social Links */}
+                <div className="edit-profile-more-info" style={{ marginTop: "30px" }}>
+                  <h3>Social Media Links</h3>
+                  <div className="edit-profile-section">
+                    <div className="edit-profile-info-grid">
+                      {/* Facebook */}
+                      <div className="edit-profile-field-inline" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                        <label style={{ minWidth: "120px", margin: 0 }}>Facebook</label>
+                        <input
+                          type="text"
+                          value={data.facebook || ""}
+                          onChange={(e) => updateData("facebook", e.target.value)}
+                          placeholder="Facebook profile URL"
+                          style={{ flex: 1, padding: "10px", borderRadius: "6px", border: "1px solid #E8EDF3" }}
+                        />
+                      </div>
+
+                      {/* Instagram */}
+                      <div className="edit-profile-field-inline" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                        <label style={{ minWidth: "120px", margin: 0 }}>Instagram</label>
+                        <input
+                          type="text"
+                          value={data.instagram || ""}
+                          onChange={(e) => updateData("instagram", e.target.value)}
+                          placeholder="Instagram profile URL"
+                          style={{ flex: 1, padding: "10px", borderRadius: "6px", border: "1px solid #E8EDF3" }}
+                        />
+                      </div>
+
+                      {/* LinkedIn */}
+                      <div className="edit-profile-field-inline" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                        <label style={{ minWidth: "120px", margin: 0 }}>LinkedIn</label>
+                        <input
+                          type="text"
+                          value={data.linkedIn || ""}
+                          onChange={(e) => updateData("linkedIn", e.target.value)}
+                          placeholder="LinkedIn profile URL"
+                          style={{ flex: 1, padding: "10px", borderRadius: "6px", border: "1px solid #E8EDF3" }}
+                        />
+                      </div>
+
+                      {/* YouTube */}
+                      <div className="edit-profile-field-inline" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                        <label style={{ minWidth: "120px", margin: 0 }}>YouTube</label>
+                        <input
+                          type="text"
+                          value={data.youtube || ""}
+                          onChange={(e) => updateData("youtube", e.target.value)}
+                          placeholder="YouTube channel URL"
+                          style={{ flex: 1, padding: "10px", borderRadius: "6px", border: "1px solid #E8EDF3" }}
+                        />
+                      </div>
+
+                      {/* Twitter */}
+                      <div className="edit-profile-field-inline" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                        <label style={{ minWidth: "120px", margin: 0 }}>Twitter / X</label>
+                        <input
+                          type="text"
+                          value={data.twitter || ""}
+                          onChange={(e) => updateData("twitter", e.target.value)}
+                          placeholder="Twitter profile URL"
+                          style={{ flex: 1, padding: "10px", borderRadius: "6px", border: "1px solid #E8EDF3" }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="edit-profile-more-info">
               <h3>More Information</h3>
               <div className="edit-profile-section">
                 <div className="edit-profile-tags-container">
@@ -1743,6 +2286,7 @@ export default function EditProfile() {
               </div>
 
             </div>
+            )}
 
             {/* Action Buttons */}
             <div className="edit-profile-actions">

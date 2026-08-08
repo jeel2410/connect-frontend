@@ -19,7 +19,7 @@ const getAuthHeadersFormData = () => {
 };
 
 // Users API
-export const getUsers = async (page = 1, limit = 10, search = "", city = "", industry = "", interest = "", religion = "") => {
+export const getUsers = async (page = 1, limit = 10, search = "", city = "", industry = "", interest = "", religion = "", isBusiness = "") => {
   try {
     const queryParams = new URLSearchParams({
       page: page.toString(),
@@ -39,6 +39,9 @@ export const getUsers = async (page = 1, limit = 10, search = "", city = "", ind
     }
     if (religion) {
       queryParams.append("religion", religion);
+    }
+    if (isBusiness) {
+      queryParams.append("isBusiness", isBusiness);
     }
 
     const response = await fetch(`${API_BASE_URL}/api/admin/users?${queryParams.toString()}`, {
@@ -1982,6 +1985,105 @@ export const getScheduledMailerLogs = async (page = 1, limit = 20, search = "", 
     throw error;
   }
 };
+
+// Business Categories API
+export const getAdminBusinessCategories = async (search = "") => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (search) {
+      queryParams.append("search", search);
+    }
+    const response = await fetch(`${API_BASE_URL}/api/admin/business-categories?${queryParams.toString()}`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch business categories");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching business categories:", error);
+    throw error;
+  }
+};
+
+export const createBusinessCategory = async (categoryData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/business-categories`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(categoryData),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create business category");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error creating business category:", error);
+    throw error;
+  }
+};
+
+export const toggleBusinessCategoryStatus = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/business-categories/${id}/toggle-status`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to toggle business category status");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error toggling business category status:", error);
+    throw error;
+  }
+};
+
+export const deleteBusinessCategory = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/business-categories/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to delete business category");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error deleting business category:", error);
+    throw error;
+  }
+};
+
+export const sendTestScheduledMailer = async (type, email) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/scheduled-mailers/test`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ type, email }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to send test scheduled mailer");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending test scheduled mailer:", error);
+    throw error;
+  }
+};
+
 
 
 
