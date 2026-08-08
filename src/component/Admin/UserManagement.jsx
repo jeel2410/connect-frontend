@@ -97,7 +97,8 @@ const UserManagement = () => {
           cityFilter,
           industryFilter,
           interestFilter,
-          religionFilter
+          religionFilter,
+          "false"
         );
         
         if (response.success && response.data) {

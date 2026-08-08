@@ -28,13 +28,13 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
             "Content-Type": "application/json",
           },
         });
-        
+
         if (!response.ok) {
           throw new Error("Failed to fetch cities");
         }
 
         const result = await response.json();
-        
+
         if (result.success && result.data && result.data.city) {
           setCities(result.data.city);
         } else {
@@ -53,7 +53,18 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
   }, []);
   return (
     <div className="step-content active">
-      <h2 className="step-title">Tell us about yourself</h2>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+        <h2 className="step-title" style={{ margin: 0 }}>Tell us about yourself</h2>
+        <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "14px", fontWeight: "600", color: "#EA650A" }}>
+          <input
+            type="checkbox"
+            checked={data.isBusinessProfile || false}
+            onChange={(e) => updateData("isBusinessProfile", e.target.checked)}
+            style={{ width: "16px", height: "16px", accentColor: "#EA650A" }}
+          />
+          Switch to a Business Profile
+        </label>
+      </div>
       <p className="step-description">Share a brief introduction so others can know you better.</p>
 
       <div className="form-group">
@@ -168,7 +179,7 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
               className={touched?.religion && errors?.religion ? "input-error" : ""}
             >
               <option value="">Select Religion</option>
-             
+
               <option value="Hinduism">Hinduism</option>
               <option value="Islam">Islam</option>
               <option value="Christianity">Christianity</option>

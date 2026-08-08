@@ -117,6 +117,8 @@ const PostApproval = () => {
           {posts.map((post) => {
             const author = post.userId?.userDetailId || {};
             const segments = post.targetSegments || {};
+            const authorName = author.isBusinessProfile ? author.businessName : author.fullName;
+            const authorImage = author.isBusinessProfile ? author.businessLogo : author.profileImage;
             
             return (
               <div key={post._id} className="pending-post-card" style={{ background: "#ffffff", border: "1px solid #E8EDF3", borderRadius: "12px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
@@ -124,13 +126,13 @@ const PostApproval = () => {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                     <img
-                      src={author.profileImage || "/default-avatar.png"}
-                      alt={author.fullName || "User"}
+                      src={authorImage || "/default-avatar.png"}
+                      alt={authorName || "User"}
                       style={{ width: "48px", height: "48px", borderRadius: "50%", objectFit: "cover", border: "2px solid #E8EDF3" }}
                       onError={(e) => { e.target.src = "/default-avatar.png"; }}
                     />
                     <div>
-                      <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#09122E", margin: "0" }}>{author.fullName || "Unnamed User"}</h4>
+                      <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#09122E", margin: "0" }}>{authorName || "Unnamed User"}</h4>
                       <p style={{ fontSize: "12px", color: "#777E90", margin: "2px 0 0 0" }}>
                         Shared on {new Date(post.createdAt).toLocaleDateString()} at {new Date(post.createdAt).toLocaleTimeString()}
                       </p>

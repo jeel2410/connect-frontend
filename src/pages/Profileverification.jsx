@@ -14,8 +14,11 @@ import Step6 from "../../src/component/StepForm/Step6";
 import Step7 from "../../src/component/StepForm/Step7";
 import Step8 from "../../src/component/StepForm/Step8";
 import StepSports from "../../src/component/StepForm/StepSports";
+import BusinessStep1 from "../../src/component/StepForm/BusinessStep1";
+import BusinessStep2 from "../../src/component/StepForm/BusinessStep2";
+import BusinessStep3 from "../../src/component/StepForm/BusinessStep3";
 import logo from "../../src/assets/image/connect_logo.png";
-import { getCookie, setCookie, isAuthenticated, hasToken } from "../utils/auth";
+import { getCookie, setCookie } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 import DynamicAuthImage from "../component/DynamicAuthImage";
 
@@ -26,7 +29,9 @@ const Profileverification = () => {
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
-  const totalSteps = 9;
+
+  // Get phone number from location state or localStorage
+  const phoneNumber = location.state?.phoneNumber || localStorage.getItem("phoneNumber") || "";
 
   // Redirect if profile is already complete
   useEffect(() => {
@@ -37,7 +42,6 @@ const Profileverification = () => {
         return;
       }
 
-      // Check actual profile completion status from backend
       try {
         const response = await fetch(`${API_BASE_URL}/api/user/profile/progress`, {
           method: "GET",
@@ -50,15 +54,12 @@ const Profileverification = () => {
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.data && data.data.isProfileComplete) {
-            // Profile is complete - redirect to home
             navigate("/", { replace: true });
             return;
           }
-          // Profile not complete - stay on this page
         }
       } catch (error) {
         console.error("Error checking profile status:", error);
-        // If error, allow user to continue on profile completion page
       }
     };
 
@@ -66,229 +67,126 @@ const Profileverification = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load saved progress on mount
-  useEffect(() => {
-    const loadSavedProgress = async () => {
-      try {
-        const token = getCookie("authToken");
-        if (!token) return;
-
-        const response = await fetch(`${API_BASE_URL}/api/user/profile/progress`, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          return; // No saved progress or error
-        }
-
-        const data = await response.json();
-
-        if (data.success && data.data) {
-          const { lastCompletedStep, profile, isProfileComplete } = data.data;
-
-          // If profile is complete, redirect immediately
-          if (isProfileComplete) {
-            navigate("/", { replace: true });
-            return;
-          }
-
-          // If profile exists, populate form with ALL saved data
-          if (profile) {
-            // Fetch cities to match city name to ID
-            let cityId = "";
-            if (profile.city) {
-              try {
-                const citiesResponse = await fetch(`${API_BASE_URL}/api/list/city`, {
-                  method: "GET",
-                  headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                  },
-                });
-
-                if (citiesResponse.ok) {
-                  const citiesResult = await citiesResponse.json();
-                  if (citiesResult.success && citiesResult.data && citiesResult.data.city) {
-                    const cities = citiesResult.data.city;
-                    // Check if profile.city is already an ID (24 char hex string)
-                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.city);
-                    if (isObjectId) {
-                      // It's already an ID, use it directly
-                      cityId = profile.city;
-                    } else {
-                      // It's a city name, find matching ID
-                      const matchedCity = cities.find(
-                        city => city.name.toLowerCase().trim() === profile.city.toLowerCase().trim()
-                      );
-                      if (matchedCity) {
-                        cityId = matchedCity._id;
-                      }
-                    }
-                  }
-                }
-              } catch (err) {
-                console.error("Error fetching cities for matching:", err);
-              }
-            }
-
-            // Fetch positions to match position name to ID
-            let positionId = "";
-            if (profile.position) {
-              try {
-                const positionsResponse = await fetch(`${API_BASE_URL}/api/list/positions`, {
-                  method: "GET",
-                  headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                  },
-                });
-
-                if (positionsResponse.ok) {
-                  const positionsResult = await positionsResponse.json();
-                  if (positionsResult.success && positionsResult.data && positionsResult.data.positions) {
-                    const positions = positionsResult.data.positions;
-                    // Check if profile.position is already an ID (24 char hex string)
-                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.position);
-                    if (isObjectId) {
-                      positionId = profile.position;
-                    } else {
-                      // It's a position name, find matching ID
-                      const matchedPosition = positions.find(
-                        pos => pos.name.toLowerCase().trim() === profile.position.toLowerCase().trim()
-                      );
-                      if (matchedPosition) {
-                        positionId = matchedPosition._id;
-                      }
-                    }
-                  }
-                }
-              } catch (err) {
-                console.error("Error fetching positions for matching:", err);
-              }
-            }
-
-            // Normalize marital status
-            let maritalStatus = profile.status || "";
-            if (maritalStatus === "Unmarried") {
-              maritalStatus = "Single";
-            }
-
-            // Ensure we populate ALL fields from saved profile, not just empty ones
-            formik.setValues({
-              mobileNumber: phoneNumber || "",
-              fullName: profile.fullName || "",
-              city: cityId, // Use matched city ID instead of name
-              pincode: profile.pincode || "",
-              religion: profile.religion || "",
-              maritalStatus: maritalStatus,
-              email: profile.email || "",
-              gender: profile.gender || "",
-              birthDate: profile.dateOfBirth
-                ? new Date(profile.dateOfBirth).toISOString().split('T')[0]
-                : "",
-              language: profile.preferredLanguage || "",
-              habits: profile.habits || [],
-              interest: profile.interests || [],
-              skill: profile.skills || [],
-              sports: profile.sports || [],
-              industry: profile.industry || "",
-              company: profile.company || "",
-              position: positionId || profile.position || "",
-              photo: profile.profileImage || null,
-            });
-
-            // Set current step to next incomplete step
-            // If lastCompletedStep is 8 but profile is not complete, stay on step 8
-            // Otherwise, go to next step after lastCompletedStep
-            let nextStep;
-            if (lastCompletedStep === 9 && !isProfileComplete) {
-              // Step 9 was saved but profile not marked complete, stay on step 9
-              nextStep = 9;
-            } else if (lastCompletedStep >= totalSteps) {
-              // All steps completed, should have been redirected above, but just in case
-              nextStep = totalSteps;
-            } else {
-              // Go to next incomplete step
-              nextStep = Math.min((lastCompletedStep || 0) + 1, totalSteps);
-            }
-            setCurrentStep(nextStep);
-            setPreviousStep(nextStep); // Initialize previousStep to current step
-          }
-        }
-      } catch (error) {
-        console.error("Error loading saved progress:", error);
-      }
-    };
-
-    loadSavedProgress();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Get phone number from location state or localStorage
-  const phoneNumber = location.state?.phoneNumber || localStorage.getItem("phoneNumber") || "";
-
-  // Validation schema using Yup
+  // Validation schema using Yup with conditional fields
   const validationSchema = Yup.object().shape({
+    isBusinessProfile: Yup.boolean(),
     mobileNumber: Yup.string().required("Mobile number is required"),
-    fullName: Yup.string().required("Full name is required").min(2, "Full name must be at least 2 characters"),
+    
+    // Individual fields: required only when isBusinessProfile is false
+    fullName: Yup.string().when("isBusinessProfile", {
+      is: (val) => !val,
+      then: () => Yup.string().required("Full name is required").min(2, "Full name must be at least 2 characters"),
+      otherwise: () => Yup.string().notRequired(),
+    }),
     city: Yup.string().required("City is required"),
     pincode: Yup.string()
       .required("Pincode is required")
       .matches(/^[1-9][0-9]{5}$/, "Please enter a valid 6-digit pincode"),
-    religion: Yup.string().required("Religion is required"),
-    maritalStatus: Yup.string().required("Status is required"),
-    email: Yup.string()
-      .email("Invalid email address")
-      .required("Email is required"),
-    gender: Yup.string().required("Gender is required"),
-    birthDate: Yup.string()
-      .required("Date of birth is required")
-      .test("age-18", "You must be at least 18 years old", function (value) {
-        if (!value) return false;
-        const birthDate = new Date(value);
-        const today = new Date();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-          age--;
-        }
-        return age >= 18;
-      }),
-    language: Yup.array()
-      .min(1, "Please select at least one language")
-      .required("Please select at least one language"),
-    habits: Yup.array()
-      .min(1, "Please select at least one habit")
-      .required("Please select at least one habit"),
-    interest: Yup.array()
-      .min(1, "Please select at least one interest")
-      .required("Please select at least one interest"),
-    skill: Yup.array()
-      .min(1, "Please select at least one skill")
-      .required("Please select at least one skill"),
-    sports: Yup.array()
-      .min(1, "Please select at least one sport")
-      .required("Please select at least one sport"),
-    industry: Yup.string().required("Industry is required"),
-    company: Yup.string(),
-    position: Yup.string(),
-    photo: Yup.mixed()
+    religion: Yup.string().when("isBusinessProfile", {
+      is: (val) => !val,
+      then: () => Yup.string().required("Religion is required"),
+      otherwise: () => Yup.string().notRequired(),
+    }),
+    maritalStatus: Yup.string().when("isBusinessProfile", {
+      is: (val) => !val,
+      then: () => Yup.string().required("Status is required"),
+      otherwise: () => Yup.string().notRequired(),
+    }),
+    email: Yup.string().email("Invalid email address").required("Email is required"),
+    website: Yup.string()
       .nullable()
-      .test("fileSize", "File size must be less than 5MB", (value) => {
+      .notRequired()
+      .test("is-url", "Please enter a valid website URL", function (value) {
         if (!value) return true;
-        if (value instanceof File) {
-          return value.size <= 5 * 1024 * 1024;
-        }
-        return true;
+        return /^(https?:\/\/)?(www\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(\/[a-zA-Z0-9-_.~!*'();:@&=+$,/?#%]*)?$/.test(value);
       }),
+    gender: Yup.string().when("isBusinessProfile", {
+      is: (val) => !val,
+      then: () => Yup.string().required("Gender is required"),
+      otherwise: () => Yup.string().notRequired(),
+    }),
+    birthDate: Yup.string().when("isBusinessProfile", {
+      is: (val) => !val,
+      then: () => Yup.string()
+        .required("Date of birth is required")
+        .test("age-18", "You must be at least 18 years old", function (value) {
+          if (!value) return false;
+          const birthDate = new Date(value);
+          const today = new Date();
+          let age = today.getFullYear() - birthDate.getFullYear();
+          const monthDiff = today.getMonth() - birthDate.getMonth();
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+          return age >= 18;
+        }),
+      otherwise: () => Yup.string().notRequired(),
+    }),
+    language: Yup.array().when("isBusinessProfile", {
+      is: (val) => !val,
+      then: () => Yup.array().min(1, "Please select at least one language").required("Please select at least one language"),
+      otherwise: () => Yup.array().notRequired(),
+    }),
+    habits: Yup.array().when("isBusinessProfile", {
+      is: (val) => !val,
+      then: () => Yup.array().min(1, "Please select at least one habit").required("Please select at least one habit"),
+      otherwise: () => Yup.array().notRequired(),
+    }),
+    interest: Yup.array().when("isBusinessProfile", {
+      is: (val) => !val,
+      then: () => Yup.array().min(1, "Please select at least one interest").required("Please select at least one interest"),
+      otherwise: () => Yup.array().notRequired(),
+    }),
+    skill: Yup.array().when("isBusinessProfile", {
+      is: (val) => !val,
+      then: () => Yup.array().min(1, "Please select at least one skill").required("Please select at least one skill"),
+      otherwise: () => Yup.array().notRequired(),
+    }),
+    sports: Yup.array().when("isBusinessProfile", {
+      is: (val) => !val,
+      then: () => Yup.array().min(1, "Please select at least one sport").required("Please select at least one sport"),
+      otherwise: () => Yup.array().notRequired(),
+    }),
+    industry: Yup.string().when("isBusinessProfile", {
+      is: (val) => !val,
+      then: () => Yup.string().required("Industry is required"),
+      otherwise: () => Yup.string().notRequired(),
+    }),
+    
+    // Business fields: required only when isBusinessProfile is true
+    businessName: Yup.string().when("isBusinessProfile", {
+      is: true,
+      then: () => Yup.string().required("Business name is required"),
+      otherwise: () => Yup.string().notRequired(),
+    }),
+    businessCategory: Yup.string().when("isBusinessProfile", {
+      is: true,
+      then: () => Yup.string().required("Business category is required"),
+      otherwise: () => Yup.string().notRequired(),
+    }),
+    contactPerson: Yup.string().when("isBusinessProfile", {
+      is: true,
+      then: () => Yup.string().required("Contact person is required"),
+      otherwise: () => Yup.string().notRequired(),
+    }),
+    whatsappNumber: Yup.string().when("isBusinessProfile", {
+      is: true,
+      then: () => Yup.string().required("WhatsApp number is required").matches(/^[6-9]\d{9}$/, "Please enter a valid 10-digit mobile number"),
+      otherwise: () => Yup.string().notRequired(),
+    }),
+    businessTagline: Yup.string().when("isBusinessProfile", {
+      is: true,
+      then: () => Yup.string().required("Tagline is required").max(160, "Tagline cannot exceed 160 characters"),
+      otherwise: () => Yup.string().notRequired(),
+    }),
+    businessLogo: Yup.mixed().nullable(),
+    businessCoverImage: Yup.mixed().nullable(),
+    businessDescription: Yup.string().nullable(),
   });
 
   const formik = useFormik({
     initialValues: {
+      isBusinessProfile: false,
       mobileNumber: phoneNumber || "",
       fullName: "",
       city: "",
@@ -307,9 +205,25 @@ const Profileverification = () => {
       company: "",
       position: "",
       photo: null,
+      
+      // Business fields
+      businessName: "",
+      businessCategory: "",
+      contactPerson: "",
+      website: "",
+      whatsappNumber: "",
+      facebook: "",
+      instagram: "",
+      linkedIn: "",
+      youtube: "",
+      twitter: "",
+      businessLogo: null,
+      businessCoverImage: null,
+      businessTagline: "",
+      businessDescription: "",
     },
     validationSchema: validationSchema,
-    enableReinitialize: false, // Changed to false to maintain values when navigating
+    enableReinitialize: false,
     onSubmit: async (values, { setSubmitting, setFieldError }) => {
       setApiError("");
       setSuccess("");
@@ -317,45 +231,80 @@ const Profileverification = () => {
       setSubmitting(true);
 
       try {
-        // Get auth token from cookie
         const token = getCookie("authToken");
         if (!token) {
           throw new Error("Authentication required. Please login again.");
         }
 
-        // Prepare FormData for file upload
         const formData = new FormData();
+        const isBusiness = values.isBusinessProfile;
 
-        // Add text fields
-        formData.append("fullName", values.fullName);
-        // Only append city if it has a valid value (not empty string and is a valid ObjectId)
-        if (values.city && values.city.trim() !== "" && /^[0-9a-fA-F]{24}$/.test(values.city)) {
-          formData.append("city", values.city);
-        }
-        formData.append("pincode", values.pincode);
-        formData.append("religion", values.religion);
-        formData.append("status", values.maritalStatus);
-        formData.append("gender", values.gender);
-        formData.append("dateOfBirth", values.birthDate || "");
-        formData.append("habits", (values.habits || []).join(","));
-        formData.append("interests", (values.interest || []).join(","));
-        formData.append("skills", (values.skill || []).join(","));
-        formData.append("sports", (values.sports || []).join(","));
-        formData.append("preferredLanguage", Array.isArray(values.language) ? values.language.join(",") : (values.language || ""));
-        formData.append("email", values.email);
-        formData.append("industry", values.industry || "");
-        formData.append("company", values.company || "");
-        formData.append("position", values.position || "");
+        if (isBusiness) {
+          formData.append("isBusinessProfile", "true");
+          formData.append("businessName", values.businessName);
+          if (values.city && values.city.trim() !== "" && /^[0-9a-fA-F]{24}$/.test(values.city)) {
+            formData.append("city", values.city);
+          }
+          formData.append("pincode", values.pincode);
+          formData.append("businessCategory", values.businessCategory);
+          formData.append("contactPerson", values.contactPerson);
+          formData.append("email", values.email || "");
+          formData.append("website", values.website || "");
+          formData.append("whatsappNumber", values.whatsappNumber || "");
+          formData.append("facebook", values.facebook || "");
+          formData.append("instagram", values.instagram || "");
+          formData.append("linkedIn", values.linkedIn || "");
+          formData.append("youtube", values.youtube || "");
+          formData.append("twitter", values.twitter || "");
+          formData.append("businessTagline", values.businessTagline || "");
+          formData.append("businessDescription", values.businessDescription || "");
 
-        // Add profile image if it's a file
-        if (values.photo) {
-          // If photo is base64, convert to blob
-          if (typeof values.photo === 'string' && values.photo.startsWith('data:')) {
-            const response = await fetch(values.photo);
-            const blob = await response.blob();
-            formData.append("profileImage", blob, "profile.jpg");
-          } else if (values.photo instanceof File) {
-            formData.append("profileImage", values.photo);
+          if (values.businessLogo) {
+            if (values.businessLogo instanceof File) {
+              formData.append("profileImage", values.businessLogo);
+            } else if (typeof values.businessLogo === 'string' && values.businessLogo.startsWith('data:')) {
+              const response = await fetch(values.businessLogo);
+              const blob = await response.blob();
+              formData.append("profileImage", blob, "logo.jpg");
+            }
+          }
+          if (values.businessCoverImage) {
+            if (values.businessCoverImage instanceof File) {
+              formData.append("coverImage", values.businessCoverImage);
+            } else if (typeof values.businessCoverImage === 'string' && values.businessCoverImage.startsWith('data:')) {
+              const response = await fetch(values.businessCoverImage);
+              const blob = await response.blob();
+              formData.append("coverImage", blob, "cover.jpg");
+            }
+          }
+        } else {
+          formData.append("fullName", values.fullName);
+          if (values.city && values.city.trim() !== "" && /^[0-9a-fA-F]{24}$/.test(values.city)) {
+            formData.append("city", values.city);
+          }
+          formData.append("pincode", values.pincode);
+          formData.append("religion", values.religion);
+          formData.append("status", values.maritalStatus);
+          formData.append("gender", values.gender);
+          formData.append("dateOfBirth", values.birthDate || "");
+          formData.append("habits", (values.habits || []).join(","));
+          formData.append("interests", (values.interest || []).join(","));
+          formData.append("skills", (values.skill || []).join(","));
+          formData.append("sports", (values.sports || []).join(","));
+          formData.append("preferredLanguage", Array.isArray(values.language) ? values.language.join(",") : (values.language || ""));
+          formData.append("email", values.email);
+          formData.append("industry", values.industry || "");
+          formData.append("company", values.company || "");
+          formData.append("position", values.position || "");
+
+          if (values.photo) {
+            if (typeof values.photo === 'string' && values.photo.startsWith('data:')) {
+              const response = await fetch(values.photo);
+              const blob = await response.blob();
+              formData.append("profileImage", blob, "profile.jpg");
+            } else if (values.photo instanceof File) {
+              formData.append("profileImage", values.photo);
+            }
           }
         }
 
@@ -373,13 +322,9 @@ const Profileverification = () => {
           throw new Error(data.message || "Failed to complete profile. Please try again.");
         }
 
-        // Update isProfileComplete to true in cookies
         setCookie("isProfileComplete", "true", 7);
-
-        // Success
         setSuccess("Profile completed successfully! Redirecting...");
 
-        // Use window.location.href for full page reload to ensure cookie is properly read
         setTimeout(() => {
           window.location.href = "/";
         }, 1500);
@@ -392,6 +337,209 @@ const Profileverification = () => {
       }
     },
   });
+
+  const totalSteps = formik.values.isBusinessProfile ? 3 : 9;
+
+  // Load saved progress on mount
+  useEffect(() => {
+    const loadSavedProgress = async () => {
+      try {
+        const token = getCookie("authToken");
+        if (!token) return;
+
+        const response = await fetch(`${API_BASE_URL}/api/user/profile/progress`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          const { lastCompletedStep, profile, isProfileComplete } = data.data;
+
+          if (isProfileComplete) {
+            navigate("/", { replace: true });
+            return;
+          }
+
+          if (profile) {
+            if (profile.phoneNumber) {
+              localStorage.setItem("phoneNumber", profile.phoneNumber);
+            }
+
+            let cityId = "";
+            if (profile.city) {
+              try {
+                const citiesResponse = await fetch(`${API_BASE_URL}/api/list/city`, {
+                  method: "GET",
+                  headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                if (citiesResponse.ok) {
+                  const citiesResult = await citiesResponse.json();
+                  if (citiesResult.success && citiesResult.data && citiesResult.data.city) {
+                    const cities = citiesResult.data.city;
+                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.city);
+                    if (isObjectId) {
+                      cityId = profile.city;
+                    } else {
+                      const matchedCity = cities.find(
+                        city => city.name.toLowerCase().trim() === profile.city.toLowerCase().trim()
+                      );
+                      if (matchedCity) {
+                        cityId = matchedCity._id;
+                      }
+                    }
+                  }
+                }
+              } catch (err) {
+                console.error("Error fetching cities for matching:", err);
+              }
+            }
+
+            let positionId = "";
+            if (profile.position) {
+              try {
+                const positionsResponse = await fetch(`${API_BASE_URL}/api/list/positions`, {
+                  method: "GET",
+                  headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                if (positionsResponse.ok) {
+                  const positionsResult = await positionsResponse.json();
+                  if (positionsResult.success && positionsResult.data && positionsResult.data.positions) {
+                    const positions = positionsResult.data.positions;
+                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.position);
+                    if (isObjectId) {
+                      positionId = profile.position;
+                    } else {
+                      const matchedPosition = positions.find(
+                        pos => pos.name.toLowerCase().trim() === profile.position.toLowerCase().trim()
+                      );
+                      if (matchedPosition) {
+                        positionId = matchedPosition._id;
+                      }
+                    }
+                  }
+                }
+              } catch (err) {
+                console.error("Error fetching positions for matching:", err);
+              }
+            }
+
+            let maritalStatus = profile.status || "";
+            if (maritalStatus === "Unmarried") {
+              maritalStatus = "Single";
+            }
+
+            if (profile.isBusinessProfile) {
+              formik.setValues({
+                isBusinessProfile: true,
+                mobileNumber: profile.phoneNumber || phoneNumber || "",
+                businessName: profile.businessName || "",
+                city: cityId,
+                pincode: profile.pincode || "",
+                businessCategory: profile.businessCategory || profile.businessCategoryId || "",
+                contactPerson: profile.contactPerson || "",
+                website: profile.website || "",
+                whatsappNumber: profile.whatsappNumber || "",
+                facebook: profile.facebook || "",
+                instagram: profile.instagram || "",
+                linkedIn: profile.linkedIn || "",
+                youtube: profile.youtube || "",
+                twitter: profile.twitter || "",
+                businessLogo: profile.businessLogo || null,
+                businessCoverImage: profile.businessCoverImage || null,
+                businessTagline: profile.businessTagline || "",
+                businessDescription: profile.businessDescription || "",
+                
+                fullName: "",
+                religion: "",
+                maritalStatus: "",
+                email: profile.email || "",
+                gender: "",
+                birthDate: "",
+                language: [],
+                habits: [],
+                interest: [],
+                skill: [],
+                sports: [],
+                industry: "",
+                company: "",
+                position: "",
+                photo: null,
+              });
+            } else {
+              formik.setValues({
+                isBusinessProfile: false,
+                mobileNumber: profile.phoneNumber || phoneNumber || "",
+                fullName: profile.fullName || "",
+                city: cityId,
+                pincode: profile.pincode || "",
+                religion: profile.religion || "",
+                maritalStatus: maritalStatus,
+                email: profile.email || "",
+                gender: profile.gender || "",
+                birthDate: profile.dateOfBirth ? new Date(profile.dateOfBirth).toISOString().split('T')[0] : "",
+                language: profile.preferredLanguage || [],
+                habits: profile.habits || [],
+                interest: profile.interests || [],
+                skill: profile.skills || [],
+                sports: profile.sports || [],
+                industry: profile.industry || "",
+                company: profile.company || "",
+                position: positionId || profile.position || "",
+                photo: profile.profileImage || null,
+                
+                businessName: "",
+                businessCategory: "",
+                contactPerson: "",
+                website: "",
+                whatsappNumber: "",
+                facebook: "",
+                instagram: "",
+                linkedIn: "",
+                youtube: "",
+                twitter: "",
+                businessLogo: null,
+                businessCoverImage: null,
+                businessTagline: "",
+                businessDescription: "",
+              });
+            }
+
+            const currentTotalSteps = profile.isBusinessProfile ? 3 : 9;
+            let nextStep;
+            if (lastCompletedStep === currentTotalSteps && !isProfileComplete) {
+              nextStep = currentTotalSteps;
+            } else if (lastCompletedStep >= currentTotalSteps) {
+              nextStep = currentTotalSteps;
+            } else {
+              nextStep = Math.min((lastCompletedStep || 0) + 1, currentTotalSteps);
+            }
+            setCurrentStep(nextStep);
+            setPreviousStep(nextStep);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading saved progress:", error);
+      }
+    };
+
+    loadSavedProgress();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Update formik values when phone number is available
   useEffect(() => {
@@ -406,28 +554,20 @@ const Profileverification = () => {
       const actualField = field.replace("_touched_", "");
       formik.setFieldTouched(actualField, true);
     } else {
-      // Set the field value first
-      formik.setFieldValue(field, value, false); // false = don't validate immediately
+      formik.setFieldValue(field, value, false);
 
-      // Immediately clear error if value is provided (for required fields)
-      // This prevents showing error when a valid value is selected
       if (value && formik.errors[field]) {
         formik.setFieldError(field, undefined);
       }
 
-      // Then validate to ensure the value is correct
       setTimeout(async () => {
         try {
-          // Create updated values object with the new value
           const updatedValues = { ...formik.values, [field]: value };
-          // Validate the field with updated values
           await validationSchema.validateAt(field, updatedValues);
-          // If validation passes, ensure error is cleared
           if (formik.errors[field]) {
             formik.setFieldError(field, undefined);
           }
         } catch (error) {
-          // Validation failed - only show error if field is touched
           if (formik.touched[field]) {
             formik.setFieldError(field, error.message);
           }
@@ -436,78 +576,98 @@ const Profileverification = () => {
     }
   };
 
-  // Helper function to extract step-specific data
   const getStepDataForSave = (stepNumber, values) => {
     const stepData = {};
+    const isBusiness = values.isBusinessProfile;
 
-    switch (stepNumber) {
-      case 1:
-        if (values.fullName) stepData.fullName = values.fullName;
-        if (values.city) stepData.city = values.city;
-        if (values.pincode) stepData.pincode = values.pincode;
-        if (values.religion) stepData.religion = values.religion;
-        if (values.maritalStatus) stepData.status = values.maritalStatus;
-        break;
-      case 2:
-        if (values.email) stepData.email = values.email;
-        if (values.gender) stepData.gender = values.gender;
-        if (values.birthDate) stepData.dateOfBirth = values.birthDate;
-        break;
-      case 3:
-        if (values.language && Array.isArray(values.language) && values.language.length > 0) {
-          stepData.preferredLanguage = values.language;
-        }
-        break;
-      case 4:
-        if (values.habits && values.habits.length > 0) {
-          stepData.habits = values.habits;
-        }
-        break;
-      case 5:
-        if (values.interest && values.interest.length > 0) {
-          stepData.interests = values.interest;
-        }
-        break;
-      case 6:
-        if (values.skill && values.skill.length > 0) {
-          stepData.skills = values.skill;
-        }
-        break;
-      case 7:
-        if (values.sports && values.sports.length > 0) {
-          stepData.sports = values.sports;
-        }
-        break;
-      case 8:
-        if (values.industry) stepData.industry = values.industry;
-        if (values.company) stepData.company = values.company;
-        if (values.position) stepData.position = values.position;
-        break;
-      case 9:
-        // Photo handled separately in saveStepData
-        break;
-      default:
-        break;
+    if (isBusiness) {
+      switch (stepNumber) {
+        case 1:
+          if (values.businessName) stepData.businessName = values.businessName;
+          if (values.businessCategory) stepData.businessCategory = values.businessCategory;
+          if (values.businessTagline) stepData.businessTagline = values.businessTagline;
+          break;
+        case 2:
+          if (values.contactPerson) stepData.contactPerson = values.contactPerson;
+          if (values.whatsappNumber) stepData.whatsappNumber = values.whatsappNumber;
+          if (values.email) stepData.email = values.email;
+          if (values.website) stepData.website = values.website;
+          if (values.city) stepData.city = values.city;
+          if (values.pincode) stepData.pincode = values.pincode;
+          break;
+        case 3:
+          if (values.facebook) stepData.facebook = values.facebook;
+          if (values.instagram) stepData.instagram = values.instagram;
+          if (values.linkedIn) stepData.linkedIn = values.linkedIn;
+          if (values.youtube) stepData.youtube = values.youtube;
+          if (values.twitter) stepData.twitter = values.twitter;
+          break;
+        default:
+          break;
+      }
+    } else {
+      switch (stepNumber) {
+        case 1:
+          if (values.fullName) stepData.fullName = values.fullName;
+          if (values.city) stepData.city = values.city;
+          if (values.pincode) stepData.pincode = values.pincode;
+          if (values.religion) stepData.religion = values.religion;
+          if (values.maritalStatus) stepData.status = values.maritalStatus;
+          break;
+        case 2:
+          if (values.email) stepData.email = values.email;
+          if (values.gender) stepData.gender = values.gender;
+          if (values.birthDate) stepData.dateOfBirth = values.birthDate;
+          break;
+        case 3:
+          if (values.language && Array.isArray(values.language) && values.language.length > 0) {
+            stepData.preferredLanguage = values.language;
+          }
+          break;
+        case 4:
+          if (values.habits && values.habits.length > 0) {
+            stepData.habits = values.habits;
+          }
+          break;
+        case 5:
+          if (values.interest && values.interest.length > 0) {
+            stepData.interests = values.interest;
+          }
+          break;
+        case 6:
+          if (values.skill && values.skill.length > 0) {
+            stepData.skills = values.skill;
+          }
+          break;
+        case 7:
+          if (values.sports && values.sports.length > 0) {
+            stepData.sports = values.sports;
+          }
+          break;
+        case 8:
+          if (values.industry) stepData.industry = values.industry;
+          if (values.company) stepData.company = values.company;
+          if (values.position) stepData.position = values.position;
+          break;
+        default:
+          break;
+      }
     }
 
     return stepData;
   };
 
-  // Save step data to backend
   const saveStepData = async (stepNumber) => {
     try {
       const token = getCookie("authToken");
       if (!token) return;
 
-      // Prepare step-specific data
       const stepData = getStepDataForSave(stepNumber, formik.values);
-
       const formData = new FormData();
+      const isBusiness = formik.values.isBusinessProfile;
 
-      // Add step-specific fields
       Object.keys(stepData).forEach(key => {
         if (stepData[key] !== null && stepData[key] !== undefined) {
-          // For city field, only append if it's a valid ObjectId
           if (key === 'city') {
             if (stepData[key] && stepData[key].trim() !== "" && /^[0-9a-fA-F]{24}$/.test(stepData[key])) {
               formData.append(key, stepData[key]);
@@ -520,14 +680,37 @@ const Profileverification = () => {
         }
       });
 
-      // Add photo if it's step 9
-      if (stepNumber === 9 && formik.values.photo) {
-        if (formik.values.photo instanceof File) {
-          formData.append("profileImage", formik.values.photo);
-        } else if (typeof formik.values.photo === 'string' && formik.values.photo.startsWith('data:')) {
-          const response = await fetch(formik.values.photo);
-          const blob = await response.blob();
-          formData.append("profileImage", blob, "profile.jpg");
+      if (isBusiness) {
+        formData.append("isBusinessProfile", "true");
+        if (stepNumber === 1) {
+          if (formik.values.businessLogo) {
+            if (formik.values.businessLogo instanceof File) {
+              formData.append("profileImage", formik.values.businessLogo);
+            } else if (typeof formik.values.businessLogo === 'string' && formik.values.businessLogo.startsWith('data:')) {
+              const response = await fetch(formik.values.businessLogo);
+              const blob = await response.blob();
+              formData.append("profileImage", blob, "logo.jpg");
+            }
+          }
+          if (formik.values.businessCoverImage) {
+            if (formik.values.businessCoverImage instanceof File) {
+              formData.append("coverImage", formik.values.businessCoverImage);
+            } else if (typeof formik.values.businessCoverImage === 'string' && formik.values.businessCoverImage.startsWith('data:')) {
+              const response = await fetch(formik.values.businessCoverImage);
+              const blob = await response.blob();
+              formData.append("coverImage", blob, "cover.jpg");
+            }
+          }
+        }
+      } else {
+        if (stepNumber === 9 && formik.values.photo) {
+          if (formik.values.photo instanceof File) {
+            formData.append("profileImage", formik.values.photo);
+          } else if (typeof formik.values.photo === 'string' && formik.values.photo.startsWith('data:')) {
+            const response = await fetch(formik.values.photo);
+            const blob = await response.blob();
+            formData.append("profileImage", blob, "profile.jpg");
+          }
         }
       }
 
@@ -542,66 +725,56 @@ const Profileverification = () => {
       });
 
       const data = await response.json();
-
       if (!response.ok) {
         console.error("Error saving step:", data.message);
-        // Don't throw error, just log it - user can still proceed
       }
     } catch (error) {
       console.error("Error saving step data:", error);
-      // Don't throw error, just log it - user can still proceed
     }
   };
 
   const nextStep = async () => {
-    // Validate current step before proceeding
     const currentStepFields = getStepFields(currentStep);
 
-    // Mark all fields in current step as touched to show errors
     currentStepFields.forEach(field => {
       formik.setFieldTouched(field, true);
     });
 
-    // Validate each field in the current step using the full schema
     let hasErrors = false;
-    const validationErrors = {};
-
     for (const field of currentStepFields) {
       try {
-        // Validate this specific field using validateAt
         await validationSchema.validateAt(field, formik.values);
-        // Clear error if validation passes
         if (formik.errors[field]) {
           formik.setFieldError(field, undefined);
         }
       } catch (error) {
-        // Validation failed for this field
         hasErrors = true;
-        validationErrors[field] = error.message;
         formik.setFieldError(field, error.message);
       }
     }
 
-    // Only proceed if no errors
     if (!hasErrors) {
-      // Save current step data before moving to next
-      if (currentStep < totalSteps) {
-        await saveStepData(currentStep);
-        setCurrentStep(currentStep + 1);
-      } else if (currentStep === totalSteps) {
-        // Last step - save and then submit complete profile
-        await saveStepData(currentStep);
-        handleSubmit();
+      setLoading(true);
+      try {
+        if (currentStep < totalSteps) {
+          await saveStepData(currentStep);
+          setCurrentStep(currentStep + 1);
+        } else if (currentStep === totalSteps) {
+          await saveStepData(currentStep);
+          handleSubmit();
+        }
+      } catch (error) {
+        console.error("Error in nextStep:", error);
+      } finally {
+        setLoading(false);
       }
     }
   };
 
-  // Track previous step to detect backward navigation
   const [previousStep, setPreviousStep] = useState(1);
 
-  // Reload saved data when navigating backward (to ensure we show saved data for previous steps)
+  // Reload saved data when navigating backward
   useEffect(() => {
-    // Only reload if we're going backward (currentStep < previousStep)
     if (currentStep < previousStep && currentStep > 0) {
       const reloadStepData = async () => {
         try {
@@ -624,11 +797,9 @@ const Profileverification = () => {
             const profile = data.data.profile;
             const currentValues = formik.values;
 
-            // Fetch cities to match city name to ID
             let cityId = currentValues.city || "";
             if (profile.city) {
               try {
-                const token = getCookie("authToken");
                 const citiesResponse = await fetch(`${API_BASE_URL}/api/list/city`, {
                   method: "GET",
                   headers: {
@@ -641,13 +812,10 @@ const Profileverification = () => {
                   const citiesResult = await citiesResponse.json();
                   if (citiesResult.success && citiesResult.data && citiesResult.data.city) {
                     const cities = citiesResult.data.city;
-                    // Check if profile.city is already an ID (24 char hex string)
                     const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.city);
                     if (isObjectId) {
-                      // It's already an ID, use it directly
                       cityId = profile.city;
                     } else {
-                      // It's a city name, find matching ID
                       const matchedCity = cities.find(
                         city => city.name.toLowerCase().trim() === profile.city.toLowerCase().trim()
                       );
@@ -662,20 +830,36 @@ const Profileverification = () => {
               }
             }
 
-            // When going back, always reload saved data for that step to ensure it's displayed
-            // Merge saved data with current formik values (saved data takes precedence for fields in previous steps)
-            const updates = {
-              // Always use saved data if it exists (for backward navigation)
+            const updates = profile.isBusinessProfile ? {
+              isBusinessProfile: true,
+              businessName: profile.businessName || currentValues.businessName || "",
+              city: cityId,
+              pincode: profile.pincode || currentValues.pincode || "",
+              businessCategory: profile.businessCategory || profile.businessCategoryId || currentValues.businessCategory || "",
+              contactPerson: profile.contactPerson || currentValues.contactPerson || "",
+              email: profile.email || currentValues.email || "",
+              website: profile.website || currentValues.website || "",
+              whatsappNumber: profile.whatsappNumber || currentValues.whatsappNumber || "",
+              facebook: profile.facebook || currentValues.facebook || "",
+              instagram: profile.instagram || currentValues.instagram || "",
+              linkedIn: profile.linkedIn || currentValues.linkedIn || "",
+              youtube: profile.youtube || currentValues.youtube || "",
+              twitter: profile.twitter || currentValues.twitter || "",
+              businessLogo: profile.businessLogo || currentValues.businessLogo || null,
+              businessCoverImage: profile.businessCoverImage || currentValues.businessCoverImage || null,
+              businessTagline: profile.businessTagline || currentValues.businessTagline || "",
+              businessDescription: profile.businessDescription || currentValues.businessDescription || "",
+              mobileNumber: phoneNumber || currentValues.mobileNumber || "",
+            } : {
+              isBusinessProfile: false,
               fullName: profile.fullName || currentValues.fullName || "",
-              city: cityId, // Use matched city ID instead of name
+              city: cityId,
               pincode: profile.pincode || currentValues.pincode || "",
               religion: profile.religion || currentValues.religion || "",
               maritalStatus: profile.status || currentValues.maritalStatus || "",
               email: profile.email || currentValues.email || "",
               gender: profile.gender || currentValues.gender || "",
-              birthDate: profile.dateOfBirth
-                ? new Date(profile.dateOfBirth).toISOString().split('T')[0]
-                : (currentValues.birthDate || ""),
+              birthDate: profile.dateOfBirth ? new Date(profile.dateOfBirth).toISOString().split('T')[0] : (currentValues.birthDate || ""),
               language: profile.preferredLanguage || currentValues.language || "",
               habits: (profile.habits && profile.habits.length > 0) ? profile.habits : (currentValues.habits || []),
               interest: (profile.interests && profile.interests.length > 0) ? profile.interests : (currentValues.interest || []),
@@ -687,7 +871,6 @@ const Profileverification = () => {
               mobileNumber: phoneNumber || currentValues.mobileNumber || "",
             };
 
-            // Update formik values with merged data
             formik.setValues(prev => ({ ...prev, ...updates }));
           }
         } catch (error) {
@@ -698,41 +881,53 @@ const Profileverification = () => {
       reloadStepData();
     }
 
-    // Update previous step
     setPreviousStep(currentStep);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep]);
 
   const prevStep = async () => {
     if (currentStep > 1) {
-      // Save current step data before going back (to preserve any changes)
       await saveStepData(currentStep);
       setCurrentStep(currentStep - 1);
     }
   };
 
   const getStepFields = (step) => {
-    switch (step) {
-      case 1:
-        return ['fullName', 'city', 'pincode', 'religion', 'maritalStatus'];
-      case 2:
-        return ['email', 'gender', 'birthDate'];
-      case 3:
-        return ['language'];
-      case 4:
-        return ['habits'];
-      case 5:
-        return ['interest'];
-      case 6:
-        return ['skill'];
-      case 7:
-        return ['sports'];
-      case 8:
-        return ['industry', 'company', 'position'];
-      case 9:
-        return ['photo'];
-      default:
-        return [];
+    const isBusiness = formik.values.isBusinessProfile;
+    if (isBusiness) {
+      switch (step) {
+        case 1:
+          return ['businessName', 'businessCategory', 'businessTagline'];
+        case 2:
+          return ['contactPerson', 'whatsappNumber', 'email', 'city', 'pincode'];
+        case 3:
+          return [];
+        default:
+          return [];
+      }
+    } else {
+      switch (step) {
+        case 1:
+          return ['fullName', 'city', 'pincode', 'religion', 'maritalStatus'];
+        case 2:
+          return ['email', 'gender', 'birthDate'];
+        case 3:
+          return ['language'];
+        case 4:
+          return ['habits'];
+        case 5:
+          return ['interest'];
+        case 6:
+          return ['skill'];
+        case 7:
+          return ['sports'];
+        case 8:
+          return ['industry', 'company', 'position'];
+        case 9:
+          return ['photo'];
+        default:
+          return [];
+      }
     }
   };
 
@@ -741,27 +936,41 @@ const Profileverification = () => {
   };
 
   const renderStep = () => {
-    switch (currentStep) {
-      case 1:
-        return <Step1 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} phoneNumber={phoneNumber} />;
-      case 2:
-        return <Step2 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
-      case 3:
-        return <Step3 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
-      case 4:
-        return <Step4 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
-      case 5:
-        return <Step5 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
-      case 6:
-        return <Step6 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
-      case 7:
-        return <StepSports data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
-      case 8:
-        return <Step8 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
-      case 9:
-        return <Step7 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
-      default:
-        return;
+    const isBusiness = formik.values.isBusinessProfile;
+    if (isBusiness) {
+      switch (currentStep) {
+        case 1:
+          return <BusinessStep1 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} phoneNumber={phoneNumber} />;
+        case 2:
+          return <BusinessStep2 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
+        case 3:
+          return <BusinessStep3 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
+        default:
+          return null;
+      }
+    } else {
+      switch (currentStep) {
+        case 1:
+          return <Step1 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} phoneNumber={phoneNumber} />;
+        case 2:
+          return <Step2 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
+        case 3:
+          return <Step3 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
+        case 4:
+          return <Step4 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
+        case 5:
+          return <Step5 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
+        case 6:
+          return <Step6 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
+        case 7:
+          return <StepSports data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
+        case 8:
+          return <Step8 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
+        case 9:
+          return <Step7 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
+        default:
+          return null;
+      }
     }
   };
 
@@ -783,14 +992,12 @@ const Profileverification = () => {
             <div className="form-content">
               {renderStep()}
 
-              {/* API Error Message */}
               {apiError && (
                 <div className="message-error">
                   {apiError}
                 </div>
               )}
 
-              {/* Success Message */}
               {success && (
                 <div className="message-success">
                   {success}

@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 import {
   getScheduledMailerStats,
-  getScheduledMailerLogs
+  getScheduledMailerLogs,
+  sendTestScheduledMailer
 } from "../../utils/adminApi";
 
 const ScheduledMailers = () => {
@@ -26,6 +27,42 @@ const ScheduledMailers = () => {
   const [loadingStats, setLoadingStats] = useState(false);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [error, setError] = useState(null);
+
+  // Test Mail states
+  const [showTestMailModal, setShowTestMailModal] = useState(false);
+  const [testMailType, setTestMailType] = useState("");
+  const [testEmail, setTestEmail] = useState("");
+  const [sendingTestMail, setSendingTestMail] = useState(false);
+  const [testMailFeedback, setTestMailFeedback] = useState({ type: "", message: "" });
+
+  const handleTestMailClick = (type) => {
+    setTestMailType(type);
+    setTestEmail("");
+    setTestMailFeedback({ type: "", message: "" });
+    setShowTestMailModal(true);
+  };
+
+  const handleSendTestMail = async (e) => {
+    e.preventDefault();
+    if (!testEmail || !testMailType) return;
+    try {
+      setSendingTestMail(true);
+      setTestMailFeedback({ type: "", message: "" });
+      const response = await sendTestScheduledMailer(testMailType, testEmail);
+      if (response.success) {
+        setTestMailFeedback({ type: "success", message: "Test mail sent successfully to " + testEmail });
+        setTimeout(() => {
+          setShowTestMailModal(false);
+        }, 2000);
+      } else {
+        setTestMailFeedback({ type: "error", message: response.message || "Failed to send test mail" });
+      }
+    } catch (err) {
+      setTestMailFeedback({ type: "error", message: err.message || "An unexpected error occurred" });
+    } finally {
+      setSendingTestMail(false);
+    }
+  };
 
   // Filters and pagination
   const [search, setSearch] = useState("");
@@ -181,6 +218,13 @@ const ScheduledMailers = () => {
               </span>
             </div>
           </div>
+          <button 
+            className="test-mail-btn"
+            onClick={() => handleTestMailClick("INCOMPLETE_PROFILE")}
+          >
+            <Mail size={14} />
+            Test Mail
+          </button>
         </div>
 
         {/* Card 2 */}
@@ -214,6 +258,13 @@ const ScheduledMailers = () => {
               </span>
             </div>
           </div>
+          <button 
+            className="test-mail-btn"
+            onClick={() => handleTestMailClick("CITY_INDUSTRY_SNAPSHOT")}
+          >
+            <Mail size={14} />
+            Test Mail
+          </button>
         </div>
 
         {/* Card 3 */}
@@ -247,6 +298,13 @@ const ScheduledMailers = () => {
               </span>
             </div>
           </div>
+          <button 
+            className="test-mail-btn"
+            onClick={() => handleTestMailClick("OFFER_OF_THE_DAY")}
+          >
+            <Mail size={14} />
+            Test Mail
+          </button>
         </div>
       </div>
 
@@ -423,6 +481,83 @@ const ScheduledMailers = () => {
           </button>
         </div>
       </div>
+
+      {showTestMailModal && (
+        <div className="trend-modal-overlay">
+          <div className="trend-modal-content" style={{ maxWidth: "480px" }}>
+            <div className="trend-modal-header">
+              <div className="trend-header-left">
+                <div className="trend-header-icon" style={{ backgroundColor: "#FFF7ED", color: "#f97316" }}>
+                  <Mail size={22} />
+                </div>
+                <div>
+                  <h3>Send Test Mail</h3>
+                  <p className="trend-header-subtitle">
+                    Send sample {formatType(testMailType)} to test inbox delivery
+                  </p>
+                </div>
+              </div>
+              <button className="trend-modal-close" onClick={() => setShowTestMailModal(false)}>
+                &times;
+              </button>
+            </div>
+            <form onSubmit={handleSendTestMail} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div className="filter-field">
+                <label htmlFor="testEmail">Recipient Email Address</label>
+                <input
+                  id="testEmail"
+                  type="email"
+                  placeholder="e.g. you@example.com"
+                  className="search-input"
+                  style={{ width: "100%", paddingLeft: "14px", height: "42px" }}
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              {testMailFeedback.message && (
+                <div 
+                  className={`status-badge-wrapper badge-status-${testMailFeedback.type === "success" ? "sent" : "failed"}`} 
+                  style={{ width: "100%", justifyContent: "center", padding: "10px", borderRadius: "8px", boxSizing: "border-box" }}
+                >
+                  {testMailFeedback.message}
+                </div>
+              )}
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "8px" }}>
+                <button
+                  type="button"
+                  className="filter-trigger-btn"
+                  onClick={() => setShowTestMailModal(false)}
+                  style={{ padding: "10px 20px" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="trigger-btn process-queue-btn"
+                  disabled={sendingTestMail}
+                  style={{ padding: "10px 20px", display: "flex", alignItems: "center", gap: "8px", border: "none" }}
+                >
+                  {sendingTestMail ? (
+                    <>
+                      <RefreshCw size={16} className="spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send size={16} />
+                      Send Test
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
