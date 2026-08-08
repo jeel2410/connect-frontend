@@ -152,6 +152,12 @@ const Profileverification = () => {
       then: () => Yup.string().required("Industry is required"),
       otherwise: () => Yup.string().notRequired(),
     }),
+    company: Yup.string().nullable().notRequired(),
+    position: Yup.string().when("isBusinessProfile", {
+      is: (val) => !val,
+      then: () => Yup.string().required("Position is required"),
+      otherwise: () => Yup.string().notRequired(),
+    }),
     
     // Business fields: required only when isBusinessProfile is true
     businessName: Yup.string().when("isBusinessProfile", {
