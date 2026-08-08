@@ -445,6 +445,76 @@ const Profileverification = () => {
               }
             }
 
+            let industryId = "";
+            if (profile.industry) {
+              try {
+                const industriesResponse = await fetch(`${API_BASE_URL}/api/list/industries`, {
+                  method: "GET",
+                  headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                if (industriesResponse.ok) {
+                  const industriesResult = await industriesResponse.json();
+                  if (industriesResult.success && industriesResult.data && industriesResult.data.industries) {
+                    const industries = industriesResult.data.industries;
+                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.industry);
+                    if (isObjectId) {
+                      industryId = profile.industry;
+                    } else {
+                      const matchedIndustry = industries.find(
+                        ind => ind.name.toLowerCase().trim() === profile.industry.toLowerCase().trim()
+                      );
+                      if (matchedIndustry) {
+                        industryId = matchedIndustry._id;
+                      }
+                    }
+                  }
+                }
+              } catch (err) {
+                console.error("Error fetching industries for matching:", err);
+              }
+            }
+
+            let companyId = "";
+            if (profile.company && (industryId || profile.industry)) {
+              try {
+                const companiesUrl = industryId 
+                  ? `${API_BASE_URL}/api/list/companies?industryId=${industryId}`
+                  : `${API_BASE_URL}/api/list/companies`;
+                
+                const companiesResponse = await fetch(companiesUrl, {
+                  method: "GET",
+                  headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                if (companiesResponse.ok) {
+                  const companiesResult = await companiesResponse.json();
+                  if (companiesResult.success && companiesResult.data && companiesResult.data.companies) {
+                    const companies = companiesResult.data.companies;
+                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.company);
+                    if (isObjectId) {
+                      companyId = profile.company;
+                    } else {
+                      const matchedCompany = companies.find(
+                        comp => comp.name.toLowerCase().trim() === profile.company.toLowerCase().trim()
+                      );
+                      if (matchedCompany) {
+                        companyId = matchedCompany._id;
+                      }
+                    }
+                  }
+                }
+              } catch (err) {
+                console.error("Error fetching companies for matching:", err);
+              }
+            }
+
             let maritalStatus = profile.status || "";
             if (maritalStatus === "Unmarried") {
               maritalStatus = "Single";
@@ -504,9 +574,9 @@ const Profileverification = () => {
                 interest: profile.interests || [],
                 skill: profile.skills || [],
                 sports: profile.sports || [],
-                industry: profile.industry || "",
-                company: profile.company || "",
-                position: positionId || profile.position || "",
+                industry: industryId || "",
+                company: companyId || "",
+                position: positionId || "",
                 photo: profile.profileImage || null,
                 
                 businessName: "",
@@ -837,6 +907,109 @@ const Profileverification = () => {
               }
             }
 
+            let positionId = currentValues.position || "";
+            if (profile.position) {
+              try {
+                const positionsResponse = await fetch(`${API_BASE_URL}/api/list/positions`, {
+                  method: "GET",
+                  headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                if (positionsResponse.ok) {
+                  const positionsResult = await positionsResponse.json();
+                  if (positionsResult.success && positionsResult.data && positionsResult.data.positions) {
+                    const positions = positionsResult.data.positions;
+                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.position);
+                    if (isObjectId) {
+                      positionId = profile.position;
+                    } else {
+                      const matchedPosition = positions.find(
+                        pos => pos.name.toLowerCase().trim() === profile.position.toLowerCase().trim()
+                      );
+                      if (matchedPosition) {
+                        positionId = matchedPosition._id;
+                      }
+                    }
+                  }
+                }
+              } catch (err) {
+                console.error("Error fetching positions for matching:", err);
+              }
+            }
+
+            let industryId = currentValues.industry || "";
+            if (profile.industry) {
+              try {
+                const industriesResponse = await fetch(`${API_BASE_URL}/api/list/industries`, {
+                  method: "GET",
+                  headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                if (industriesResponse.ok) {
+                  const industriesResult = await industriesResponse.json();
+                  if (industriesResult.success && industriesResult.data && industriesResult.data.industries) {
+                    const industries = industriesResult.data.industries;
+                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.industry);
+                    if (isObjectId) {
+                      industryId = profile.industry;
+                    } else {
+                      const matchedIndustry = industries.find(
+                        ind => ind.name.toLowerCase().trim() === profile.industry.toLowerCase().trim()
+                      );
+                      if (matchedIndustry) {
+                        industryId = matchedIndustry._id;
+                      }
+                    }
+                  }
+                }
+              } catch (err) {
+                console.error("Error fetching industries for matching:", err);
+              }
+            }
+
+            let companyId = currentValues.company || "";
+            if (profile.company && (industryId || profile.industry)) {
+              try {
+                const companiesUrl = industryId 
+                  ? `${API_BASE_URL}/api/list/companies?industryId=${industryId}`
+                  : `${API_BASE_URL}/api/list/companies`;
+
+                const companiesResponse = await fetch(companiesUrl, {
+                  method: "GET",
+                  headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                if (companiesResponse.ok) {
+                  const companiesResult = await companiesResponse.json();
+                  if (companiesResult.success && companiesResult.data && companiesResult.data.companies) {
+                    const companies = companiesResult.data.companies;
+                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(profile.company);
+                    if (isObjectId) {
+                      companyId = profile.company;
+                    } else {
+                      const matchedCompany = companies.find(
+                        comp => comp.name.toLowerCase().trim() === profile.company.toLowerCase().trim()
+                      );
+                      if (matchedCompany) {
+                        companyId = matchedCompany._id;
+                      }
+                    }
+                  }
+                }
+              } catch (err) {
+                console.error("Error fetching companies for matching:", err);
+              }
+            }
+
             const updates = profile.isBusinessProfile ? {
               isBusinessProfile: true,
               businessName: profile.businessName || currentValues.businessName || "",
@@ -872,8 +1045,9 @@ const Profileverification = () => {
               interest: (profile.interests && profile.interests.length > 0) ? profile.interests : (currentValues.interest || []),
               skill: (profile.skills && profile.skills.length > 0) ? profile.skills : (currentValues.skill || []),
               sports: (profile.sports && profile.sports.length > 0) ? profile.sports : (currentValues.sports || []),
-              industry: profile.industry || currentValues.industry || "",
-              company: profile.company || currentValues.company || "",
+              industry: industryId || "",
+              company: companyId || "",
+              position: positionId || "",
               photo: profile.profileImage || currentValues.photo || null,
               mobileNumber: phoneNumber || currentValues.mobileNumber || "",
             };
@@ -938,8 +1112,26 @@ const Profileverification = () => {
     }
   };
 
-  const handleSubmit = () => {
-    formik.handleSubmit();
+  const handleSubmit = async () => {
+    const errors = await formik.validateForm();
+    if (Object.keys(errors).length > 0) {
+      for (let step = 1; step <= totalSteps; step++) {
+        const stepFields = getStepFields(step);
+        const stepHasError = stepFields.some(field => errors[field]);
+        if (stepHasError) {
+          stepFields.forEach(field => {
+            formik.setFieldTouched(field, true, false);
+          });
+          setCurrentStep(step);
+          setApiError(`Please correct the errors in Step ${step} before submitting.`);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+      }
+      setApiError("Please review and complete all required fields.");
+    } else {
+      formik.handleSubmit();
+    }
   };
 
   const renderStep = () => {
