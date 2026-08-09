@@ -21,14 +21,19 @@
 .side-image-container {
   flex: 0 0 50%;
   width: 50%;
-  height: auto;
-  min-height: calc(100vh - 80px);
-  position: relative;
+  height: calc(100vh - 80px);
+  position: sticky;
+  top: 80px;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: #ffffff;
+}
+
+.verification-wrapper .side-image-container {
+  height: 100vh;
+  top: 0;
 }
 
 .side-image {
