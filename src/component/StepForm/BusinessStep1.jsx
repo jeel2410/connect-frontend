@@ -250,10 +250,10 @@ const BusinessStep1 = ({ data, updateData, errors, touched }) => {
               className={touched?.businessCategory && errors?.businessCategory ? "input-error" : ""}
               disabled={loadingCategories}
             >
-              <option value="">{loadingCategories ? "Loading categories..." : "Select Category"}</option>
+              <option value="">{loadingCategories ? "Loading categories..." : "\u00A0Select Category"}</option>
               {categories.map((cat) => (
                 <option key={cat._id} value={cat._id}>
-                  {cat.name}
+                  {"\u00A0" + cat.name}
                 </option>
               ))}
             </select>
@@ -267,6 +267,29 @@ const BusinessStep1 = ({ data, updateData, errors, touched }) => {
             )}
           </div>
         </div>
+        {data.businessCategory && categories.find(cat => cat._id === data.businessCategory)?.description && (
+          <div className="category-description-box" style={{
+            marginTop: "12px",
+            padding: "12px 16px",
+            backgroundColor: "#F9FAFB",
+            borderLeft: "4px solid #EA650A",
+            borderRadius: "0 8px 8px 0",
+            fontSize: "13px",
+            color: "#4B5563",
+            lineHeight: "1.5",
+            animation: "fadeIn 0.3s ease-in-out"
+          }}>
+            <div style={{ fontWeight: "600", color: "#09122E", marginBottom: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EA650A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              About this Category
+            </div>
+            {categories.find(cat => cat._id === data.businessCategory).description}
+          </div>
+        )}
       </div>
     </div>
   );

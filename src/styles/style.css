@@ -807,6 +807,7 @@
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
+  padding-left: 4px;
   cursor: pointer;
 }
 
@@ -3714,6 +3715,14 @@
   color: #DBDBDB;
 }
 
+.desktop-copyright {
+  display: block;
+}
+
+.mobile-agreement {
+  display: none;
+}
+
 .highlight {
   color: #EA650A;
 }
@@ -3788,26 +3797,58 @@
 
 @media (max-width: 768px) {
   .footer-container {
-    padding: 30px 40px;
+    background: #ffffff !important;
+    color: #555555 !important;
+    border-top: 1px solid #eeeeee !important;
+    padding: 25px 15px !important;
   }
 
   .footer-nav {
-    flex-direction: column;
-    gap: 15px;
+    display: none !important;
   }
 
-  .copyright {
-    font-size: 12px;
+  .desktop-copyright {
+    display: none !important;
+  }
+
+  .mobile-agreement {
+    display: block !important;
+    color: #888888 !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    margin-bottom: 6px !important;
+    font-family: 'Inter', sans-serif !important;
   }
 
   .legal-links {
-    font-size: 12px;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 6px 8px !important;
+    font-size: 13px !important;
+    color: #777777 !important;
+  }
+
+  .legal-link {
+    color: #EA650A !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+  }
+
+  .legal-link:hover {
+    text-decoration: underline !important;
+  }
+
+  .separator {
+    display: inline !important;
+    color: #e0e0e0 !important;
   }
 }
 
 @media (max-width: 480px) {
   .footer-container {
-    padding: 25px 20px;
+    padding: 20px 10px !important;
   }
 
   .logo-circle {
@@ -3818,10 +3859,6 @@
 
   .logo-text {
     font-size: 16px;
-  }
-
-  .footer-link {
-    font-size: 14px;
   }
 
   .social-icon {
@@ -3835,12 +3872,14 @@
   }
 
   .legal-links {
-    flex-direction: column;
-    gap: 5px;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 4px 6px !important;
   }
 
   .separator {
-    display: none;
+    display: inline !important;
   }
 }
 
@@ -3874,10 +3913,12 @@
 
 @media (max-width: 768px) {
   .footer-bottom-row {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 15px;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 12px !important;
+    border-top: none !important;
+    padding-top: 0 !important;
   }
 }
 

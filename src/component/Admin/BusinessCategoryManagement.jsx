@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Search, Plus, Trash2, X, Save, Eye, EyeOff } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, X, Save, Eye, EyeOff } from "lucide-react";
 import { 
   getAdminBusinessCategories, 
   createBusinessCategory, 
   toggleBusinessCategoryStatus, 
-  deleteBusinessCategory 
+  deleteBusinessCategory,
+  updateBusinessCategory
 } from "../../utils/adminApi";
 
 const BusinessCategoryManagement = () => {
@@ -15,6 +16,7 @@ const BusinessCategoryManagement = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [formData, setFormData] = useState({ name: "", description: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
 
   // Fetch business categories from API
   const fetchCategories = async () => {
@@ -52,6 +54,13 @@ const BusinessCategoryManagement = () => {
 
   const handleAdd = () => {
     setFormData({ name: "", description: "" });
+    setEditingCategory(null);
+    setIsAddModalOpen(true);
+  };
+
+  const handleEdit = (category) => {
+    setEditingCategory(category);
+    setFormData({ name: category.name || "", description: category.description || "" });
     setIsAddModalOpen(true);
   };
 
@@ -93,11 +102,19 @@ const BusinessCategoryManagement = () => {
 
     try {
       setSubmitting(true);
-      await createBusinessCategory({
-        name: formData.name.trim(),
-        description: formData.description.trim()
-      });
+      if (editingCategory) {
+        await updateBusinessCategory(editingCategory._id, {
+          name: formData.name.trim(),
+          description: formData.description.trim()
+        });
+      } else {
+        await createBusinessCategory({
+          name: formData.name.trim(),
+          description: formData.description.trim()
+        });
+      }
       setIsAddModalOpen(false);
+      setEditingCategory(null);
       setFormData({ name: "", description: "" });
       await fetchCategories();
     } catch (err) {
@@ -172,9 +189,21 @@ const BusinessCategoryManagement = () => {
                     <div className="action-buttons">
                       <button
                         className="action-btn edit-btn"
+                        onClick={() => handleEdit(category)}
+                        title="Edit"
+                        disabled={loading}
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        className="action-btn"
                         onClick={() => handleToggleStatus(category._id)}
                         title={category.isActive ? "Deactivate" : "Activate"}
                         disabled={loading}
+                        style={{
+                          color: category.isActive ? "#D97706" : "#059669",
+                          backgroundColor: category.isActive ? "#FEF3C7" : "#D1FAE5"
+                        }}
                       >
                         {category.isActive ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
@@ -195,15 +224,21 @@ const BusinessCategoryManagement = () => {
         </table>
       </div>
 
-      {/* Add Modal */}
+      {/* Add/Edit Modal */}
       {isAddModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsAddModalOpen(false)}>
+        <div className="modal-overlay" onClick={() => {
+          setIsAddModalOpen(false);
+          setEditingCategory(null);
+        }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Add New Business Category</h3>
+              <h3>{editingCategory ? "Edit Business Category" : "Add New Business Category"}</h3>
               <button
                 className="modal-close-btn"
-                onClick={() => setIsAddModalOpen(false)}
+                onClick={() => {
+                  setIsAddModalOpen(false);
+                  setEditingCategory(null);
+                }}
               >
                 <X size={20} />
               </button>
@@ -236,14 +271,17 @@ const BusinessCategoryManagement = () => {
                 <button
                   type="button"
                   className="btn-secondary"
-                  onClick={() => setIsAddModalOpen(false)}
+                  onClick={() => {
+                    setIsAddModalOpen(false);
+                    setEditingCategory(null);
+                  }}
                   disabled={submitting}
                 >
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary" disabled={submitting}>
                   <Save size={16} />
-                  {submitting ? "Saving..." : "Save Category"}
+                  {submitting ? "Saving..." : (editingCategory ? "Update Category" : "Save Category")}
                 </button>
               </div>
             </form>

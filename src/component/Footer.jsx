@@ -69,10 +69,12 @@ const Footer = () => {
 
         <div className="footer-bottom-row">
           <div className="left-section">
-            <p className="copyright">
+            <p className="copyright desktop-copyright">
               copyright © 2026 <span className="highlight">Connect.in</span> All Rights Reserved
             </p>
-
+            <p className="agreement-text mobile-agreement">
+              By continuing, you agree to our
+            </p>
           </div>
           <div className="legal-links">
             <a href="/privacy-policy" className="legal-link">Privacy</a>

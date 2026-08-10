@@ -699,6 +699,7 @@ export default function Home() {
           onSkip={handleSkip}
           likedProfiles={likedProfiles}
           connectedProfiles={connectedProfiles}
+          isBusiness={activeTab === "Businesses"}
         ></Usercard>
       </div>
 

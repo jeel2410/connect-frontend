@@ -27,6 +27,7 @@ export default function Usercard({
   onSkip = null,
   likedProfiles = new Set(),
   connectedProfiles = new Set(),
+  isBusiness = false,
 }) {
   const navigate = useNavigate();
 
@@ -124,7 +125,7 @@ export default function Usercard({
               color: "#333",
             }}
           >
-            No Users Found
+            {isBusiness ? "No Businesses Found" : "No Users Found"}
           </div>
           <div style={{ fontSize: "16px", color: "#999" }}>
             Try adjusting your filters or search criteria

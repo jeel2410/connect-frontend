@@ -2063,6 +2063,27 @@ export const deleteBusinessCategory = async (id) => {
   }
 };
 
+export const updateBusinessCategory = async (id, categoryData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/business-categories/${id}`, {
+      method: "PUT",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(categoryData),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to update business category");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating business category:", error);
+    throw error;
+  }
+};
+
 export const sendTestScheduledMailer = async (type, email) => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/admin/scheduled-mailers/test`, {

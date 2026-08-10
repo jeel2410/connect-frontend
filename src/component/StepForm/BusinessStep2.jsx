@@ -140,7 +140,7 @@ const BusinessStep2 = ({ data, updateData, errors, touched, phoneNumber }) => {
             <img src={fullnameIcon} alt="Email" style={{ opacity: 0.7 }}></img>
           </div>
           <div className="input-content">
-            <label className="input-label">Email Address</label>
+            <label className="input-label">Business Email Address</label>
             <input
               type="email"
               name="email"
