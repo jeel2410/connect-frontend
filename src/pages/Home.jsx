@@ -20,6 +20,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [likedProfiles, setLikedProfiles] = useState(new Set());
   const [connectedProfiles, setConnectedProfiles] = useState(new Set());
+  const [pendingProfiles, setPendingProfiles] = useState(new Set());
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [popupOffer, setPopupOffer] = useState(null);
   const [showOfferPopup, setShowOfferPopup] = useState(false);
@@ -209,10 +210,14 @@ export default function Home() {
           feed.filter(p => p.isLiked).map(p => String(p._id || p.id))
         );
         const newConnected = new Set(
-          feed.filter(p => p.isConnected).map(p => String(p._id || p.id))
+          feed.filter(p => p.alreadyConnect).map(p => String(p._id || p.id))
+        );
+        const newPending = new Set(
+          feed.filter(p => p.sendRequest || (p.isConnected && !p.alreadyConnect)).map(p => String(p._id || p.id))
         );
         setLikedProfiles(newLiked);
         setConnectedProfiles(newConnected);
+        setPendingProfiles(newPending);
       }
     } catch (error) {
       console.error("Error fetching feed data:", error);
@@ -301,8 +306,16 @@ export default function Home() {
       const connectData = await connectResponse.json();
 
       if (connectData.success) {
-        toast.success("Connection request sent successfully!");
-        setConnectedProfiles(prev => new Set([...prev, String(receiverId)]));
+        const profile = feedData.find(p => String(p._id || p.id) === String(receiverId));
+        const name = profile?.businessName || profile?.fullName || "the profile";
+
+        if (connectData.data?.isConnected) {
+          toast.success(`You are now connected to ${name}`);
+          setConnectedProfiles(prev => new Set([...prev, String(receiverId)]));
+        } else {
+          toast.success("Connection request sent successfully!");
+          setPendingProfiles(prev => new Set([...prev, String(receiverId)]));
+        }
       } else {
         throw new Error(connectData.message || "Failed to send connection request");
       }
@@ -699,6 +712,7 @@ export default function Home() {
           onSkip={handleSkip}
           likedProfiles={likedProfiles}
           connectedProfiles={connectedProfiles}
+          pendingProfiles={pendingProfiles}
           isBusiness={activeTab === "Businesses"}
         ></Usercard>
       </div>

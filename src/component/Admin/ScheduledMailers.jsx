@@ -14,7 +14,9 @@ import {
 import {
   getScheduledMailerStats,
   getScheduledMailerLogs,
-  sendTestScheduledMailer
+  sendTestScheduledMailer,
+  getScheduledMailerSettings,
+  updateScheduledMailerSettings
 } from "../../utils/adminApi";
 
 const ScheduledMailers = () => {
@@ -23,6 +25,111 @@ const ScheduledMailers = () => {
     CITY_INDUSTRY_SNAPSHOT: { pending: 0, sent: 0, failed: 0 },
     OFFER_OF_THE_DAY: { pending: 0, sent: 0, failed: 0 }
   });
+
+  const [settings, setSettings] = useState({
+    INCOMPLETE_PROFILE: { isEnabled: true, subject: "" },
+    CITY_INDUSTRY_SNAPSHOT: { isEnabled: true, subject: "" },
+    OFFER_OF_THE_DAY: { isEnabled: true, subject: "" }
+  });
+  const [subjectInputs, setSubjectInputs] = useState({
+    INCOMPLETE_PROFILE: "",
+    CITY_INDUSTRY_SNAPSHOT: "",
+    OFFER_OF_THE_DAY: ""
+  });
+  const [loadingSettings, setLoadingSettings] = useState(false);
+  const [savingType, setSavingType] = useState("");
+  const [saveFeedback, setSaveFeedback] = useState({ type: "", message: "", cardType: "" });
+
+  const fetchSettings = async () => {
+    try {
+      setLoadingSettings(true);
+      const response = await getScheduledMailerSettings();
+      if (response.success && response.data?.settings) {
+        setSettings(response.data.settings);
+        setSubjectInputs({
+          INCOMPLETE_PROFILE: response.data.settings.INCOMPLETE_PROFILE?.subject || "",
+          CITY_INDUSTRY_SNAPSHOT: response.data.settings.CITY_INDUSTRY_SNAPSHOT?.subject || "",
+          OFFER_OF_THE_DAY: response.data.settings.OFFER_OF_THE_DAY?.subject || ""
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching settings:", err);
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+
+  const handleSaveSettings = async (type) => {
+    try {
+      setSavingType(type);
+      setSaveFeedback({ type: "", message: "", cardType: "" });
+      const updatedSettings = {
+        ...settings,
+        [type]: {
+          ...settings[type],
+          subject: subjectInputs[type]
+        }
+      };
+      const response = await updateScheduledMailerSettings(updatedSettings);
+      if (response.success && response.data?.settings) {
+        setSettings(response.data.settings);
+        setSaveFeedback({ type: "success", message: "Saved successfully!", cardType: type });
+        setTimeout(() => {
+          setSaveFeedback({ type: "", message: "", cardType: "" });
+        }, 3000);
+      } else {
+        setSaveFeedback({ type: "error", message: response.message || "Failed to save settings", cardType: type });
+      }
+    } catch (err) {
+      setSaveFeedback({ type: "error", message: err.message || "An unexpected error occurred", cardType: type });
+    } finally {
+      setSavingType("");
+    }
+  };
+
+  const handleToggleChange = async (type, isEnabled) => {
+    try {
+      setSaveFeedback({ type: "", message: "", cardType: "" });
+      // Optimistic update
+      setSettings(prev => ({
+        ...prev,
+        [type]: {
+          ...prev[type],
+          isEnabled
+        }
+      }));
+      const updatedSettings = {
+        ...settings,
+        [type]: {
+          ...settings[type],
+          isEnabled
+        }
+      };
+      await updateScheduledMailerSettings(updatedSettings);
+      setSaveFeedback({ type: "success", message: `${formatType(type)} mailer is now ${isEnabled ? "enabled" : "disabled"}.`, cardType: type });
+      setTimeout(() => {
+        setSaveFeedback({ type: "", message: "", cardType: "" });
+      }, 3000);
+    } catch (err) {
+      console.error("Error toggling status:", err);
+      // Revert optimistic update
+      setSettings(prev => ({
+        ...prev,
+        [type]: {
+          ...prev[type],
+          isEnabled: !isEnabled
+        }
+      }));
+      setSaveFeedback({ type: "error", message: "Failed to update status: " + err.message, cardType: type });
+    }
+  };
+
+  const handleSubjectInputChange = (type, val) => {
+    setSubjectInputs(prev => ({
+      ...prev,
+      [type]: val
+    }));
+  };
   const [logs, setLogs] = useState([]);
   const [loadingStats, setLoadingStats] = useState(false);
   const [loadingLogs, setLoadingLogs] = useState(false);
@@ -115,6 +222,7 @@ const ScheduledMailers = () => {
 
   useEffect(() => {
     fetchStats();
+    fetchSettings();
   }, []);
 
   useEffect(() => {
@@ -218,6 +326,48 @@ const ScheduledMailers = () => {
               </span>
             </div>
           </div>
+          
+          <div className="mailer-config-section" style={{ borderTop: "1px solid #E4E6EB", paddingTop: "16px", marginTop: "4px", display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "13px", fontWeight: "600", color: "#374151" }}>Enable Automatic Cron</span>
+              <label className="switch" style={{ position: "relative", display: "inline-block", width: "40px", height: "20px" }}>
+                <input 
+                  type="checkbox" 
+                  checked={settings.INCOMPLETE_PROFILE?.isEnabled ?? true} 
+                  onChange={(e) => handleToggleChange("INCOMPLETE_PROFILE", e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span className="slider round" style={{ position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: (settings.INCOMPLETE_PROFILE?.isEnabled ?? true) ? "#EA650A" : "#ccc", transition: ".4s", borderRadius: "20px" }}>
+                  <span style={{ position: "absolute", content: "''", height: "14px", width: "14px", left: (settings.INCOMPLETE_PROFILE?.isEnabled ?? true) ? "22px" : "3px", bottom: "3px", backgroundColor: "white", transition: ".4s", borderRadius: "50%" }}></span>
+                </span>
+              </label>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <label style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", textTransform: "uppercase" }}>Email Subject</label>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input 
+                  type="text" 
+                  value={subjectInputs.INCOMPLETE_PROFILE || ""} 
+                  onChange={(e) => handleSubjectInputChange("INCOMPLETE_PROFILE", e.target.value)}
+                  style={{ flex: 1, padding: "6px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
+                  placeholder="Enter email subject line..."
+                />
+                <button 
+                  onClick={() => handleSaveSettings("INCOMPLETE_PROFILE")}
+                  disabled={savingType === "INCOMPLETE_PROFILE"}
+                  style={{ padding: "6px 12px", backgroundColor: "#EA650A", color: "white", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}
+                >
+                  {savingType === "INCOMPLETE_PROFILE" ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+            {saveFeedback.cardType === "INCOMPLETE_PROFILE" && (
+              <div style={{ fontSize: "12px", fontWeight: "500", color: saveFeedback.type === "success" ? "#10b981" : "#ef4444", textAlign: "center", marginTop: "2px" }}>
+                {saveFeedback.message}
+              </div>
+            )}
+          </div>
+
           <button 
             className="test-mail-btn"
             onClick={() => handleTestMailClick("INCOMPLETE_PROFILE")}
@@ -258,6 +408,48 @@ const ScheduledMailers = () => {
               </span>
             </div>
           </div>
+
+          <div className="mailer-config-section" style={{ borderTop: "1px solid #E4E6EB", paddingTop: "16px", marginTop: "4px", display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "13px", fontWeight: "600", color: "#374151" }}>Enable Automatic Cron</span>
+              <label className="switch" style={{ position: "relative", display: "inline-block", width: "40px", height: "20px" }}>
+                <input 
+                  type="checkbox" 
+                  checked={settings.CITY_INDUSTRY_SNAPSHOT?.isEnabled ?? true} 
+                  onChange={(e) => handleToggleChange("CITY_INDUSTRY_SNAPSHOT", e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span className="slider round" style={{ position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: (settings.CITY_INDUSTRY_SNAPSHOT?.isEnabled ?? true) ? "#EA650A" : "#ccc", transition: ".4s", borderRadius: "20px" }}>
+                  <span style={{ position: "absolute", content: "''", height: "14px", width: "14px", left: (settings.CITY_INDUSTRY_SNAPSHOT?.isEnabled ?? true) ? "22px" : "3px", bottom: "3px", backgroundColor: "white", transition: ".4s", borderRadius: "50%" }}></span>
+                </span>
+              </label>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <label style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", textTransform: "uppercase" }}>Email Subject</label>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input 
+                  type="text" 
+                  value={subjectInputs.CITY_INDUSTRY_SNAPSHOT || ""} 
+                  onChange={(e) => handleSubjectInputChange("CITY_INDUSTRY_SNAPSHOT", e.target.value)}
+                  style={{ flex: 1, padding: "6px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
+                  placeholder="Enter email subject line..."
+                />
+                <button 
+                  onClick={() => handleSaveSettings("CITY_INDUSTRY_SNAPSHOT")}
+                  disabled={savingType === "CITY_INDUSTRY_SNAPSHOT"}
+                  style={{ padding: "6px 12px", backgroundColor: "#EA650A", color: "white", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}
+                >
+                  {savingType === "CITY_INDUSTRY_SNAPSHOT" ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+            {saveFeedback.cardType === "CITY_INDUSTRY_SNAPSHOT" && (
+              <div style={{ fontSize: "12px", fontWeight: "500", color: saveFeedback.type === "success" ? "#10b981" : "#ef4444", textAlign: "center", marginTop: "2px" }}>
+                {saveFeedback.message}
+              </div>
+            )}
+          </div>
+
           <button 
             className="test-mail-btn"
             onClick={() => handleTestMailClick("CITY_INDUSTRY_SNAPSHOT")}
@@ -298,6 +490,48 @@ const ScheduledMailers = () => {
               </span>
             </div>
           </div>
+
+          <div className="mailer-config-section" style={{ borderTop: "1px solid #E4E6EB", paddingTop: "16px", marginTop: "4px", display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "13px", fontWeight: "600", color: "#374151" }}>Enable Automatic Cron</span>
+              <label className="switch" style={{ position: "relative", display: "inline-block", width: "40px", height: "20px" }}>
+                <input 
+                  type="checkbox" 
+                  checked={settings.OFFER_OF_THE_DAY?.isEnabled ?? true} 
+                  onChange={(e) => handleToggleChange("OFFER_OF_THE_DAY", e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span className="slider round" style={{ position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: (settings.OFFER_OF_THE_DAY?.isEnabled ?? true) ? "#EA650A" : "#ccc", transition: ".4s", borderRadius: "20px" }}>
+                  <span style={{ position: "absolute", content: "''", height: "14px", width: "14px", left: (settings.OFFER_OF_THE_DAY?.isEnabled ?? true) ? "22px" : "3px", bottom: "3px", backgroundColor: "white", transition: ".4s", borderRadius: "50%" }}></span>
+                </span>
+              </label>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <label style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", textTransform: "uppercase" }}>Email Subject</label>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input 
+                  type="text" 
+                  value={subjectInputs.OFFER_OF_THE_DAY || ""} 
+                  onChange={(e) => handleSubjectInputChange("OFFER_OF_THE_DAY", e.target.value)}
+                  style={{ flex: 1, padding: "6px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
+                  placeholder="Enter email subject line..."
+                />
+                <button 
+                  onClick={() => handleSaveSettings("OFFER_OF_THE_DAY")}
+                  disabled={savingType === "OFFER_OF_THE_DAY"}
+                  style={{ padding: "6px 12px", backgroundColor: "#EA650A", color: "white", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}
+                >
+                  {savingType === "OFFER_OF_THE_DAY" ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+            {saveFeedback.cardType === "OFFER_OF_THE_DAY" && (
+              <div style={{ fontSize: "12px", fontWeight: "500", color: saveFeedback.type === "success" ? "#10b981" : "#ef4444", textAlign: "center", marginTop: "2px" }}>
+                {saveFeedback.message}
+              </div>
+            )}
+          </div>
+
           <button 
             className="test-mail-btn"
             onClick={() => handleTestMailClick("OFFER_OF_THE_DAY")}

@@ -2105,6 +2105,44 @@ export const sendTestScheduledMailer = async (type, email) => {
   }
 };
 
+export const getScheduledMailerSettings = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/scheduled-mailers/settings`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch scheduled mailer settings");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching scheduled mailer settings:", error);
+    throw error;
+  }
+};
+
+export const updateScheduledMailerSettings = async (settings) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/scheduled-mailers/settings`, {
+      method: "PUT",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ settings }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to update scheduled mailer settings");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating scheduled mailer settings:", error);
+    throw error;
+  }
+};
+
 
 
 

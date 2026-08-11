@@ -20,6 +20,9 @@ const Search = () => {
   const [feedData, setFeedData] = useState([]);
   const [loadingFeed, setLoadingFeed] = useState(false);
   const [searchName, setSearchName] = useState("");
+  const [likedProfiles, setLikedProfiles] = useState(new Set());
+  const [connectedProfiles, setConnectedProfiles] = useState(new Set());
+  const [pendingProfiles, setPendingProfiles] = useState(new Set());
   const [filters, setFilters] = useState({
     ageMin: null,
     ageMax: null,
@@ -162,8 +165,19 @@ const Search = () => {
         if (feedDataResponse.success && feedDataResponse.data) {
           const profiles = feedDataResponse.data.profiles || [];
           const paginationData = feedDataResponse.data.pagination || {};
-          
           setFeedData(profiles);
+          const newLiked = new Set(
+            profiles.filter(p => p.isLiked).map(p => String(p._id || p.id))
+          );
+          const newConnected = new Set(
+            profiles.filter(p => p.alreadyConnect).map(p => String(p._id || p.id))
+          );
+          const newPending = new Set(
+            profiles.filter(p => p.sendRequest || (p.isConnected && !p.alreadyConnect)).map(p => String(p._id || p.id))
+          );
+          setLikedProfiles(newLiked);
+          setConnectedProfiles(newConnected);
+          setPendingProfiles(newPending);
           setPagination({
             currentPage: paginationData.currentPage || currentPage,
             limit: paginationData.limit || 20,
@@ -218,6 +232,7 @@ const Search = () => {
       if (likeData.success) {
         // Show success toast notification
         toast.success("Profile liked successfully!");
+        setLikedProfiles(prev => new Set([...prev, String(likedUserId)]));
         // Refetch all feeds after successful like
         await fetchFeedData();
       } else {
@@ -259,8 +274,16 @@ const Search = () => {
       const connectData = await connectResponse.json();
       
       if (connectData.success) {
-        // Show success toast notification
-        toast.success("Connection request sent successfully!");
+        const profile = feedData.find(p => String(p._id || p.id) === String(receiverId));
+        const name = profile?.businessName || profile?.fullName || "the profile";
+
+        if (connectData.data?.isConnected) {
+          toast.success(`You are now connected to ${name}`);
+          setConnectedProfiles(prev => new Set([...prev, String(receiverId)]));
+        } else {
+          toast.success("Connection request sent successfully!");
+          setPendingProfiles(prev => new Set([...prev, String(receiverId)]));
+        }
         // Refetch all feeds after successful connection request
         await fetchFeedData();
       } else {
@@ -403,6 +426,9 @@ const Search = () => {
             onLike={handleLike}
             onConnect={handleConnect}
             onSkip={handleSkip}
+            likedProfiles={likedProfiles}
+            connectedProfiles={connectedProfiles}
+            pendingProfiles={pendingProfiles}
           />
 
           {pagination.totalPages > 1 && (

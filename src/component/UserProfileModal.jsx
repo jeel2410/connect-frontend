@@ -251,7 +251,12 @@ export default function UserProfileModal({ userId }) {
       const data = await response.json();
 
       if (data.success) {
-        toast.success("Connection request sent successfully!");
+        if (data.data?.isConnected) {
+          const name = profileData?.businessName || profileData?.fullName || "the profile";
+          toast.success(`You are now connected to ${name}`);
+        } else {
+          toast.success("Connection request sent successfully!");
+        }
         const profileResponse = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`, {
           method: "GET",
           headers: {

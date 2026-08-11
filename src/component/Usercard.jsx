@@ -27,6 +27,7 @@ export default function Usercard({
   onSkip = null,
   likedProfiles = new Set(),
   connectedProfiles = new Set(),
+  pendingProfiles = new Set(),
   isBusiness = false,
 }) {
   const navigate = useNavigate();
@@ -49,6 +50,10 @@ export default function Usercard({
             verified: item.verified || false,
             featured: item.featured || false,
             isBusiness: true,
+            alreadyConnect: item.alreadyConnect || false,
+            sendRequest: item.sendRequest || false,
+            isLiked: item.isLiked || false,
+            isConnected: item.isConnected || false,
           };
         }
 
@@ -64,6 +69,10 @@ export default function Usercard({
           verified: item.verified || false,
           featured: item.featured || false,
           isBusiness: false,
+          alreadyConnect: item.alreadyConnect || false,
+          sendRequest: item.sendRequest || false,
+          isLiked: item.isLiked || false,
+          isConnected: item.isConnected || false,
         };
       })
       : [];
@@ -139,8 +148,9 @@ export default function Usercard({
     <div>
       <div className="profile-grid">
         {profiles.map((profile) => {
-          const isLiked = likedProfiles.has(String(profile.userId));
-          const isConnected = connectedProfiles.has(String(profile.userId));
+          const isLiked = likedProfiles ? likedProfiles.has(String(profile.userId)) : profile.isLiked;
+          const isAlreadyConnected = connectedProfiles ? connectedProfiles.has(String(profile.userId)) : profile.alreadyConnect;
+          const isPending = pendingProfiles ? pendingProfiles.has(String(profile.userId)) : (profile.sendRequest || (profile.isConnected && !profile.alreadyConnect));
 
           return (
             <div
@@ -193,24 +203,25 @@ export default function Usercard({
                   />
                 </button>
 
-                {/* Connect button — black_c.png with white circle bg, same styling as UserProfileModal */}
+                 {/* Connect button — black_c.png with white circle bg, same styling as UserProfileModal */}
                 <button
                   className="action-btn chat-btn"
                   onClick={(e) => handleConnectClick(profile.userId, e)}
-                  title={isConnected ? "Request sent" : "Connect"}
-                  disabled={isConnected}
-                  style={{ opacity: isConnected ? 0.85 : 1, cursor: isConnected ? "default" : "pointer" }}
+                  title={isAlreadyConnected ? "Connected" : isPending ? "Request sent" : "Connect"}
+                  disabled={isAlreadyConnected || isPending}
+                  style={{ opacity: (isAlreadyConnected || isPending) ? 0.85 : 1, cursor: (isAlreadyConnected || isPending) ? "default" : "pointer" }}
                 >
                   <img
                     src={blackcIcon}
                     className="chatbtn-icon"
-                    alt={isConnected ? "Connected" : "Connect"}
+                    alt={isAlreadyConnected ? "Connected" : isPending ? "Request sent" : "Connect"}
                     style={{
                       backgroundColor: "white",
                       borderRadius: "50%",
                       padding: "5px",
                       // Rotate to indicate "sent/connected" state, matching UserProfileModal's connected look
-                      opacity: isConnected ? 0.6 : 1,
+                      transform: isAlreadyConnected ? "rotate(45deg)" : "none",
+                      opacity: isPending ? 0.6 : 1,
                     }}
                   />
                 </button>
