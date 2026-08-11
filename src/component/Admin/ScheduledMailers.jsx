@@ -27,11 +27,16 @@ const ScheduledMailers = () => {
   });
 
   const [settings, setSettings] = useState({
-    INCOMPLETE_PROFILE: { isEnabled: true, subject: "" },
-    CITY_INDUSTRY_SNAPSHOT: { isEnabled: true, subject: "" },
-    OFFER_OF_THE_DAY: { isEnabled: true, subject: "" }
+    INCOMPLETE_PROFILE: { isEnabled: true, subject: "", body: "" },
+    CITY_INDUSTRY_SNAPSHOT: { isEnabled: true, subject: "", body: "" },
+    OFFER_OF_THE_DAY: { isEnabled: true, subject: "", body: "" }
   });
   const [subjectInputs, setSubjectInputs] = useState({
+    INCOMPLETE_PROFILE: "",
+    CITY_INDUSTRY_SNAPSHOT: "",
+    OFFER_OF_THE_DAY: ""
+  });
+  const [bodyInputs, setBodyInputs] = useState({
     INCOMPLETE_PROFILE: "",
     CITY_INDUSTRY_SNAPSHOT: "",
     OFFER_OF_THE_DAY: ""
@@ -51,6 +56,11 @@ const ScheduledMailers = () => {
           CITY_INDUSTRY_SNAPSHOT: response.data.settings.CITY_INDUSTRY_SNAPSHOT?.subject || "",
           OFFER_OF_THE_DAY: response.data.settings.OFFER_OF_THE_DAY?.subject || ""
         });
+        setBodyInputs({
+          INCOMPLETE_PROFILE: response.data.settings.INCOMPLETE_PROFILE?.body || "",
+          CITY_INDUSTRY_SNAPSHOT: response.data.settings.CITY_INDUSTRY_SNAPSHOT?.body || "",
+          OFFER_OF_THE_DAY: response.data.settings.OFFER_OF_THE_DAY?.body || ""
+        });
       }
     } catch (err) {
       console.error("Error fetching settings:", err);
@@ -67,7 +77,8 @@ const ScheduledMailers = () => {
         ...settings,
         [type]: {
           ...settings[type],
-          subject: subjectInputs[type]
+          subject: subjectInputs[type],
+          body: bodyInputs[type]
         }
       };
       const response = await updateScheduledMailerSettings(updatedSettings);
@@ -102,7 +113,9 @@ const ScheduledMailers = () => {
         ...settings,
         [type]: {
           ...settings[type],
-          isEnabled
+          isEnabled,
+          subject: subjectInputs[type],
+          body: bodyInputs[type]
         }
       };
       await updateScheduledMailerSettings(updatedSettings);
@@ -126,6 +139,13 @@ const ScheduledMailers = () => {
 
   const handleSubjectInputChange = (type, val) => {
     setSubjectInputs(prev => ({
+      ...prev,
+      [type]: val
+    }));
+  };
+
+  const handleBodyInputChange = (type, val) => {
+    setBodyInputs(prev => ({
       ...prev,
       [type]: val
     }));
@@ -344,23 +364,31 @@ const ScheduledMailers = () => {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <label style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", textTransform: "uppercase" }}>Email Subject</label>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <input 
-                  type="text" 
-                  value={subjectInputs.INCOMPLETE_PROFILE || ""} 
-                  onChange={(e) => handleSubjectInputChange("INCOMPLETE_PROFILE", e.target.value)}
-                  style={{ flex: 1, padding: "6px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
-                  placeholder="Enter email subject line..."
-                />
-                <button 
-                  onClick={() => handleSaveSettings("INCOMPLETE_PROFILE")}
-                  disabled={savingType === "INCOMPLETE_PROFILE"}
-                  style={{ padding: "6px 12px", backgroundColor: "#EA650A", color: "white", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}
-                >
-                  {savingType === "INCOMPLETE_PROFILE" ? "Saving..." : "Save"}
-                </button>
-              </div>
+              <input 
+                type="text" 
+                value={subjectInputs.INCOMPLETE_PROFILE || ""} 
+                onChange={(e) => handleSubjectInputChange("INCOMPLETE_PROFILE", e.target.value)}
+                style={{ padding: "6px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
+                placeholder="Enter email subject line..."
+              />
             </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <label style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", textTransform: "uppercase" }}>Email HTML Body</label>
+              <textarea 
+                value={bodyInputs.INCOMPLETE_PROFILE || ""} 
+                onChange={(e) => handleBodyInputChange("INCOMPLETE_PROFILE", e.target.value)}
+                style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "12px", fontFamily: "monospace", minHeight: "100px", resize: "vertical" }}
+                placeholder="Enter HTML email body..."
+              />
+              <span style={{ fontSize: "10px", color: "#777E90" }}>Supported Placeholders: <strong>{"{name}"}</strong></span>
+            </div>
+            <button 
+              onClick={() => handleSaveSettings("INCOMPLETE_PROFILE")}
+              disabled={savingType === "INCOMPLETE_PROFILE"}
+              style={{ width: "100%", padding: "8px 12px", backgroundColor: "#EA650A", color: "white", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer", display: "flex", justifyContent: "center", alignItems: "center" }}
+            >
+              {savingType === "INCOMPLETE_PROFILE" ? "Saving..." : "Save Settings"}
+            </button>
             {saveFeedback.cardType === "INCOMPLETE_PROFILE" && (
               <div style={{ fontSize: "12px", fontWeight: "500", color: saveFeedback.type === "success" ? "#10b981" : "#ef4444", textAlign: "center", marginTop: "2px" }}>
                 {saveFeedback.message}
@@ -426,23 +454,31 @@ const ScheduledMailers = () => {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <label style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", textTransform: "uppercase" }}>Email Subject</label>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <input 
-                  type="text" 
-                  value={subjectInputs.CITY_INDUSTRY_SNAPSHOT || ""} 
-                  onChange={(e) => handleSubjectInputChange("CITY_INDUSTRY_SNAPSHOT", e.target.value)}
-                  style={{ flex: 1, padding: "6px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
-                  placeholder="Enter email subject line..."
-                />
-                <button 
-                  onClick={() => handleSaveSettings("CITY_INDUSTRY_SNAPSHOT")}
-                  disabled={savingType === "CITY_INDUSTRY_SNAPSHOT"}
-                  style={{ padding: "6px 12px", backgroundColor: "#EA650A", color: "white", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}
-                >
-                  {savingType === "CITY_INDUSTRY_SNAPSHOT" ? "Saving..." : "Save"}
-                </button>
-              </div>
+              <input 
+                type="text" 
+                value={subjectInputs.CITY_INDUSTRY_SNAPSHOT || ""} 
+                onChange={(e) => handleSubjectInputChange("CITY_INDUSTRY_SNAPSHOT", e.target.value)}
+                style={{ padding: "6px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
+                placeholder="Enter email subject line..."
+              />
             </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <label style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", textTransform: "uppercase" }}>Email HTML Body</label>
+              <textarea 
+                value={bodyInputs.CITY_INDUSTRY_SNAPSHOT || ""} 
+                onChange={(e) => handleBodyInputChange("CITY_INDUSTRY_SNAPSHOT", e.target.value)}
+                style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "12px", fontFamily: "monospace", minHeight: "100px", resize: "vertical" }}
+                placeholder="Enter HTML email body..."
+              />
+              <span style={{ fontSize: "10px", color: "#777E90" }}>Supported Placeholders: <strong>{"{name}"}</strong>, <strong>{"{matches}"}</strong></span>
+            </div>
+            <button 
+              onClick={() => handleSaveSettings("CITY_INDUSTRY_SNAPSHOT")}
+              disabled={savingType === "CITY_INDUSTRY_SNAPSHOT"}
+              style={{ width: "100%", padding: "8px 12px", backgroundColor: "#EA650A", color: "white", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer", display: "flex", justifyContent: "center", alignItems: "center" }}
+            >
+              {savingType === "CITY_INDUSTRY_SNAPSHOT" ? "Saving..." : "Save Settings"}
+            </button>
             {saveFeedback.cardType === "CITY_INDUSTRY_SNAPSHOT" && (
               <div style={{ fontSize: "12px", fontWeight: "500", color: saveFeedback.type === "success" ? "#10b981" : "#ef4444", textAlign: "center", marginTop: "2px" }}>
                 {saveFeedback.message}
@@ -508,23 +544,31 @@ const ScheduledMailers = () => {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <label style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", textTransform: "uppercase" }}>Email Subject</label>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <input 
-                  type="text" 
-                  value={subjectInputs.OFFER_OF_THE_DAY || ""} 
-                  onChange={(e) => handleSubjectInputChange("OFFER_OF_THE_DAY", e.target.value)}
-                  style={{ flex: 1, padding: "6px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
-                  placeholder="Enter email subject line..."
-                />
-                <button 
-                  onClick={() => handleSaveSettings("OFFER_OF_THE_DAY")}
-                  disabled={savingType === "OFFER_OF_THE_DAY"}
-                  style={{ padding: "6px 12px", backgroundColor: "#EA650A", color: "white", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}
-                >
-                  {savingType === "OFFER_OF_THE_DAY" ? "Saving..." : "Save"}
-                </button>
-              </div>
+              <input 
+                type="text" 
+                value={subjectInputs.OFFER_OF_THE_DAY || ""} 
+                onChange={(e) => handleSubjectInputChange("OFFER_OF_THE_DAY", e.target.value)}
+                style={{ padding: "6px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
+                placeholder="Enter email subject line..."
+              />
             </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <label style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", textTransform: "uppercase" }}>Email HTML Body</label>
+              <textarea 
+                value={bodyInputs.OFFER_OF_THE_DAY || ""} 
+                onChange={(e) => handleBodyInputChange("OFFER_OF_THE_DAY", e.target.value)}
+                style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "12px", fontFamily: "monospace", minHeight: "100px", resize: "vertical" }}
+                placeholder="Enter HTML email body..."
+              />
+              <span style={{ fontSize: "10px", color: "#777E90" }}>Placeholders: <strong>{"{name}"}</strong>, <strong>{"{offerName}"}</strong>, <strong>{"{offerDescription}"}</strong>, <strong>{"{offerLogo}"}</strong>, <strong>{"{offerFeatures}"}</strong></span>
+            </div>
+            <button 
+              onClick={() => handleSaveSettings("OFFER_OF_THE_DAY")}
+              disabled={savingType === "OFFER_OF_THE_DAY"}
+              style={{ width: "100%", padding: "8px 12px", backgroundColor: "#EA650A", color: "white", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer", display: "flex", justifyContent: "center", alignItems: "center" }}
+            >
+              {savingType === "OFFER_OF_THE_DAY" ? "Saving..." : "Save Settings"}
+            </button>
             {saveFeedback.cardType === "OFFER_OF_THE_DAY" && (
               <div style={{ fontSize: "12px", fontWeight: "500", color: saveFeedback.type === "success" ? "#10b981" : "#ef4444", textAlign: "center", marginTop: "2px" }}>
                 {saveFeedback.message}

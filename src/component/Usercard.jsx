@@ -208,8 +208,8 @@ export default function Usercard({
                   className="action-btn chat-btn"
                   onClick={(e) => handleConnectClick(profile.userId, e)}
                   title={isAlreadyConnected ? "Connected" : isPending ? "Request sent" : "Connect"}
-                  disabled={isAlreadyConnected || isPending}
-                  style={{ opacity: (isAlreadyConnected || isPending) ? 0.85 : 1, cursor: (isAlreadyConnected || isPending) ? "default" : "pointer" }}
+                  disabled={isPending}
+                  style={{ opacity: isPending ? 0.6 : 1, cursor: isPending ? "default" : "pointer" }}
                 >
                   <img
                     src={blackcIcon}
@@ -219,8 +219,7 @@ export default function Usercard({
                       backgroundColor: "white",
                       borderRadius: "50%",
                       padding: "5px",
-                      // Rotate to indicate "sent/connected" state, matching UserProfileModal's connected look
-                      transform: isAlreadyConnected ? "rotate(45deg)" : "none",
+                      transform: "none",
                       opacity: isPending ? 0.6 : 1,
                     }}
                   />
