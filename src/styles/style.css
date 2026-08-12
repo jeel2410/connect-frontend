@@ -3090,42 +3090,43 @@
     content: url("../../src/assets/image/fill_heart.png");
   }
 
-  .chat-btn {
-    background: #EA650A;
-    color: white;
-    transition: all 0.3s ease;
-    cursor: pointer;
-  }
+}
 
-  .chat-btn:hover:not(:disabled) {
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(234, 101, 10, 0.4);
-    background: #d4550a;
-  }
+.chat-btn {
+  background: #EA650A;
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
 
-  .chat-btn.connected {
-    background: #4CAF50;
-    cursor: default;
-  }
+.chat-btn:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(234, 101, 10, 0.4);
+  background: #d4550a;
+}
 
-  .chat-btn.connected:hover {
-    transform: none;
-    box-shadow: none;
-    background: #4CAF50;
-  }
+.chat-btn.connected {
+  background: #EA650A;
+  cursor: default;
+}
 
-  .chat-btn:disabled {
-    cursor: default;
-    opacity: 1;
-  }
+.chat-btn.connected:hover {
+  transform: none;
+  box-shadow: none;
+  background: #EA650A;
+}
 
-  .chatbtn-icon {
-    content: url("../../src/assets//image/black_c.png");
-    background-color: white;
-    border-radius: 50%;
-    padding: 5px;
+.chat-btn:disabled {
+  cursor: default;
+  opacity: 1;
+}
 
-  }
+.chatbtn-icon {
+  content: url("../../src/assets/image/black_c.png");
+  background-color: white;
+  border-radius: 50%;
+  padding: 5px;
 }
 
 .profile-image-wrapper {

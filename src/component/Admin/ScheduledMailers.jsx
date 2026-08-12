@@ -324,6 +324,9 @@ const ScheduledMailers = () => {
             <div>
               <h3>Incomplete Profile Mailers</h3>
               <p>Weekly batch split into 7 days</p>
+              <span style={{ fontSize: "11px", color: "#777E90", display: "block", marginTop: "2px" }}>
+                Runs: <strong>Sundays at 9:00 PM</strong> | Sends: <strong>Daily at 9:00 AM</strong>
+              </span>
             </div>
           </div>
           <div className="stat-card-details">
@@ -414,6 +417,9 @@ const ScheduledMailers = () => {
             <div>
               <h3>Network Snapshot Mailers</h3>
               <p>Weekly batch split into 7 days</p>
+              <span style={{ fontSize: "11px", color: "#777E90", display: "block", marginTop: "2px" }}>
+                Runs: <strong>Sundays at 9:00 PM</strong> | Sends: <strong>Daily at 10:00 AM</strong>
+              </span>
             </div>
           </div>
           <div className="stat-card-details">
@@ -504,6 +510,9 @@ const ScheduledMailers = () => {
             <div>
               <h3>Offer of the Day Mailers</h3>
               <p>Daily batch distributed hourly</p>
+              <span style={{ fontSize: "11px", color: "#777E90", display: "block", marginTop: "2px" }}>
+                Runs: <strong>Daily at 9:00 PM</strong> | Sends: <strong>Hourly</strong>
+              </span>
             </div>
           </div>
           <div className="stat-card-details">
@@ -560,7 +569,7 @@ const ScheduledMailers = () => {
                 style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "12px", fontFamily: "monospace", minHeight: "100px", resize: "vertical" }}
                 placeholder="Enter HTML email body..."
               />
-              <span style={{ fontSize: "10px", color: "#777E90" }}>Placeholders: <strong>{"{name}"}</strong>, <strong>{"{offerName}"}</strong>, <strong>{"{offerDescription}"}</strong>, <strong>{"{offerLogo}"}</strong>, <strong>{"{offerFeatures}"}</strong></span>
+              <span style={{ fontSize: "10px", color: "#777E90" }}>Placeholders: <strong>{"{name}"}</strong>, <strong>{"{offerName}"}</strong>, <strong>{"{offerDescription}"}</strong>, <strong>{"{offerLogo}"}</strong>, <strong>{"{offerImage}"}</strong>, <strong>{"{offerFeatures}"}</strong></span>
             </div>
             <button 
               onClick={() => handleSaveSettings("OFFER_OF_THE_DAY")}

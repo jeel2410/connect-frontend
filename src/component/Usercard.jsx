@@ -205,11 +205,11 @@ export default function Usercard({
 
                  {/* Connect button — black_c.png with white circle bg, same styling as UserProfileModal */}
                 <button
-                  className="action-btn chat-btn"
+                  className={`action-btn chat-btn ${isAlreadyConnected ? "connected" : ""}`}
                   onClick={(e) => handleConnectClick(profile.userId, e)}
                   title={isAlreadyConnected ? "Connected" : isPending ? "Request sent" : "Connect"}
-                  disabled={isPending}
-                  style={{ opacity: isPending ? 0.6 : 1, cursor: isPending ? "default" : "pointer" }}
+                  disabled={isPending || isAlreadyConnected}
+                  style={{ opacity: isPending ? 0.6 : 1, cursor: (isPending || isAlreadyConnected) ? "default" : "pointer" }}
                 >
                   <img
                     src={blackcIcon}
