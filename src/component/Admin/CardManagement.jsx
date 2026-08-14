@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Search, Plus, Edit2, Trash2, X, Save, ChevronLeft, ChevronRight, XCircle, Users, Download, Mail } from "lucide-react";
-import { getCards, createCard, updateCard, deleteCard, getPopupSetting, updatePopupSetting, getCities, getPositions, getCardClicks, broadcastCardMailer } from "../../utils/adminApi";
+import { getCards, createCard, updateCard, deleteCard, getPopupSetting, updatePopupSetting, getCities, getPositions, getCardClicks, broadcastCardMailer, getOfferCategories, createOfferCategory } from "../../utils/adminApi";
 
 const CardManagement = () => {
   const [cards, setCards] = useState([]);
@@ -30,8 +30,16 @@ const CardManagement = () => {
     targetCities: [],
     targetPositions: [],
     offer_image: null,
-    offer_image_preview: null
+    offer_image_preview: null,
+    isActive: true,
+    showInPopup: true,
+    showInMailer: true,
+    category: ""
   });
+  const [offerCategories, setOfferCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("");
   const [newFeature, setNewFeature] = useState("");
   const [newEligible, setNewEligible] = useState("");
   const [newCity, setNewCity] = useState("");
@@ -50,13 +58,14 @@ const CardManagement = () => {
   const [broadcastHtml, setBroadcastHtml] = useState("");
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
   const itemsPerPage = 10;
+  const [clickFilterDays, setClickFilterDays] = useState("all");
 
   // Fetch cards and settings from API
   const fetchCards = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getCards(currentPage, itemsPerPage, searchTerm);
+      const response = await getCards(currentPage, itemsPerPage, searchTerm, null, selectedCategoryFilter);
       
       if (response.success && response.data) {
         setCards(response.data.cards || []);
@@ -77,9 +86,40 @@ const CardManagement = () => {
 
   useEffect(() => {
     fetchCards();
-  }, [currentPage]);
+  }, [currentPage, selectedCategoryFilter]);
 
-  // Fetch popup setting, cities, and positions
+  const fetchOfferCategories = async () => {
+    try {
+      setLoadingCategories(true);
+      const response = await getOfferCategories();
+      if (response.success && response.data) {
+        setOfferCategories(response.data.categories || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch offer categories", err);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    try {
+      setLoadingCategories(true);
+      const response = await createOfferCategory(newCategoryName.trim());
+      if (response.success && response.data) {
+        setNewCategoryName("");
+        await fetchOfferCategories();
+        alert("Category created successfully!");
+      }
+    } catch (err) {
+      alert(err.message || "Failed to create category");
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  // Fetch popup setting, cities, positions, and offer categories
   useEffect(() => {
     const fetchSettingAndDropdowns = async () => {
       try {
@@ -103,6 +143,8 @@ const CardManagement = () => {
       } catch (err) {
         console.error("Failed to fetch dropdown data", err);
       }
+
+      await fetchOfferCategories();
     };
     fetchSettingAndDropdowns();
   }, []);
@@ -145,13 +187,14 @@ const CardManagement = () => {
     }
   };
 
-  const handleViewClicks = async (card) => {
+  const handleViewClicks = async (card, days = "all") => {
     setSelectedCardForClicks(card);
     setIsClicksModalOpen(true);
     setLoadingClicks(true);
     setClicksError(null);
+    setClickFilterDays(days);
     try {
-      const response = await getCardClicks(card._id);
+      const response = await getCardClicks(card._id, days);
       if (response.success && response.data) {
         setSelectedCardClicks(response.data.clicks || []);
       } else {
@@ -238,7 +281,7 @@ const CardManagement = () => {
 
     setSendingBroadcast(true);
     try {
-      const response = await broadcastCardMailer(selectedCardForClicks._id, broadcastSubject, broadcastHtml);
+      const response = await broadcastCardMailer(selectedCardForClicks._id, broadcastSubject, broadcastHtml, clickFilterDays);
       if (response.success) {
         alert(`Mailer sent successfully to ${response.data.sent} users! (${response.data.skipped} skipped)`);
         setIsBroadcastModalOpen(false);
@@ -265,7 +308,11 @@ const CardManagement = () => {
       targetCities: [],
       targetPositions: [],
       offer_image: null,
-      offer_image_preview: null
+      offer_image_preview: null,
+      isActive: true,
+      showInPopup: true,
+      showInMailer: true,
+      category: ""
     });
     setNewFeature("");
     setNewEligible("");
@@ -289,7 +336,11 @@ const CardManagement = () => {
       targetCities: card.targetCities && Array.isArray(card.targetCities) ? [...card.targetCities] : [],
       targetPositions: card.targetPositions && Array.isArray(card.targetPositions) ? [...card.targetPositions] : [],
       offer_image: null,
-      offer_image_preview: card.offer_image || null
+      offer_image_preview: card.offer_image || null,
+      isActive: card.isActive !== undefined ? card.isActive : true,
+      showInPopup: card.showInPopup !== undefined ? card.showInPopup : true,
+      showInMailer: card.showInMailer !== undefined ? card.showInMailer : true,
+      category: card.category ? (typeof card.category === 'object' ? card.category._id : card.category) : ""
     });
     setNewFeature("");
     setNewEligible("");
@@ -312,6 +363,42 @@ const CardManagement = () => {
       }
     } catch (err) {
       alert(err.message || "Failed to delete card");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleActive = async (card) => {
+    try {
+      setLoading(true);
+      await updateCard(card._id, { isActive: !card.isActive });
+      await fetchCards();
+    } catch (err) {
+      alert(err.message || "Failed to update card status");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleShowInPopup = async (card) => {
+    try {
+      setLoading(true);
+      await updateCard(card._id, { showInPopup: card.showInPopup !== undefined ? !card.showInPopup : false });
+      await fetchCards();
+    } catch (err) {
+      alert(err.message || "Failed to update card popup setting");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleShowInMailer = async (card) => {
+    try {
+      setLoading(true);
+      await updateCard(card._id, { showInMailer: card.showInMailer !== undefined ? !card.showInMailer : false });
+      await fetchCards();
+    } catch (err) {
+      alert(err.message || "Failed to update card mailer setting");
     } finally {
       setLoading(false);
     }
@@ -402,7 +489,11 @@ const CardManagement = () => {
         targetAgeMax: formData.targetAgeMax !== "" ? Number(formData.targetAgeMax) : null,
         targetCities: formData.targetCities,
         targetPositions: formData.targetPositions,
-        offer_image: formData.offer_image
+        offer_image: formData.offer_image,
+        isActive: formData.isActive,
+        showInPopup: formData.showInPopup,
+        showInMailer: formData.showInMailer,
+        category: formData.category || null
       };
 
       if (isEditModalOpen) {
@@ -426,7 +517,11 @@ const CardManagement = () => {
         targetCities: [],
         targetPositions: [],
         offer_image: null,
-        offer_image_preview: null
+        offer_image_preview: null,
+        isActive: true,
+        showInPopup: true,
+        showInMailer: true,
+        category: ""
       });
       setNewFeature("");
       setNewEligible("");
@@ -467,6 +562,69 @@ const CardManagement = () => {
             <span style={{ fontSize: '14px', fontWeight: '500', color: '#555' }}>Daily Popup Enabled</span>
           </div>
 
+          <div className="category-adder-inline" style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '1px solid #eee', paddingLeft: '15px', marginRight: '10px' }}>
+            <input 
+              type="text" 
+              placeholder="New Category Name..." 
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              style={{
+                padding: '6px 12px',
+                fontSize: '13px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                width: '160px',
+                outline: 'none'
+              }}
+              disabled={loadingCategories}
+            />
+            <button 
+              type="button"
+              onClick={handleCreateCategory}
+              disabled={loadingCategories || !newCategoryName.trim()}
+              style={{
+                padding: '6px 12px',
+                fontSize: '13px',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: '500',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              + Category
+            </button>
+          </div>
+
+          <select
+            value={selectedCategoryFilter}
+            onChange={(e) => {
+              setSelectedCategoryFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            style={{
+              padding: '8px 12px',
+              fontSize: '14px',
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              backgroundColor: 'white',
+              outline: 'none',
+              cursor: 'pointer',
+              color: '#333',
+              height: '38px',
+              minWidth: '150px'
+            }}
+          >
+            <option value="">All Categories</option>
+            {offerCategories.map((cat) => (
+              <option key={cat._id} value={cat._id}>{cat.name}</option>
+            ))}
+          </select>
+
           <div className="search-container">
             <Search size={20} className="search-icon" />
             <input
@@ -490,6 +648,7 @@ const CardManagement = () => {
             <tr>
               <th>Logo</th>
               <th>Name</th>
+              <th>Category</th>
               <th>Description</th>
               <th>URL</th>
               <th>Features</th>
@@ -497,25 +656,28 @@ const CardManagement = () => {
               <th>Targeting</th>
               <th>Views</th>
               <th>Clicks</th>
+              <th>Offer Active</th>
+              <th>Show in Popup</th>
+              <th>In Mailer</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="9" className="empty-state">
+                <td colSpan="13" className="empty-state">
                   Loading...
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan="9" className="empty-state" style={{ color: "red" }}>
+                <td colSpan="13" className="empty-state" style={{ color: "red" }}>
                   {error}
                 </td>
               </tr>
             ) : cards.length === 0 ? (
               <tr>
-                <td colSpan="9" className="empty-state">
+                <td colSpan="13" className="empty-state">
                   No cards found
                 </td>
               </tr>
@@ -534,6 +696,11 @@ const CardManagement = () => {
                     )}
                   </td>
                   <td>{card.name || "N/A"}</td>
+                  <td>
+                    <span className="badge" style={{ backgroundColor: '#e0f2fe', color: '#0369a1', padding: '4px 8px', borderRadius: '4px', fontWeight: '500', fontSize: '12px' }}>
+                      {card.category ? (typeof card.category === 'object' ? card.category.name : card.category) : "Uncategorized"}
+                    </span>
+                  </td>
                   <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {card.description || "N/A"}
                   </td>
@@ -582,6 +749,66 @@ const CardManagement = () => {
                         <Users size={12} /> {card.clicks || 0}
                       </span>
                     </button>
+                  </td>
+                  <td>
+                    <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '34px', height: '18px', margin: 0 }}>
+                      <input 
+                        type="checkbox" 
+                        checked={card.isActive !== false} 
+                        onChange={() => handleToggleActive(card)}
+                        style={{ opacity: 0, width: 0, height: 0 }}
+                        disabled={loading}
+                      />
+                      <span className="slider round" style={{
+                        position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: (card.isActive !== false) ? '#22c55e' : '#ccc', transition: '.4s', borderRadius: '34px'
+                      }}>
+                        <span style={{
+                          position: 'absolute', content: '""', height: '12px', width: '12px', left: (card.isActive !== false) ? '18px' : '4px', bottom: '3px',
+                          backgroundColor: 'white', transition: '.4s', borderRadius: '50%'
+                        }} />
+                      </span>
+                    </label>
+                  </td>
+                  <td>
+                    <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '34px', height: '18px', margin: 0 }}>
+                      <input 
+                        type="checkbox" 
+                        checked={card.showInPopup !== false} 
+                        onChange={() => handleToggleShowInPopup(card)}
+                        style={{ opacity: 0, width: 0, height: 0 }}
+                        disabled={loading}
+                      />
+                      <span className="slider round" style={{
+                        position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: (card.showInPopup !== false) ? '#3b82f6' : '#ccc', transition: '.4s', borderRadius: '34px'
+                      }}>
+                        <span style={{
+                          position: 'absolute', content: '""', height: '12px', width: '12px', left: (card.showInPopup !== false) ? '18px' : '4px', bottom: '3px',
+                          backgroundColor: 'white', transition: '.4s', borderRadius: '50%'
+                        }} />
+                      </span>
+                    </label>
+                  </td>
+                  <td>
+                    <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '34px', height: '18px', margin: 0 }}>
+                      <input 
+                        type="checkbox" 
+                        checked={card.showInMailer !== false} 
+                        onChange={() => handleToggleShowInMailer(card)}
+                        style={{ opacity: 0, width: 0, height: 0 }}
+                        disabled={loading}
+                      />
+                      <span className="slider round" style={{
+                        position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: card.showInMailer !== false ? '#eab308' : '#ccc', transition: '.4s', borderRadius: '34px'
+                      }}>
+                        <span style={{
+                          position: 'absolute', content: '""', height: '12px', width: '12px', left: card.showInMailer !== false ? '18px' : '4px', bottom: '3px',
+                          backgroundColor: 'white', transition: '.4s', borderRadius: '50%'
+                        }} />
+                      </span>
+                    </label>
                   </td>
                   <td>
                     <div className="action-buttons">
@@ -717,6 +944,20 @@ const CardManagement = () => {
                 />
               </div>
               <div className="form-groups">
+                <label>Category</label>
+                <select
+                  className="form-input"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  disabled={submitting}
+                >
+                  <option value="">Select Category</option>
+                  {offerCategories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-groups">
                 <label>Logo Image</label>
                 <input
                   type="file"
@@ -813,6 +1054,78 @@ const CardManagement = () => {
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* Offer Settings Section */}
+              <div style={{ borderTop: "1px solid #eee", paddingTop: "15px", marginTop: "15px" }}>
+                <h4 style={{ marginBottom: "12px", color: "#ff6f00" }}>Offer Settings</h4>
+                <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "15px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px', margin: 0 }}>
+                      <input 
+                        type="checkbox" 
+                        checked={formData.isActive} 
+                        onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                        style={{ opacity: 0, width: 0, height: 0 }}
+                        disabled={submitting}
+                      />
+                      <span className="slider round" style={{
+                        position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: formData.isActive ? '#22c55e' : '#ccc', transition: '.4s', borderRadius: '34px'
+                      }}>
+                        <span style={{
+                          position: 'absolute', content: '""', height: '14px', width: '14px', left: formData.isActive ? '22px' : '4px', bottom: '3px',
+                          backgroundColor: 'white', transition: '.4s', borderRadius: '50%'
+                        }} />
+                      </span>
+                    </label>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#555' }}>Active (Disable/Enable Offer)</span>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px', margin: 0 }}>
+                      <input 
+                        type="checkbox" 
+                        checked={formData.showInPopup} 
+                        onChange={(e) => setFormData({ ...formData, showInPopup: e.target.checked })}
+                        style={{ opacity: 0, width: 0, height: 0 }}
+                        disabled={submitting}
+                      />
+                      <span className="slider round" style={{
+                        position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: formData.showInPopup ? '#3b82f6' : '#ccc', transition: '.4s', borderRadius: '34px'
+                      }}>
+                        <span style={{
+                          position: 'absolute', content: '""', height: '14px', width: '14px', left: formData.showInPopup ? '22px' : '4px', bottom: '3px',
+                          backgroundColor: 'white', transition: '.4s', borderRadius: '50%'
+                        }} />
+                      </span>
+                    </label>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#555' }}>Show in Daily Popup</span>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px', margin: 0 }}>
+                      <input 
+                        type="checkbox" 
+                        checked={formData.showInMailer} 
+                        onChange={(e) => setFormData({ ...formData, showInMailer: e.target.checked })}
+                        style={{ opacity: 0, width: 0, height: 0 }}
+                        disabled={submitting}
+                      />
+                      <span className="slider round" style={{
+                        position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: formData.showInMailer ? '#eab308' : '#ccc', transition: '.4s', borderRadius: '34px'
+                      }}>
+                        <span style={{
+                          position: 'absolute', content: '""', height: '14px', width: '14px', left: formData.showInMailer ? '22px' : '4px', bottom: '3px',
+                          backgroundColor: 'white', transition: '.4s', borderRadius: '50%'
+                        }} />
+                      </span>
+                    </label>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#555' }}>Enable for Scheduled Mailers</span>
+                  </div>
+                </div>
               </div>
 
               {/* Targeting Criteria Section */}
@@ -1082,6 +1395,20 @@ const CardManagement = () => {
                 />
               </div>
               <div className="form-groups">
+                <label>Category</label>
+                <select
+                  className="form-input"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  disabled={submitting}
+                >
+                  <option value="">Select Category</option>
+                  {offerCategories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-groups">
                 <label>Logo Image</label>
                 <input
                   type="file"
@@ -1178,6 +1505,78 @@ const CardManagement = () => {
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* Offer Settings Section */}
+              <div style={{ borderTop: "1px solid #eee", paddingTop: "15px", marginTop: "15px" }}>
+                <h4 style={{ marginBottom: "12px", color: "#ff6f00" }}>Offer Settings</h4>
+                <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "15px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px', margin: 0 }}>
+                      <input 
+                        type="checkbox" 
+                        checked={formData.isActive} 
+                        onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                        style={{ opacity: 0, width: 0, height: 0 }}
+                        disabled={submitting}
+                      />
+                      <span className="slider round" style={{
+                        position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: formData.isActive ? '#22c55e' : '#ccc', transition: '.4s', borderRadius: '34px'
+                      }}>
+                        <span style={{
+                          position: 'absolute', content: '""', height: '14px', width: '14px', left: formData.isActive ? '22px' : '4px', bottom: '3px',
+                          backgroundColor: 'white', transition: '.4s', borderRadius: '50%'
+                        }} />
+                      </span>
+                    </label>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#555' }}>Active (Disable/Enable Offer)</span>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px', margin: 0 }}>
+                      <input 
+                        type="checkbox" 
+                        checked={formData.showInPopup} 
+                        onChange={(e) => setFormData({ ...formData, showInPopup: e.target.checked })}
+                        style={{ opacity: 0, width: 0, height: 0 }}
+                        disabled={submitting}
+                      />
+                      <span className="slider round" style={{
+                        position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: formData.showInPopup ? '#3b82f6' : '#ccc', transition: '.4s', borderRadius: '34px'
+                      }}>
+                        <span style={{
+                          position: 'absolute', content: '""', height: '14px', width: '14px', left: formData.showInPopup ? '22px' : '4px', bottom: '3px',
+                          backgroundColor: 'white', transition: '.4s', borderRadius: '50%'
+                        }} />
+                      </span>
+                    </label>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#555' }}>Show in Daily Popup</span>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px', margin: 0 }}>
+                      <input 
+                        type="checkbox" 
+                        checked={formData.showInMailer} 
+                        onChange={(e) => setFormData({ ...formData, showInMailer: e.target.checked })}
+                        style={{ opacity: 0, width: 0, height: 0 }}
+                        disabled={submitting}
+                      />
+                      <span className="slider round" style={{
+                        position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: formData.showInMailer ? '#eab308' : '#ccc', transition: '.4s', borderRadius: '34px'
+                      }}>
+                        <span style={{
+                          position: 'absolute', content: '""', height: '14px', width: '14px', left: formData.showInMailer ? '22px' : '4px', bottom: '3px',
+                          backgroundColor: 'white', transition: '.4s', borderRadius: '50%'
+                        }} />
+                      </span>
+                    </label>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#555' }}>Enable for Scheduled Mailers</span>
+                  </div>
+                </div>
               </div>
 
               {/* Targeting Criteria Section */}
@@ -1415,17 +1814,32 @@ const CardManagement = () => {
             </div>
 
             <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
-              {loadingClicks ? (
-                <div style={{ textAlign: "center", padding: "40px 0", color: "#6b7280" }}>Loading user clicks...</div>
-              ) : clicksError ? (
-                <div style={{ textAlign: "center", padding: "20px 0", color: "#dc2626" }}>{clicksError}</div>
-              ) : selectedCardClicks.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "45px 0" }}>
-                  <p style={{ margin: 0, color: "#6b7280", fontSize: "0.95rem" }}>No click logs found for this offer yet.</p>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ fontSize: "14px", fontWeight: "500", color: "#4b5563" }}>Timeframe:</span>
+                  <select
+                    value={clickFilterDays}
+                    onChange={(e) => handleViewClicks(selectedCardForClicks, e.target.value)}
+                    style={{
+                      padding: "6px 12px",
+                      fontSize: "14px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      backgroundColor: "white",
+                      outline: "none",
+                      cursor: "pointer",
+                      color: "#374151"
+                    }}
+                  >
+                    <option value="all">All Time</option>
+                    <option value="1">Last 24 Hours</option>
+                    <option value="7">Last 7 Days</option>
+                    <option value="30">Last 30 Days</option>
+                  </select>
                 </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-                  <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                
+                {!loadingClicks && !clicksError && selectedCardClicks.length > 0 && (
+                  <div style={{ display: "flex", gap: "10px" }}>
                     <button
                       onClick={downloadClicksCSV}
                       className="btn-secondary"
@@ -1441,7 +1855,19 @@ const CardManagement = () => {
                       <Mail size={16} /> Broadcast Mailer
                     </button>
                   </div>
+                )}
+              </div>
 
+              {loadingClicks ? (
+                <div style={{ textAlign: "center", padding: "40px 0", color: "#6b7280" }}>Loading user clicks...</div>
+              ) : clicksError ? (
+                <div style={{ textAlign: "center", padding: "20px 0", color: "#dc2626" }}>{clicksError}</div>
+              ) : selectedCardClicks.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "45px 0" }}>
+                  <p style={{ margin: 0, color: "#6b7280", fontSize: "0.95rem" }}>No click logs found for this offer matching the selected timeframe.</p>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
                   <div className="table-container" style={{ border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden", marginBottom: 0 }}>
                     <table className="admin-table" style={{ width: "100%", borderCollapse: "collapse" }}>
                       <thead>

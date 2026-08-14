@@ -7610,13 +7610,15 @@ like page */
   .likes-page-wrapper,
   .connections-page-wrapper,
   .chat-page-wrapper,
-  .offers-page-wrapper {
+  .offers-page-wrapper,
+  .share-page-wrapper {
     padding: 12px;
   }
 
   .likes-page-card,
   .connections-page-card,
-  .offers-page-card {
+  .offers-page-card,
+  .share-page-card {
     padding: 20px;
   }
 
@@ -7646,13 +7648,15 @@ like page */
   .likes-page-wrapper,
   .connections-page-wrapper,
   .chat-page-wrapper,
-  .offers-page-wrapper {
+  .offers-page-wrapper,
+  .share-page-wrapper {
     padding: 12px;
   }
 
   .likes-page-card,
   .connections-page-card,
-  .offers-page-card {
+  .offers-page-card,
+  .share-page-card {
     padding: 20px;
   }
 
@@ -8085,13 +8089,11 @@ like page */
 
 /* Share Page Styles */
 .share-page-wrapper {
-  padding: 40px 0;
-  width: 100%;
   flex: 1;
+  padding: 20px;
+  min-height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
 }
 
 .share-page-card {
@@ -8506,26 +8508,7 @@ like page */
   gap: 16px;
 }
 
-@media (max-width: 1024px) {
-  .share-page-card {
-    padding: 20px;
-  }
-}
-
 @media (max-width: 768px) {
-  .share-page-wrapper {
-    padding: 20px 0;
-  }
-
-  .inner-page-title {
-    font-size: 24px;
-  }
-
-  .share-page-card {
-    padding: 15px;
-    border-radius: 10px;
-  }
-
   .post-card {
     padding: 16px;
   }

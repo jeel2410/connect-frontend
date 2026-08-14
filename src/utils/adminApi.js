@@ -1217,7 +1217,7 @@ export const deleteCity = async (cityId) => {
 };
 
 // Cards API
-export const getCards = async (page = 1, limit = 10, search = "", isActive = null) => {
+export const getCards = async (page = 1, limit = 10, search = "", isActive = null, category = "") => {
   try {
     const queryParams = new URLSearchParams({
       page: page.toString(),
@@ -1228,6 +1228,9 @@ export const getCards = async (page = 1, limit = 10, search = "", isActive = nul
     }
     if (isActive !== null) {
       queryParams.append("isActive", isActive.toString());
+    }
+    if (category) {
+      queryParams.append("category", category);
     }
 
     const response = await fetch(`${API_BASE_URL}/api/admin/cards?${queryParams.toString()}`, {
@@ -1309,6 +1312,19 @@ export const createCard = async (cardData) => {
       formData.append("offer_image", cardData.offer_image);
     }
 
+    if (cardData.isActive !== undefined) {
+      formData.append("isActive", cardData.isActive.toString());
+    }
+    if (cardData.showInPopup !== undefined) {
+      formData.append("showInPopup", cardData.showInPopup.toString());
+    }
+    if (cardData.showInMailer !== undefined) {
+      formData.append("showInMailer", cardData.showInMailer.toString());
+    }
+    if (cardData.category !== undefined && cardData.category !== null) {
+      formData.append("category", cardData.category.toString());
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/admin/cards`, {
       method: "POST",
       headers: getAuthHeadersFormData(),
@@ -1345,11 +1361,21 @@ export const createCard = async (cardData) => {
 export const updateCard = async (cardId, cardData) => {
   try {
     const formData = new FormData();
-    formData.append("name", cardData.name);
-    formData.append("description", cardData.description || "");
-    formData.append("url", cardData.url || "");
-    formData.append("targetAgeMin", cardData.targetAgeMin !== undefined && cardData.targetAgeMin !== null ? cardData.targetAgeMin : "");
-    formData.append("targetAgeMax", cardData.targetAgeMax !== undefined && cardData.targetAgeMax !== null ? cardData.targetAgeMax : "");
+    if (cardData.name !== undefined) {
+      formData.append("name", cardData.name);
+    }
+    if (cardData.description !== undefined) {
+      formData.append("description", cardData.description || "");
+    }
+    if (cardData.url !== undefined) {
+      formData.append("url", cardData.url || "");
+    }
+    if (cardData.targetAgeMin !== undefined) {
+      formData.append("targetAgeMin", cardData.targetAgeMin !== null ? cardData.targetAgeMin : "");
+    }
+    if (cardData.targetAgeMax !== undefined) {
+      formData.append("targetAgeMax", cardData.targetAgeMax !== null ? cardData.targetAgeMax : "");
+    }
     
     // Append features array
     if (cardData.features && Array.isArray(cardData.features)) {
@@ -1387,6 +1413,19 @@ export const updateCard = async (cardId, cardData) => {
     // Append offer image if it's a File (only if it's a new file)
     if (cardData.offer_image instanceof File) {
       formData.append("offer_image", cardData.offer_image);
+    }
+
+    if (cardData.isActive !== undefined) {
+      formData.append("isActive", cardData.isActive.toString());
+    }
+    if (cardData.showInPopup !== undefined) {
+      formData.append("showInPopup", cardData.showInPopup.toString());
+    }
+    if (cardData.showInMailer !== undefined) {
+      formData.append("showInMailer", cardData.showInMailer.toString());
+    }
+    if (cardData.category !== undefined) {
+      formData.append("category", cardData.category !== null ? cardData.category.toString() : "");
     }
 
     const response = await fetch(`${API_BASE_URL}/api/admin/cards/${cardId}`, {
@@ -1569,6 +1608,58 @@ export const exportInquiriesToCSV = async (search = "", status = "") => {
     return { success: true };
   } catch (error) {
     console.error("Error exporting inquiries:", error);
+    throw error;
+  }
+};
+
+export const deleteInquiry = async (inquiryId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/info/inquiries/${inquiryId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to delete inquiry");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error deleting inquiry:", error);
+    throw error;
+  }
+};
+
+export const deleteAllInquiries = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/info/inquiries`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to delete all inquiries");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error deleting all inquiries:", error);
     throw error;
   }
 };
@@ -1909,9 +2000,9 @@ export const updatePopupSetting = async (isPopupEnabled) => {
   }
 };
 
-export const getCardClicks = async (cardId) => {
+export const getCardClicks = async (cardId, days = "all") => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/admin/cards/${cardId}/clicks`, {
+    const response = await fetch(`${API_BASE_URL}/api/admin/cards/${cardId}/clicks?days=${days}`, {
       method: "GET",
       headers: getAuthHeaders(),
     });
@@ -1925,7 +2016,7 @@ export const getCardClicks = async (cardId) => {
   }
 };
 
-export const broadcastCardMailer = async (cardId, subject, htmlContent) => {
+export const broadcastCardMailer = async (cardId, subject, htmlContent, days = "all") => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/admin/cards/${cardId}/broadcast`, {
       method: "POST",
@@ -1933,7 +2024,7 @@ export const broadcastCardMailer = async (cardId, subject, htmlContent) => {
         ...getAuthHeaders(),
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ subject, htmlContent }),
+      body: JSON.stringify({ subject, htmlContent, days }),
     });
     if (!response.ok) {
       const errData = await response.json();
@@ -2139,6 +2230,45 @@ export const updateScheduledMailerSettings = async (settings) => {
     return await response.json();
   } catch (error) {
     console.error("Error updating scheduled mailer settings:", error);
+    throw error;
+  }
+};
+
+export const getOfferCategories = async (search = "") => {
+  try {
+    const url = `${API_BASE_URL}/api/admin/offer-categories${search ? `?search=${encodeURIComponent(search)}` : ""}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch offer categories");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching offer categories:", error);
+    throw error;
+  }
+};
+
+export const createOfferCategory = async (name) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/offer-categories`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create offer category");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error creating offer category:", error);
     throw error;
   }
 };

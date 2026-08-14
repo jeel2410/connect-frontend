@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Search, Mail, Phone, ChevronLeft, ChevronRight, Download, FileText, Calendar, Eye, X } from "lucide-react";
-import { getInquiries, exportInquiriesToCSV } from "../../utils/adminApi";
+import { Search, Mail, Phone, ChevronLeft, ChevronRight, Download, FileText, Calendar, Eye, X, Trash2 } from "lucide-react";
+import { getInquiries, exportInquiriesToCSV, deleteInquiry, deleteAllInquiries } from "../../utils/adminApi";
 
 const InquiryManagement = () => {
   const [inquiries, setInquiries] = useState([]);
@@ -19,37 +19,67 @@ const InquiryManagement = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const itemsPerPage = 10;
 
-  // Fetch inquiries from API
-  useEffect(() => {
-    const fetchInquiries = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await getInquiries(currentPage, itemsPerPage, searchTerm, "");
-        
-        if (response.success && response.data) {
-          setInquiries(response.data.inquiries || []);
-          setPagination(response.data.pagination || {
-            currentPage: 1,
-            totalPages: 1,
-            totalCount: 0,
-            limit: 10,
-          });
-        }
-      } catch (err) {
-        setError(err.message || "Failed to fetch inquiries");
-        console.error("Error fetching inquiries:", err);
-      } finally {
-        setLoading(false);
+  const fetchInquiries = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getInquiries(currentPage, itemsPerPage, searchTerm, "");
+      
+      if (response.success && response.data) {
+        setInquiries(response.data.inquiries || []);
+        setPagination(response.data.pagination || {
+          currentPage: 1,
+          totalPages: 1,
+          totalCount: 0,
+          limit: 10,
+        });
       }
-    };
+    } catch (err) {
+      setError(err.message || "Failed to fetch inquiries");
+      console.error("Error fetching inquiries:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     const timer = setTimeout(() => {
       fetchInquiries();
     }, searchTerm ? 500 : 0);
 
     return () => clearTimeout(timer);
   }, [currentPage, searchTerm]);
+
+  const handleDeleteInquiry = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this inquiry?")) {
+      return;
+    }
+    try {
+      setLoading(true);
+      await deleteInquiry(id);
+      await fetchInquiries();
+    } catch (err) {
+      alert(err.message || "Failed to delete inquiry");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAllInquiries = async () => {
+    if (!window.confirm("Are you sure you want to delete ALL inquiries? This action is permanent and cannot be undone.")) {
+      return;
+    }
+    try {
+      setLoading(true);
+      await deleteAllInquiries();
+      setCurrentPage(1);
+      await fetchInquiries();
+    } catch (err) {
+      alert(err.message || "Failed to delete all inquiries");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const totalPages = pagination.totalPages;
   const totalInquiries = pagination.totalCount;
@@ -112,6 +142,15 @@ const InquiryManagement = () => {
           >
             <Download size={18} />
             <span>{exporting ? "Exporting..." : "Export CSV"}</span>
+          </button>
+          <button 
+            className="import-button"
+            onClick={handleDeleteAllInquiries}
+            disabled={loading}
+            style={{ backgroundColor: "#fee2e2", color: "#991b1b", border: "1px solid #fecaca", marginLeft: "10px" }}
+          >
+            <Trash2 size={18} />
+            <span>Delete All</span>
           </button>
           <div className="search-container">
             <Search size={20} className="search-icon" />
@@ -194,14 +233,25 @@ const InquiryManagement = () => {
                     </div>
                   </td>
                   <td>
-                    <button
-                      className="admin-button primary-button"
-                      onClick={() => handleViewInquiry(inquiry)}
-                      style={{ padding: "6px 12px", fontSize: "12px" }}
-                    >
-                      <Eye size={14} style={{ marginRight: "4px" }} />
-                      View
-                    </button>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button
+                        className="admin-button primary-button"
+                        onClick={() => handleViewInquiry(inquiry)}
+                        style={{ padding: "6px 12px", fontSize: "12px", display: "inline-flex", alignItems: "center" }}
+                      >
+                        <Eye size={14} style={{ marginRight: "4px" }} />
+                        View
+                      </button>
+                      <button
+                        className="admin-button"
+                        onClick={() => handleDeleteInquiry(inquiry._id)}
+                        style={{ padding: "6px 12px", fontSize: "12px", backgroundColor: "#fee2e2", color: "#991b1b", border: "1px solid #fecaca", cursor: "pointer", display: "inline-flex", alignItems: "center", borderRadius: "4px" }}
+                        disabled={loading}
+                      >
+                        <Trash2 size={14} style={{ marginRight: "4px" }} />
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -294,7 +344,18 @@ const InquiryManagement = () => {
                 )}
               </div>
             </div>
-            <div className="modal-actions" style={{ padding: "0 24px 24px" }}>
+            <div className="modal-actions" style={{ padding: "0 24px 24px", display: "flex", justifyContent: "space-between" }}>
+              <button
+                className="btn-danger"
+                onClick={() => {
+                  handleDeleteInquiry(selectedInquiry._id);
+                  handleCloseModal();
+                }}
+                style={{ padding: "8px 16px", backgroundColor: "#dc2626", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}
+              >
+                <Trash2 size={16} />
+                Delete Inquiry
+              </button>
               <button
                 className="btn-secondary"
                 onClick={handleCloseModal}

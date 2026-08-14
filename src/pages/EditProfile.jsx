@@ -2115,7 +2115,7 @@ export default function EditProfile() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   <div className="edit-profile-field-inline">
-                    <label>Status</label>
+                    <label>Marital Status</label>
                     <select
                       value={data.status || ""}
                       onChange={(e) => {
@@ -2130,7 +2130,7 @@ export default function EditProfile() {
                       }}
                       className={fieldErrors.status ? "input-error" : ""}
                     >
-                      <option value="">Select Status</option>
+                      <option value="">Select Marital Status</option>
                       <option value="Single">Single</option>
                       <option value="Married">Married</option>
                       <option value="Divorced">Divorced</option>

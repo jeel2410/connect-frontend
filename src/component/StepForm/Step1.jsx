@@ -200,14 +200,14 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
             <img src={statusIcon} alt="Status"></img>
           </div>
           <div className="input-content">
-            <label className="input-label">Select Status</label>
+            <label className="input-label">Select Marital Status</label>
             <select
               value={data.maritalStatus || ""}
               onChange={(e) => updateData("maritalStatus", e.target.value)}
               onBlur={() => updateData("_touched_maritalStatus", true)}
               className={touched?.maritalStatus && errors?.maritalStatus ? "input-error" : ""}
             >
-              <option value="">Select Status</option>
+              <option value="">Select Marital Status</option>
               <option value="Single">Single</option>
               <option value="Married">Married</option>
               <option value="Divorced">Divorced</option>

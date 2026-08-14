@@ -138,6 +138,17 @@ const Dashboard = () => {
       borderColor: "#FBBF24",
     },
     {
+      id: "offer-clicks",
+      title: "Total Offer Clicks",
+      value: stats?.totalOfferClicks || 0,
+      icon: TrendingUp,
+      color: "indigo",
+      description: "Total clicks across all active offers",
+      accentBg: "linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%)",
+      iconColor: "#4338CA",
+      borderColor: "#818CF8",
+    },
+    {
       id: "shared",
       title: "Shared Items",
       value: stats?.totalSharedItems || 0,

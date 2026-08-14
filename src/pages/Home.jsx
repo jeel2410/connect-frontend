@@ -534,7 +534,7 @@ export default function Home() {
         <div className="sec-header">
           <div className="sec-header-left" style={{ display: "flex", alignItems: "center", gap: "24px" }}>
             <h1 className="title" style={{ margin: 0 }}>
-              Profiles <span className="title-highlight">Near You</span>
+              People <span className="title-highlight">Near You</span>
             </h1>
             <div className="feed-tabs" style={{ display: "flex", gap: "8px", background: "#f3f4f6", padding: "4px", borderRadius: "8px" }}>
               <button
