@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 import API_BASE_URL from "../utils/config";
 import { getCookie } from "../utils/auth";
 
-const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
+const FilterModal = ({ isOpen, onClose, onApply, onClear, onUnskip }) => {
   const [ageRange, setAgeRange] = useState([0, 100]);
   const [gender, setGender] = useState("Male");
   const [habits, setHabits] = useState([]);
@@ -16,6 +16,8 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
   const [company, setCompany] = useState("");
   const [selectedIndustryId, setSelectedIndustryId] = useState("");
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  const [skippedUsers, setSkippedUsers] = useState([]);
+  const [loadingSkips, setLoadingSkips] = useState(false);
   
   // State for API data
   const [habitsList, setHabitsList] = useState([]);
@@ -62,6 +64,66 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
         : [...prev, interest]
     );
   };
+
+  const fetchSkippedUsers = async () => {
+    try {
+      setLoadingSkips(true);
+      const token = getCookie("authToken");
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/api/connection/skips`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data && result.data.skips) {
+          setSkippedUsers(result.data.skips);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching skipped users:", err);
+    } finally {
+      setLoadingSkips(false);
+    }
+  };
+
+  const handleUnskip = async (skippedUserId) => {
+    try {
+      const token = getCookie("authToken");
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/api/connection/skip/${skippedUserId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setSkippedUsers(prev => prev.filter(u => u._id !== skippedUserId));
+          if (onUnskip) {
+            onUnskip();
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error unskipping user:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchSkippedUsers();
+    }
+  }, [isOpen]);
 
   // Fetch interests from API
   useEffect(() => {
@@ -577,6 +639,58 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear }) => {
                 ))
               )}
             </div>
+          </div>
+
+          {/* Hidden / Deleted Profiles */}
+          <div className="filter-section" style={{ borderTop: "1px solid #e5e7eb", paddingTop: "20px" }}>
+            <label className="filter-label" style={{ marginBottom: "12px", display: "block" }}>Hidden Profiles</label>
+            {loadingSkips ? (
+              <div style={{ fontSize: "14px", color: "#666", padding: "8px 0" }}>Loading hidden profiles...</div>
+            ) : skippedUsers.length === 0 ? (
+              <div style={{ fontSize: "14px", color: "#888", padding: "8px 0", fontStyle: "italic" }}>No hidden profiles.</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "200px", overflowY: "auto", paddingRight: "4px" }}>
+                {skippedUsers.map((user) => (
+                  <div key={user._id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: "8px", backgroundColor: "#f9fafb" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <img
+                        src={user.profileImage || "https://res.cloudinary.com/demo/image/upload/d_avatar.png/avatar.png"}
+                        alt={user.fullName}
+                        style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", border: "1px solid #ddd" }}
+                      />
+                      <div>
+                        <div style={{ fontSize: "14px", fontWeight: "600", color: "#1f2937" }}>{user.fullName}</div>
+                        <div style={{ fontSize: "12px", color: "#6b7280" }}>{user.city || "N/A"}</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleUnskip(user._id)}
+                      style={{
+                        padding: "6px 12px",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#EA650A",
+                        backgroundColor: "white",
+                        border: "1px solid #EA650A",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = "#EA650A";
+                        e.target.style.color = "white";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = "white";
+                        e.target.style.color = "#EA650A";
+                      }}
+                    >
+                      Show Again
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

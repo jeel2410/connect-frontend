@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Search, Plus, Edit2, Trash2, X, Save, ChevronLeft, ChevronRight, XCircle, Users, Download, Mail } from "lucide-react";
-import { getCards, createCard, updateCard, deleteCard, getPopupSetting, updatePopupSetting, getCities, getPositions, getCardClicks, broadcastCardMailer, getOfferCategories, createOfferCategory } from "../../utils/adminApi";
+import { Search, Plus, Edit2, Trash2, X, Save, ChevronLeft, ChevronRight, XCircle, Users, Download, Mail, MessageSquare } from "lucide-react";
+import { getCards, createCard, updateCard, deleteCard, getPopupSetting, updatePopupSetting, getCities, getPositions, getCardClicks, broadcastCardMailer, broadcastCardSms, getOfferCategories, createOfferCategory } from "../../utils/adminApi";
 
 const CardManagement = () => {
   const [cards, setCards] = useState([]);
@@ -57,6 +57,7 @@ const CardManagement = () => {
   const [broadcastSubject, setBroadcastSubject] = useState("");
   const [broadcastHtml, setBroadcastHtml] = useState("");
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
+  const [sendingSms, setSendingSms] = useState(false);
   const itemsPerPage = 10;
   const [clickFilterDays, setClickFilterDays] = useState("all");
 
@@ -291,6 +292,29 @@ const CardManagement = () => {
       console.error(err);
     } finally {
       setSendingBroadcast(false);
+    }
+  };
+
+  const handleSendSmsBroadcast = async () => {
+    const activeCount = selectedCardClicks.length;
+    const confirmMessage = `Are you sure you want to send the eligibility SMS to the ${activeCount} user(s) who clicked "${selectedCardForClicks?.name}" in the selected timeframe?`;
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    setSendingSms(true);
+    try {
+      const response = await broadcastCardSms(selectedCardForClicks._id, clickFilterDays);
+      if (response.success) {
+        alert(`SMS broadcast successfully initiated for ${response.data?.sent || activeCount} users!`);
+      } else {
+        alert(response.message || "Failed to send SMS broadcast");
+      }
+    } catch (err) {
+      alert(err.message || "Failed to send SMS broadcast");
+    } finally {
+      setSendingSms(false);
     }
   };
 
@@ -1849,10 +1873,19 @@ const CardManagement = () => {
                     </button>
                     <button
                       onClick={handleOpenBroadcast}
+                      disabled={sendingSms || sendingBroadcast}
                       className="btn-primary"
-                      style={{ display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "#EC7523", color: "white", border: "none", padding: "8px 14px", borderRadius: "6px", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}
+                      style={{ display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "#EC7523", color: "white", border: "none", padding: "8px 14px", borderRadius: "6px", fontSize: "14px", fontWeight: "600", cursor: (sendingSms || sendingBroadcast) ? "not-allowed" : "pointer", opacity: (sendingSms || sendingBroadcast) ? 0.7 : 1 }}
                     >
                       <Mail size={16} /> Broadcast Mailer
+                    </button>
+                    <button
+                      onClick={handleSendSmsBroadcast}
+                      disabled={sendingSms || sendingBroadcast}
+                      className="btn-primary"
+                      style={{ display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "#0284c7", color: "white", border: "none", padding: "8px 14px", borderRadius: "6px", fontSize: "14px", fontWeight: "600", cursor: (sendingSms || sendingBroadcast) ? "not-allowed" : "pointer", opacity: (sendingSms || sendingBroadcast) ? 0.7 : 1 }}
+                    >
+                      <MessageSquare size={16} /> {sendingSms ? "Sending SMS..." : "Broadcast SMS"}
                     </button>
                   </div>
                 )}
