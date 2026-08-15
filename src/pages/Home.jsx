@@ -528,6 +528,7 @@ export default function Home() {
         onClose={() => setIsFilterOpen(false)}
         onApply={handleApplyFilters}
         onClear={handleClearFilters}
+        onUnskip={fetchFeedData}
       />
 
       <div className="profile-container">
