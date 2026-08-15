@@ -2037,6 +2037,27 @@ export const broadcastCardMailer = async (cardId, subject, htmlContent, days = "
   }
 };
 
+export const broadcastCardSms = async (cardId, days = "all") => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/cards/${cardId}/broadcast-sms`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ days }),
+    });
+    if (!response.ok) {
+      const errData = await response.json();
+      throw new Error(errData.message || "Failed to send SMS broadcast");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending SMS broadcast:", error);
+    throw error;
+  }
+};
+
 // Scheduled Mailers API
 export const getScheduledMailerStats = async () => {
   try {

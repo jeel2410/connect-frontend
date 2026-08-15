@@ -390,6 +390,7 @@ const Search = () => {
           onClose={() => setIsFilterOpen(false)}
           onApply={handleApplyFilters}
           onClear={handleClearFilters}
+          onUnskip={fetchFeedData}
         />
 
         <main className="main-content">
