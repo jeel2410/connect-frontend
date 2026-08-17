@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Send, Mail, AlertCircle, CheckCircle, Bell, MessageSquare, Users } from "lucide-react";
+import { Send, Mail, AlertCircle, CheckCircle, Bell, MessageSquare, Users, Download } from "lucide-react";
 import { 
   broadcastNotification,
   broadcastOfferEmail, 
@@ -10,6 +10,8 @@ import {
   getTargetedEmailUserCount,
   sendTargetedEmailBroadcast
 } from "../../utils/adminApi";
+import { getCookie } from "../../utils/auth";
+import API_BASE_URL from "../../utils/config";
 
 const StatusBanner = ({ error, success }) => {
   if (error)
@@ -225,6 +227,36 @@ function IncompleteProfileSmsSection() {
     fetchCount();
   }, [formData.days]);
 
+  const handleDownloadCsv = async () => {
+    try {
+      setError(null);
+      const token = getCookie("authToken");
+      const headers = {
+        "Authorization": `Bearer ${token}`
+      };
+      
+      const response = await fetch(`${API_BASE_URL}/api/admin/notifications/incomplete-profiles/csv?days=${formData.days}`, {
+        headers
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to download CSV");
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `incomplete_profiles_${formData.days}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message || "Failed to download CSV");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (userCount === 0) return setError("No users match the selected criteria");
@@ -296,12 +328,36 @@ function IncompleteProfileSmsSection() {
           </div>
         </div>
 
-        <button type="submit" className="btn-primary" disabled={submitting || userCount === 0} style={{ background: "#7C3AED" }}
-          onMouseEnter={e => { if (!submitting && userCount > 0) e.currentTarget.style.background = "#6D28D9"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "#7C3AED"; }}>
-          <Send size={15} />
-          {submitting ? "Sending SMS..." : "Send SMS Broadcast"}
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <button type="submit" className="btn-primary" disabled={submitting || userCount === 0} style={{ background: "#7C3AED" }}
+            onMouseEnter={e => { if (!submitting && userCount > 0) e.currentTarget.style.background = "#6D28D9"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#7C3AED"; }}>
+            <Send size={15} />
+            {submitting ? "Sending SMS..." : "Send SMS Broadcast"}
+          </button>
+          
+          <button type="button" className="btn-secondary" onClick={handleDownloadCsv} disabled={userCount === 0}
+            style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              gap: 8, 
+              padding: "10px 18px", 
+              borderRadius: 8, 
+              border: "1px solid #E2E8F0", 
+              background: "#fff", 
+              color: "#334155", 
+              fontWeight: 600, 
+              fontSize: 14,
+              cursor: userCount === 0 ? "not-allowed" : "pointer",
+              opacity: userCount === 0 ? 0.6 : 1,
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={e => { if (userCount > 0) { e.currentTarget.style.background = "#F8FAFC"; e.currentTarget.style.borderColor = "#CBD5E1"; } }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#E2E8F0"; }}>
+            <Download size={15} />
+            Download CSV
+          </button>
+        </div>
       </form>
     </div>
   );
