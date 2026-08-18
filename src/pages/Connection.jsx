@@ -8,7 +8,7 @@ import filterIcon from "../../src/assets/image/filterIcon.png";
 import messageIcon from "../../src/assets/image/bluemessageIcon.png";
 import wrongICon from "../../src/assets/image/wrong.png"
 import rightIcon from "../../src/assets/image/right.png"
-import { getAvatar } from "../utils/avatarHelper";
+import { getAvatar, resolveImageUrl } from "../utils/avatarHelper";
 import { getCookie, setCookie } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 
@@ -21,9 +21,9 @@ const Connection = () => {
 
   const getProfileImage = (user) => {
     if (user.isBusinessProfile) {
-      return user.businessLogo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop";
+      return resolveImageUrl(user.businessLogo) || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop";
     }
-    return user.profileImage || user.image || getAvatar(user.gender, user.dateOfBirth || user.age);
+    return resolveImageUrl(user.profileImage || user.image) || getAvatar(user.gender, user.dateOfBirth || user.age);
   };
 
   const getProfileName = (user) => {

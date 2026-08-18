@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { getAvatar } from "../utils/avatarHelper"
+import { getAvatar, resolveImageUrl } from "../utils/avatarHelper"
 import closeIcon from "../assets/image/close.png"
 import heartfillIcon from "../assets/image/fill_heart.png"
 import heartOutlineIcon from "../assets/image/outline_icon.png"
@@ -113,7 +113,7 @@ export default function UserProfileModal({ userId }) {
       if (bgElement) {
         const coverImg = profileData.isBusinessProfile ? profileData.businessCoverImage : profileData.coverImage;
         if (coverImg) {
-          bgElement.style.backgroundImage = `url(${coverImg})`;
+          bgElement.style.backgroundImage = `url(${resolveImageUrl(coverImg)})`;
           bgElement.style.backgroundSize = 'cover';
           bgElement.style.backgroundPosition = 'center';
           if (overlayElement) {
@@ -484,7 +484,7 @@ export default function UserProfileModal({ userId }) {
   const businessPlaceholderLogo = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop";
   const defaultAvatar = isBusiness ? businessPlaceholderLogo : getAvatar(profileData.gender, age || profileData.dateOfBirth);
 
-  const displayLogo = isBusiness ? (profileData.businessLogo || businessPlaceholderLogo) : (profileData.profileImage || defaultAvatar);
+  const displayLogo = isBusiness ? (resolveImageUrl(profileData.businessLogo) || businessPlaceholderLogo) : (resolveImageUrl(profileData.profileImage) || defaultAvatar);
   const displayName = isBusiness ? profileData.businessName : (profileData.fullName || "User");
   const displayTagline = isBusiness ? profileData.businessTagline : null;
 

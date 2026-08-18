@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Plus, Trash2, X, Monitor, Smartphone, ToggleLeft, ToggleRight, Upload, AlertCircle, Image } from "lucide-react";
 import { getAuthBanners, createAuthBanner, deleteAuthBanner, toggleAuthBanner } from "../../utils/adminApi";
+import { resolveImageUrl } from "../../utils/avatarHelper";
 
 const DESKTOP_MIN_W = 400;
 const DESKTOP_MIN_H = 600;
@@ -338,7 +339,7 @@ const BannerSection = ({ title, icon, hint, banners, onToggle, onDelete }) => (
           >
             <div style={{ position: "relative", height: 130, background: "#F4F5F6" }}>
               <img
-                src={banner.imageUrl}
+                src={resolveImageUrl(banner.imageUrl)}
                 alt="Banner"
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />

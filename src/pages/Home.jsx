@@ -11,6 +11,7 @@ import API_BASE_URL from "../utils/config";
 import FilterModal from "../component/FilterModal";
 import filterIcon from "../../src/assets/image/filter.png";
 import searchIcon from "../../src/assets/image/serachIcon.png";
+import { resolveImageUrl } from "../utils/avatarHelper";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -780,7 +781,7 @@ export default function Home() {
                 justifyContent: "center"
               }}>
                 <img 
-                  src={popupOffer.offer_image} 
+                  src={resolveImageUrl(popupOffer.offer_image)} 
                   alt={popupOffer.name} 
                   style={{
                     width: "100%",
@@ -804,7 +805,7 @@ export default function Home() {
                 border: "1px solid #ffe0d0"
               }}>
                 <img 
-                  src={popupOffer.logo_image} 
+                  src={resolveImageUrl(popupOffer.logo_image)} 
                   alt={popupOffer.name} 
                   style={{
                     maxWidth: "120px",

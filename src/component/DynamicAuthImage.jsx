@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import sideImage from "../../src/assets/image/sideImage.png";
 import API_BASE_URL from "../utils/config";
+import { resolveImageUrl } from "../utils/avatarHelper";
 
 const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -40,12 +41,12 @@ const DynamicAuthImage = () => {
   const { desktopBanners, mobileBanners } = useBanners();
 
   const desktopSrc = useMemo(
-    () => (desktopBanners.length > 0 ? pickRandom(desktopBanners).imageUrl : null),
+    () => (desktopBanners.length > 0 ? resolveImageUrl(pickRandom(desktopBanners).imageUrl) : null),
     [desktopBanners]
   );
 
   const mobileSrc = useMemo(
-    () => (mobileBanners.length > 0 ? pickRandom(mobileBanners).imageUrl : null),
+    () => (mobileBanners.length > 0 ? resolveImageUrl(pickRandom(mobileBanners).imageUrl) : null),
     [mobileBanners]
   );
 

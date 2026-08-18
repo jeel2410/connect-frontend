@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Search, Plus, Edit2, Trash2, X, Save, ChevronLeft, ChevronRight, XCircle, Users, Download, Mail, MessageSquare } from "lucide-react";
 import { getCards, createCard, updateCard, deleteCard, getPopupSetting, updatePopupSetting, getCities, getPositions, getCardClicks, broadcastCardMailer, broadcastCardSms, getOfferCategories, createOfferCategory } from "../../utils/adminApi";
+import { resolveImageUrl } from "../../utils/avatarHelper";
 
 const CardManagement = () => {
   const [cards, setCards] = useState([]);
@@ -352,7 +353,7 @@ const CardManagement = () => {
       description: card.description || "",
       url: card.url || "",
       logo_image: null,
-      logo_image_preview: card.logo_image || null,
+      logo_image_preview: resolveImageUrl(card.logo_image) || null,
       features: card.features && Array.isArray(card.features) ? [...card.features] : [],
       eligibles: card.eligibles && Array.isArray(card.eligibles) ? [...card.eligibles] : [],
       targetAgeMin: card.targetAgeMin !== null && card.targetAgeMin !== undefined ? card.targetAgeMin : "",
@@ -360,7 +361,7 @@ const CardManagement = () => {
       targetCities: card.targetCities && Array.isArray(card.targetCities) ? [...card.targetCities] : [],
       targetPositions: card.targetPositions && Array.isArray(card.targetPositions) ? [...card.targetPositions] : [],
       offer_image: null,
-      offer_image_preview: card.offer_image || null,
+      offer_image_preview: resolveImageUrl(card.offer_image) || null,
       isActive: card.isActive !== undefined ? card.isActive : true,
       showInPopup: card.showInPopup !== undefined ? card.showInPopup : true,
       showInMailer: card.showInMailer !== undefined ? card.showInMailer : true,
@@ -711,7 +712,7 @@ const CardManagement = () => {
                   <td>
                     {card.logo_image ? (
                       <img 
-                        src={card.logo_image} 
+                        src={resolveImageUrl(card.logo_image)} 
                         alt={card.name} 
                         style={{ width: "50px", height: "50px", objectFit: "cover", borderRadius: "4px" }}
                       />
@@ -992,7 +993,7 @@ const CardManagement = () => {
                 {formData.logo_image_preview && (
                   <div style={{ marginTop: "10px" }}>
                     <img 
-                      src={formData.logo_image_preview} 
+                      src={resolveImageUrl(formData.logo_image_preview)} 
                       alt="Preview" 
                       style={{ maxWidth: "200px", maxHeight: "200px", borderRadius: "4px" }}
                     />
@@ -1010,7 +1011,7 @@ const CardManagement = () => {
                 {formData.offer_image_preview && (
                   <div style={{ marginTop: "10px" }}>
                     <img 
-                      src={formData.offer_image_preview} 
+                      src={resolveImageUrl(formData.offer_image_preview)} 
                       alt="Offer Preview" 
                       style={{ maxWidth: "200px", maxHeight: "200px", borderRadius: "4px" }}
                     />
@@ -1443,7 +1444,7 @@ const CardManagement = () => {
                 {formData.logo_image_preview && (
                   <div style={{ marginTop: "10px" }}>
                     <img 
-                      src={formData.logo_image_preview} 
+                      src={resolveImageUrl(formData.logo_image_preview)} 
                       alt="Preview" 
                       style={{ maxWidth: "200px", maxHeight: "200px", borderRadius: "4px" }}
                     />
@@ -1461,7 +1462,7 @@ const CardManagement = () => {
                 {formData.offer_image_preview && (
                   <div style={{ marginTop: "10px" }}>
                     <img 
-                      src={formData.offer_image_preview} 
+                      src={resolveImageUrl(formData.offer_image_preview)} 
                       alt="Offer Preview" 
                       style={{ maxWidth: "200px", maxHeight: "200px", borderRadius: "4px" }}
                     />

@@ -8,6 +8,7 @@ import female_45_60 from "../assets/image/female_45_60.png";
 import female_60_plus from "../assets/image/female_60_plus.png";
 import maleDefault from "../assets/image/maleProfile.png";
 import femaleDefault from "../assets/image/userProfile.png";
+import API_BASE_URL from "./config";
 
 // Helper function to calculate age from date of birth
 export const calculateAge = (dateOfBirth) => {
@@ -54,4 +55,15 @@ export const getAvatar = (gender, ageOrDob) => {
     if (age <= 60) return female_45_60;
     return female_60_plus;
   }
+};
+
+// Resolve local upload relative paths to fully-qualified API server URLs
+export const resolveImageUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:") || url.startsWith("blob:")) {
+    return url;
+  }
+  const base = API_BASE_URL.endsWith("/") ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+  const path = url.startsWith("/") ? url : "/" + url;
+  return `${base}${path}`;
 };

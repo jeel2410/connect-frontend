@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getCookie } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
+import { resolveImageUrl } from "../utils/avatarHelper";
 
 export default function OfferCard({ searchQuery = "" }) {
   const [cards, setCards] = useState([]);
@@ -65,7 +66,7 @@ export default function OfferCard({ searchQuery = "" }) {
     return {
       id: card._id,
       bank: bankName || card.name,
-      img: card.logo_image || null,
+      img: resolveImageUrl(card.logo_image) || null,
       card: cardName || card.description || "",
       features: card.features || [],
       eligibles: card.eligibles || [],

@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { getAvatar } from "../utils/avatarHelper";
+import { getAvatar, resolveImageUrl } from "../utils/avatarHelper";
 import close from "../../src/assets/image/close.png";
 import heartfillIcon from "../../src/assets/image/fill_heart.png";
 import heartOutlineIcon from "../../src/assets/image/outline_icon.png";
@@ -46,7 +46,8 @@ export default function Usercard({
             userId: userId,
             name: item.businessName || "Unknown Business",
             industry: item.businessCategoryName || item.businessCategory || "Business",
-            image: item.businessLogo || businessLogoPlaceholder,
+            image: resolveImageUrl(item.businessLogo) || businessLogoPlaceholder,
+            fallbackImage: businessLogoPlaceholder,
             verified: item.verified || false,
             featured: item.featured || false,
             isBusiness: true,
@@ -65,7 +66,8 @@ export default function Usercard({
           userId: userId,
           name: age ? `${name} (${age})` : name,
           industry: item.industry || "",
-          image: item.profileImage || item.image || defaultAvatar,
+          image: resolveImageUrl(item.profileImage || item.image) || defaultAvatar,
+          fallbackImage: defaultAvatar,
           verified: item.verified || false,
           featured: item.featured || false,
           isBusiness: false,

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { getAvatar } from "../utils/avatarHelper";
+import { getAvatar, resolveImageUrl } from "../utils/avatarHelper";
 import profileIconActive from "../../src/assets/image/profileicon/profile.png";
 import profileIcon from "../../src/assets/image/profileicon/profile_black.png";
 import connectionIconActive from "../../src/assets/image/profileicon/connection_white.png";
@@ -24,7 +24,8 @@ export default function Sidebar({ profileData = null }) {
   const cachedProfile = profileData || getUserProfile();
 
   const displayName = cachedProfile?.isBusinessProfile ? cachedProfile.businessName : (cachedProfile?.fullName || "User");
-  const displayImage = cachedProfile?.isBusinessProfile ? (cachedProfile.businessLogo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop") : (cachedProfile?.profileImage || getAvatar(cachedProfile?.gender, cachedProfile?.dateOfBirth || cachedProfile?.age));
+  const defaultAvatar = cachedProfile?.isBusinessProfile ? "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop" : getAvatar(cachedProfile?.gender, cachedProfile?.dateOfBirth || cachedProfile?.age);
+  const displayImage = cachedProfile?.isBusinessProfile ? (resolveImageUrl(cachedProfile.businessLogo) || defaultAvatar) : (resolveImageUrl(cachedProfile?.profileImage) || defaultAvatar);
 
   const handleDeleteAccount = async () => {
     try {

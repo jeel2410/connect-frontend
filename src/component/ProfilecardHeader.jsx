@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { getAvatar } from "../utils/avatarHelper";
+import { getAvatar, resolveImageUrl } from "../utils/avatarHelper";
 import editIcon from "../../src/assets/image/edit (1).png";
 import passwordIcon from "../../src/assets/image/passwordIcon.png";
 import { useNavigate } from "react-router-dom";
@@ -14,8 +14,8 @@ export default function ProfilecardHeader({ showChangePassword = true, profileDa
   const defaultAvatar = isBusiness ? businessPlaceholderLogo : getAvatar(profileData?.gender, profileData?.dateOfBirth || profileData?.age || profileData?.birthDate);
 
   const displayName = isBusiness ? (profileData?.businessName || "Business User") : (profileData?.fullName || "User");
-  const displayImage = isBusiness ? (profileData?.businessLogo || businessPlaceholderLogo) : (profileData?.profileImage || defaultAvatar);
-  const displayCover = isBusiness ? (profileData?.businessCoverImage || profileData?.coverImage) : profileData?.coverImage;
+  const displayImage = isBusiness ? (resolveImageUrl(profileData?.businessLogo) || businessPlaceholderLogo) : (resolveImageUrl(profileData?.profileImage) || defaultAvatar);
+  const displayCover = isBusiness ? (resolveImageUrl(profileData?.businessCoverImage || profileData?.coverImage)) : resolveImageUrl(profileData?.coverImage);
 
   const handleImageClick = () => {
     if (fileInputRef.current && showImageUpload) {

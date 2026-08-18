@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Image as ImageIcon, File } from 'lucide-react';
-import { getAvatar } from '../utils/avatarHelper';
+import { getAvatar, resolveImageUrl } from '../utils/avatarHelper';
 import { getCookie, getUserProfile } from '../utils/auth';
 import API_BASE_URL from '../utils/config';
 import { toast } from 'react-toastify';
@@ -10,7 +10,8 @@ const PostCard = ({ post, onReact }) => {
   const { _id: postId, userId, content, attachments, createdAt, reactions, linkPreview } = post;
   const userDetail = userId?.userDetailId;
   const displayName = userDetail?.isBusinessProfile ? userDetail?.businessName : userDetail?.fullName || 'User';
-  const displayImage = userDetail?.isBusinessProfile ? (userDetail?.businessLogo || '/default-avatar.png') : (userDetail?.profileImage || getAvatar(userDetail?.gender, userDetail?.dateOfBirth));
+  const displayImage = userDetail?.isBusinessProfile ? (resolveImageUrl(userDetail?.businessLogo) || '/default-avatar.png') : (resolveImageUrl(userDetail?.profileImage) || getAvatar(userDetail?.gender, userDetail?.dateOfBirth));
+  const fallbackAvatar = userDetail?.isBusinessProfile ? '/default-avatar.png' : getAvatar(userDetail?.gender, userDetail?.dateOfBirth);
 
   const [showEmojiBar, setShowEmojiBar] = useState(false);
   const likeWrapperRef = useRef(null);
@@ -92,16 +93,17 @@ const PostCard = ({ post, onReact }) => {
   };
 
   const renderAttachment = (att, index) => {
+    const resolvedUrl = resolveImageUrl(att.url);
     if (att.type === 'image') {
       return (
         <div key={index} className="post-attachment-image">
-          <img src={att.url} alt={att.name || 'attachment'} />
+          <img src={resolvedUrl} alt={att.name || 'attachment'} />
         </div>
       );
     }
     
     return (
-      <a key={index} href={att.url} target="_blank" rel="noopener noreferrer" className="post-attachment-file">
+      <a key={index} href={resolvedUrl} target="_blank" rel="noopener noreferrer" className="post-attachment-file">
         {att.type === 'pdf' ? <FileText size={20} /> : <File size={20} />}
         <span>{att.name || (att.type === 'pdf' ? 'PDF Document' : 'Document')}</span>
       </a>
@@ -197,7 +199,7 @@ const PostCard = ({ post, onReact }) => {
       {linkPreview && linkPreview.url && (
         <div className="post-link-preview" style={{ display: 'flex', gap: '16px', border: '1px solid #E8EDF3', borderRadius: '8px', overflow: 'hidden', background: '#F8F9FB', marginBottom: '16px', marginTop: '8px' }}>
           {linkPreview.image && (
-            <img src={linkPreview.image} alt="preview" style={{ width: '150px', height: '100px', objectFit: 'cover', flexShrink: 0 }} />
+            <img src={resolveImageUrl(linkPreview.image)} alt="preview" style={{ width: '150px', height: '100px', objectFit: 'cover', flexShrink: 0 }} />
           )}
           <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
             <h5 style={{ fontSize: '14px', fontWeight: '700', margin: '0 0 6px 0', color: '#09122E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{linkPreview.title || 'External Link'}</h5>
