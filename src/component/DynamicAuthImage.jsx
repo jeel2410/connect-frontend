@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import sideImage from "../../src/assets/image/sideImage.png";
+import sideImage from "../../src/assets/image/side.png";
 import API_BASE_URL from "../utils/config";
 import { resolveImageUrl } from "../utils/avatarHelper";
 
