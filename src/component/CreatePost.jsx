@@ -162,12 +162,8 @@ const CreatePost = ({ onPostCreated }) => {
 
     let finalContent = '';
     if (shareType === 'link') {
-      if (attachments.length === 0) {
-        toast.error('Please attach a reel (.mp4)');
-        return;
-      }
-      if (!sharingReason.trim()) {
-        toast.error('Please explain why you are sharing this reel');
+      if (attachments.length === 0 && !sharingReason.trim()) {
+        toast.error('Please attach a reel (.mp4) or write a description');
         return;
       }
       finalContent = sharingReason.trim();
@@ -261,7 +257,7 @@ const CreatePost = ({ onPostCreated }) => {
           {shareType === 'link' ? (
             <div className="share-link-fields-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
               <div className="link-input-group">
-                <label style={{ fontSize: '14px', fontWeight: '600', color: '#353945', marginBottom: '6px', display: 'block' }}>Upload Reel (.mp4) <span style={{ color: '#EA650A' }}>*</span></label>
+                <label style={{ fontSize: '14px', fontWeight: '600', color: '#353945', marginBottom: '6px', display: 'block' }}>Upload Reel (.mp4)</label>
                 <div 
                   className="video-upload-area" 
                   onClick={() => fileInputRef.current.click()}
@@ -300,7 +296,6 @@ const CreatePost = ({ onPostCreated }) => {
               )}
 
               <div className="reason-input-group">
-                <label style={{ fontSize: '14px', fontWeight: '600', color: '#353945', marginBottom: '6px', display: 'block' }}>Why are you sharing this? <span style={{ color: '#EA650A' }}>*</span></label>
                 <textarea
                   className="post-textarea-premium"
                   rows={4}
