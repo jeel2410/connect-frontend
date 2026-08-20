@@ -116,12 +116,12 @@ const Dashboard = () => {
       borderColor: "#C084FC",
     },
     {
-      id: "likes",
-      title: "Total Likes",
-      value: stats?.totalLikes || 0,
+      id: "likes-shares",
+      title: "Likes & Shares",
+      value: (stats?.totalLikes || 0) + (stats?.totalReshares || 0),
       icon: Heart,
       color: "pink",
-      description: "Expressive user like reactions",
+      description: `Likes: ${(stats?.totalLikes || 0).toLocaleString()} | Shares: ${(stats?.totalReshares || 0).toLocaleString()}`,
       accentBg: "linear-gradient(135deg, #FCE7F3 0%, #FBCFE8 100%)",
       iconColor: "#BE185D",
       borderColor: "#F472B6",
@@ -303,38 +303,86 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
             <>
               {/* Summary Cards */}
               <div className="trend-summary-row">
-                <div className="trend-summary-card">
-                  <span className="summary-label">7-Day Total</span>
-                  <span className="summary-val" style={{ color: currentTheme.main }}>{totalCount.toLocaleString()}</span>
-                </div>
-                <div className="trend-summary-card">
-                  <span className="summary-label">Daily Avg</span>
-                  <span className="summary-val">{avgCount}</span>
-                </div>
-                <div className="trend-summary-card">
-                  <span className="summary-label">Highest Day</span>
-                  <span className="summary-val">
-                    {maxPoint ? `${maxPoint.count} (${maxPoint.date})` : "-"}
-                  </span>
-                </div>
+                {statId === "likes-shares" ? (
+                  <>
+                    <div className="trend-summary-card">
+                      <span className="summary-label">7-Day Likes</span>
+                      <span className="summary-val" style={{ color: "#BE185D" }}>
+                        {data.reduce((sum, d) => sum + (d.likesCount || 0), 0).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="trend-summary-card">
+                      <span className="summary-label">7-Day Shares</span>
+                      <span className="summary-val" style={{ color: "#047857" }}>
+                        {data.reduce((sum, d) => sum + (d.sharesCount || 0), 0).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="trend-summary-card">
+                      <span className="summary-label">Total Engagement</span>
+                      <span className="summary-val" style={{ color: currentTheme.main }}>
+                        {totalCount.toLocaleString()}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="trend-summary-card">
+                      <span className="summary-label">7-Day Total</span>
+                      <span className="summary-val" style={{ color: currentTheme.main }}>{totalCount.toLocaleString()}</span>
+                    </div>
+                    <div className="trend-summary-card">
+                      <span className="summary-label">Daily Avg</span>
+                      <span className="summary-val">{avgCount}</span>
+                    </div>
+                    <div className="trend-summary-card">
+                      <span className="summary-label">Highest Day</span>
+                      <span className="summary-val">
+                        {maxPoint ? `${maxPoint.count} (${maxPoint.date})` : "-"}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Table list */}
               <div className="trend-table-container">
                 <table className="trend-table">
                   <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th style={{ textAlign: "right" }}>Count</th>
-                    </tr>
+                    {statId === "likes-shares" ? (
+                      <tr>
+                        <th>Date</th>
+                        <th style={{ textAlign: "right" }}>Likes</th>
+                        <th style={{ textAlign: "right" }}>Shares</th>
+                        <th style={{ textAlign: "right" }}>Total</th>
+                      </tr>
+                    ) : (
+                      <tr>
+                        <th>Date</th>
+                        <th style={{ textAlign: "right" }}>Count</th>
+                      </tr>
+                    )}
                   </thead>
                   <tbody>
                     {data.slice().reverse().map((row, i) => (
                       <tr key={i}>
                         <td className="trend-td-date">{row.date}</td>
-                        <td className="trend-td-count" style={{ color: currentTheme.main, fontWeight: "600", textAlign: "right" }}>
-                          {row.count.toLocaleString()}
-                        </td>
+                        {statId === "likes-shares" ? (
+                          <>
+                            <td className="trend-td-count" style={{ color: "#BE185D", fontWeight: "500", textAlign: "right" }}>
+                              {(row.likesCount || 0).toLocaleString()}
+                            </td>
+                            <td className="trend-td-count" style={{ color: "#047857", fontWeight: "500", textAlign: "right" }}>
+                              {(row.sharesCount || 0).toLocaleString()}
+                            </td>
+                            <td className="trend-td-count" style={{ color: currentTheme.main, fontWeight: "700", textAlign: "right" }}>
+                              {row.count.toLocaleString()}
+                            </td>
+                          </>
+                        ) : (
+                          <td className="trend-td-count" style={{ color: currentTheme.main, fontWeight: "600", textAlign: "right" }}>
+                            {row.count.toLocaleString()}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

@@ -1938,6 +1938,32 @@ export const getTrafficSources = async () => {
   }
 };
 
+export const getTrafficSourceTrend = async (source) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/traffic-sources/trend?source=${encodeURIComponent(source)}`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch traffic source trend");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching traffic source trend:", error);
+    throw error;
+  }
+};
+
 export const getStatsTrend = async (statId) => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/admin/dashboard-stats/trend?statId=${statId}`, {

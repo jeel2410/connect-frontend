@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Image as ImageIcon, File } from 'lucide-react';
+import { FileText, Image as ImageIcon, File, Share2 } from 'lucide-react';
 import { getAvatar, resolveImageUrl } from '../utils/avatarHelper';
 import { getCookie, getUserProfile } from '../utils/auth';
 import API_BASE_URL from '../utils/config';
 import { toast } from 'react-toastify';
 
 const PostCard = ({ post, onReact }) => {
-  const { _id: postId, userId, content, attachments, createdAt, reactions, linkPreview } = post;
+  const { _id: postId, userId, content, attachments, createdAt, reactions, linkPreview, sharedPostId, reshareCount } = post;
   const userDetail = userId?.userDetailId;
   const displayName = userDetail?.isBusinessProfile ? userDetail?.businessName : userDetail?.fullName || 'User';
   const displayImage = userDetail?.isBusinessProfile ? (resolveImageUrl(userDetail?.businessLogo) || '/default-avatar.png') : (resolveImageUrl(userDetail?.profileImage) || getAvatar(userDetail?.gender, userDetail?.dateOfBirth));
@@ -92,6 +92,38 @@ const PostCard = ({ post, onReact }) => {
     }
   };
 
+  const handleReshareClick = async () => {
+    const confirmReshare = window.confirm("Are you sure you want to reshare this post to your connections?");
+    if (!confirmReshare) return;
+
+    try {
+      const token = getCookie('authToken');
+      if (!token) {
+        toast.error('You must be logged in to reshare');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}/reshare`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Post reshared successfully! Pending admin approval.');
+      } else {
+        toast.error(data.message || 'Failed to reshare post');
+      }
+    } catch (err) {
+      console.error('Error resharing post:', err);
+      toast.error('Something went wrong. Please try again.');
+    }
+  };
+
   const renderAttachment = (att, index) => {
     const resolvedUrl = resolveImageUrl(att.url);
     if (att.type === 'image') {
@@ -101,7 +133,15 @@ const PostCard = ({ post, onReact }) => {
         </div>
       );
     }
-    
+
+    if (att.type === 'video') {
+      return (
+        <div key={index} className="post-attachment-video" style={{ width: '100%', maxWidth: '100%', margin: '12px 0', borderRadius: '8px', overflow: 'hidden', background: '#000' }}>
+          <video src={resolvedUrl} controls style={{ width: '100%', maxHeight: '450px', display: 'block', outline: 'none' }} />
+        </div>
+      );
+    }
+
     return (
       <a key={index} href={resolvedUrl} target="_blank" rel="noopener noreferrer" className="post-attachment-file">
         {att.type === 'pdf' ? <FileText size={20} /> : <File size={20} />}
@@ -138,10 +178,10 @@ const PostCard = ({ post, onReact }) => {
     <div className="post-card">
       <div className="post-header">
         <div className="post-header-left">
-          <img 
-            src={displayImage} 
-            alt={displayName} 
-            className="post-user-avatar" 
+          <img
+            src={displayImage}
+            alt={displayName}
+            className="post-user-avatar"
             onClick={handleProfileClick}
             style={{ objectFit: userDetail?.isBusinessProfile ? 'contain' : 'cover', backgroundColor: userDetail?.isBusinessProfile ? '#fff' : 'transparent' }}
           />
@@ -164,7 +204,7 @@ const PostCard = ({ post, onReact }) => {
             </div>
           </div>
         </div>
-        <div className="post-header-right">
+        <div className="post-header-right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <div className="post-like-wrapper" ref={likeWrapperRef}>
             {showEmojiBar && (
               <div className="emoji-picker-popup">
@@ -191,6 +231,30 @@ const PostCard = ({ post, onReact }) => {
               <span className="like-btn-label">Like</span>
             </button>
           </div>
+
+          <button
+            className="post-share-btn"
+            onClick={handleReshareClick}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              border: 'none',
+              background: 'none',
+              padding: '6px 12px',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              color: '#777E90',
+              fontWeight: '600',
+              fontSize: '13px',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={(e) => e.target.style.background = '#F3F4F6'}
+            onMouseLeave={(e) => e.target.style.background = 'none'}
+          >
+            <Share2 size={16} />
+            <span>Reshare</span>
+          </button>
         </div>
       </div>
       <div className="post-content">
@@ -216,22 +280,91 @@ const PostCard = ({ post, onReact }) => {
         </div>
       )}
 
-      {/* Reactions count display */}
-      {totalReactionsCount > 0 && (
-        <div className="post-reactions-display">
-          <div className="reaction-emoji-stack">
-            {uniqueEmojisUsed.slice(0, 3).map((emoji) => (
-              <span key={emoji} className="stack-emoji">
-                {emoji}
-              </span>
-            ))}
+      {sharedPostId && (
+        <div className="reshared-post-box" style={{
+          border: '1px solid #E8EDF3',
+          borderRadius: '8px',
+          padding: '16px',
+          background: '#F8F9FB',
+          marginTop: '12px',
+          textAlign: 'left'
+        }}>
+          <div className="reshared-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+            <img
+              src={sharedPostId.userId?.userDetailId?.isBusinessProfile
+                ? (resolveImageUrl(sharedPostId.userId?.userDetailId?.businessLogo) || '/default-avatar.png')
+                : (resolveImageUrl(sharedPostId.userId?.userDetailId?.profileImage) || getAvatar(sharedPostId.userId?.userDetailId?.gender, sharedPostId.userId?.userDetailId?.dateOfBirth))
+              }
+              alt={sharedPostId.userId?.userDetailId?.fullName || 'User'}
+              style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
+            />
+            <div>
+              <h5 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#09122E' }}>
+                {sharedPostId.userId?.userDetailId?.isBusinessProfile
+                  ? sharedPostId.userId?.userDetailId?.businessName
+                  : sharedPostId.userId?.userDetailId?.fullName || 'User'
+                }
+              </h5>
+              <span style={{ fontSize: '11px', color: '#777E90' }}>{formatDate(sharedPostId.createdAt)}</span>
+            </div>
           </div>
-          <span className="reaction-total-count">
-            {totalReactionsCount}
-          </span>
-          {reactionsTooltipText && (
-            <div className="reactions-tooltip">
-              {reactionsTooltipText}
+
+          <div className="reshared-content" style={{ fontSize: '13px', color: '#353945', marginBottom: '12px' }}>
+            <p style={{ whiteSpace: 'pre-line', margin: 0 }}>{sharedPostId.content}</p>
+          </div>
+
+          {sharedPostId.attachments && sharedPostId.attachments.length > 0 && (
+            <div className="post-attachments">
+              {sharedPostId.attachments.map((att, index) => renderAttachment(att, index))}
+            </div>
+          )}
+
+          {sharedPostId.linkPreview && sharedPostId.linkPreview.url && (
+            <div className="post-link-preview" style={{ display: 'flex', gap: '16px', border: '1px solid #E8EDF3', borderRadius: '8px', overflow: 'hidden', background: '#ffffff', marginBottom: '0px', marginTop: '8px' }}>
+              {sharedPostId.linkPreview.image && (
+                <img src={resolveImageUrl(sharedPostId.linkPreview.image)} alt="preview" style={{ width: '120px', height: '80px', objectFit: 'cover', flexShrink: 0 }} />
+              )}
+              <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
+                <h5 style={{ fontSize: '13px', fontWeight: '700', margin: '0 0 4px 0', color: '#09122E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sharedPostId.linkPreview.title || 'External Link'}</h5>
+                {sharedPostId.linkPreview.description && (
+                  <p style={{ fontSize: '11px', color: '#777E90', margin: '0 0 4px 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{sharedPostId.linkPreview.description}</p>
+                )}
+                <a href={sharedPostId.linkPreview.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '10px', color: '#EA650A', fontWeight: '600', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sharedPostId.linkPreview.url}</a>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Reactions & Reshares count display */}
+      {(totalReactionsCount > 0 || (reshareCount && reshareCount > 0)) && (
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '14px' }}>
+          {totalReactionsCount > 0 && (
+            <div className="post-reactions-display" style={{ marginTop: 0 }}>
+              <div className="reaction-emoji-stack">
+                {uniqueEmojisUsed.slice(0, 3).map((emoji) => (
+                  <span key={emoji} className="stack-emoji">
+                    {emoji}
+                  </span>
+                ))}
+              </div>
+              <span className="reaction-total-count">
+                {totalReactionsCount}
+              </span>
+              {reactionsTooltipText && (
+                <div className="reactions-tooltip">
+                  {reactionsTooltipText}
+                </div>
+              )}
+            </div>
+          )}
+
+          {reshareCount && reshareCount > 0 && (
+            <div className="post-reactions-display" style={{ marginTop: 0, cursor: 'default' }}>
+              <Share2 size={14} color="#777E90" />
+              <span className="reaction-total-count" style={{ marginLeft: '4px' }}>
+                {reshareCount} {reshareCount === 1 ? 'Reshare' : 'Reshares'}
+              </span>
             </div>
           )}
         </div>

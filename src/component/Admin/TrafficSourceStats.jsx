@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { BarChart3, Users, RefreshCw, Smile } from "lucide-react";
-import { getTrafficSources } from "../../utils/adminApi";
+import { BarChart3, Users, RefreshCw, Smile, TrendingUp, Loader2 } from "lucide-react";
+import { getTrafficSources, getTrafficSourceTrend } from "../../utils/adminApi";
 
 const TrafficSourceStats = () => {
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedSource, setSelectedSource] = useState(null);
 
   const fetchStats = async (isRefresh = false) => {
     try {
@@ -156,9 +157,27 @@ const TrafficSourceStats = () => {
                 return (
                   <tr key={index}>
                     <td>
-                      <span style={{ fontWeight: 600, color: "#09122E", textTransform: "capitalize" }}>
-                        {item.trafficSource}
-                      </span>
+                      <button 
+                        onClick={() => setSelectedSource(item.trafficSource)}
+                        className="drilldown-link"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          padding: 0,
+                          margin: 0,
+                          cursor: "pointer",
+                          fontWeight: 600,
+                          color: "#0B63E5",
+                          textAlign: "left",
+                          textTransform: "capitalize",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px"
+                        }}
+                      >
+                        <TrendingUp size={14} />
+                        <span>{item.trafficSource}</span>
+                      </button>
                     </td>
                     <td>
                       <span className="table-cell-badge badge-city" style={{ fontWeight: 600 }}>
@@ -189,6 +208,142 @@ const TrafficSourceStats = () => {
             )}
           </tbody>
         </table>
+      </div>
+
+      {selectedSource && (
+        <TrafficSourceTrendModal 
+          source={selectedSource} 
+          onClose={() => setSelectedSource(null)} 
+        />
+      )}
+    </div>
+  );
+};
+
+const TrafficSourceTrendModal = ({ source, onClose }) => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchTrend = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getTrafficSourceTrend(source);
+        if (response.success && response.data) {
+          setData(response.data.trend || []);
+        } else {
+          setError(response.message || "Failed to load trend data");
+        }
+      } catch (err) {
+        setError(err.message || "Something went wrong while fetching trend");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (source) {
+      fetchTrend();
+    }
+  }, [source]);
+
+  // Math insights
+  const totalRegistrations = data.reduce((sum, d) => sum + (d.totalCount || 0), 0);
+  const totalCompletions = data.reduce((sum, d) => sum + (d.completeCount || 0), 0);
+  const avgCompletionRate = totalRegistrations > 0 
+    ? ((totalCompletions / totalRegistrations) * 100).toFixed(1) 
+    : "0.0";
+
+  return (
+    <div className="trend-modal-overlay" onClick={onClose}>
+      <div className="trend-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="trend-modal-header" style={{ borderLeft: `6px solid #0B63E5` }}>
+          <div className="trend-header-left">
+            <div className="trend-header-icon" style={{ background: "linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%)", color: "#0B63E5" }}>
+              <TrendingUp size={20} />
+            </div>
+            <div>
+              <h3 style={{ textTransform: "capitalize" }}>"{source}" Traffic Source Trend</h3>
+              <p className="trend-header-subtitle">Last 7 days registration & profile completion</p>
+            </div>
+          </div>
+          <button className="trend-modal-close" onClick={onClose}>&times;</button>
+        </div>
+
+        <div className="trend-modal-body">
+          {loading ? (
+            <div className="trend-modal-loading">
+              <Loader2 className="spinner animate-spin" size={32} />
+              <p style={{ marginTop: "10px", color: "#718096" }}>Fetching trend metrics...</p>
+            </div>
+          ) : error ? (
+            <div className="trend-modal-error">
+              <p>{error}</p>
+            </div>
+          ) : (
+            <>
+              {/* Summary Cards */}
+              <div className="trend-summary-row" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "15px", marginBottom: "20px" }}>
+                <div className="trend-summary-card" style={{ padding: "15px", background: "#F8FAFC", borderRadius: "10px", border: "1px solid #E2E8F0", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <span className="summary-label" style={{ fontSize: "12px", color: "#64748B", fontWeight: 500, marginBottom: "5px" }}>7-Day Registrations</span>
+                  <span className="summary-val" style={{ fontSize: "20px", color: "#0B63E5", fontWeight: "700" }}>{totalRegistrations.toLocaleString()}</span>
+                </div>
+                <div className="trend-summary-card" style={{ padding: "15px", background: "#F8FAFC", borderRadius: "10px", border: "1px solid #E2E8F0", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <span className="summary-label" style={{ fontSize: "12px", color: "#64748B", fontWeight: 500, marginBottom: "5px" }}>7-Day Completed Profiles</span>
+                  <span className="summary-val" style={{ fontSize: "20px", color: "#059669", fontWeight: "700" }}>{totalCompletions.toLocaleString()}</span>
+                </div>
+                <div className="trend-summary-card" style={{ padding: "15px", background: "#F8FAFC", borderRadius: "10px", border: "1px solid #E2E8F0", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <span className="summary-label" style={{ fontSize: "12px", color: "#64748B", fontWeight: 500, marginBottom: "5px" }}>7-Day Completion Rate</span>
+                  <span className="summary-val" style={{ fontSize: "20px", color: "#D97706", fontWeight: "700" }}>{avgCompletionRate}%</span>
+                </div>
+              </div>
+
+              {/* Table list */}
+              <div className="trend-table-container">
+                <table className="trend-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th style={{ textAlign: "right" }}>Registrations</th>
+                      <th style={{ textAlign: "right" }}>Completed Profiles</th>
+                      <th style={{ textAlign: "right" }}>Completion Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.length === 0 ? (
+                      <tr>
+                        <td colSpan="4" style={{ textAlign: "center", padding: "15px", color: "#718096" }}>
+                          No registration data in the last 7 days.
+                        </td>
+                      </tr>
+                    ) : (
+                      data.slice().reverse().map((row, i) => {
+                        const rate = row.totalCount > 0 
+                          ? ((row.completeCount / row.totalCount) * 100).toFixed(1)
+                          : "0.0";
+                        return (
+                          <tr key={i}>
+                            <td className="trend-td-date">{row.date}</td>
+                            <td className="trend-td-count" style={{ color: "#0B63E5", fontWeight: "600", textAlign: "right" }}>
+                              {row.totalCount.toLocaleString()}
+                            </td>
+                            <td className="trend-td-count" style={{ color: "#059669", fontWeight: "600", textAlign: "right" }}>
+                              {row.completeCount.toLocaleString()}
+                            </td>
+                            <td className="trend-td-count" style={{ color: "#D97706", fontWeight: "600", textAlign: "right" }}>
+                              {rate}%
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

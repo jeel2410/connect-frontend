@@ -12,7 +12,7 @@ const CreatePost = ({ onPostCreated }) => {
   const [isPosting, setIsPosting] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
-  const [shareType, setShareType] = useState('post'); // 'post' or 'link'
+  const [shareType, setShareType] = useState('link'); // 'post' or 'link'
   const [targetConnections, setTargetConnections] = useState(true);
   const [targetCity, setTargetCity] = useState(false);
   const [targetIndustries, setTargetIndustries] = useState([]);
@@ -120,11 +120,20 @@ const CreatePost = ({ onPostCreated }) => {
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    if (attachments.length + files.length > 5) {
-      toast.error('Maximum 5 attachments allowed');
-      return;
+    if (shareType === 'link') {
+      const mp4Files = files.filter(file => file.type === 'video/mp4' || file.name.toLowerCase().endsWith('.mp4'));
+      if (mp4Files.length === 0) {
+        toast.error('Only .mp4 video files are allowed');
+        return;
+      }
+      setAttachments([mp4Files[0]]);
+    } else {
+      if (attachments.length + files.length > 5) {
+        toast.error('Maximum 5 attachments allowed');
+        return;
+      }
+      setAttachments([...attachments, ...files]);
     }
-    setAttachments([...attachments, ...files]);
   };
 
   const removeAttachment = (index) => {
@@ -153,20 +162,15 @@ const CreatePost = ({ onPostCreated }) => {
 
     let finalContent = '';
     if (shareType === 'link') {
-      if (!shareLink.trim()) {
-        toast.error('Please enter a link to share');
-        return;
-      }
-      const urlPattern = /https?:\/\/[^\s]+/i;
-      if (!urlPattern.test(shareLink.trim())) {
-        toast.error('Please enter a valid link starting with http:// or https://');
+      if (attachments.length === 0) {
+        toast.error('Please attach a reel (.mp4)');
         return;
       }
       if (!sharingReason.trim()) {
-        toast.error('Please explain why you are sharing this link');
+        toast.error('Please explain why you are sharing this reel');
         return;
       }
-      finalContent = `${sharingReason.trim()}\n\n${shareLink.trim()}`;
+      finalContent = sharingReason.trim();
     } else {
       if (!content.trim() && attachments.length === 0) {
         toast.error('Please add some content or an attachment');
@@ -237,79 +241,61 @@ const CreatePost = ({ onPostCreated }) => {
     <div className="create-post-section">
       {!isExpanded ? (
         <div className="create-post-trigger">
-          {!showOptions ? (
-            <button className="create-btn-main" onClick={() => setShowOptions(true)}>
-              <Plus size={20} />
-              <span>New Share</span>
-            </button>
-          ) : (
-            <div className="share-options-container" style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <button
-                className="create-btn-main create-post-option-btn"
-                onClick={() => {
-                  setShareType('post');
-                  setIsExpanded(true);
-                }}
-              >
-                <Plus size={20} />
-                <span>Create post</span>
-              </button>
-              <button
-                className="create-btn-main link-btn-variant"
-                onClick={() => {
-                  setShareType('link');
-                  setIsExpanded(true);
-                }}
-              >
-                <Plus size={20} />
-                <span>Share Link</span>
-              </button>
-              <button
-                className="close-icon-btn"
-                onClick={() => setShowOptions(false)}
-                title="Cancel selection"
-              >
-                <X size={16} />
-              </button>
-            </div>
-          )}
+          <button
+            className="create-btn-main"
+            onClick={() => {
+              setShareType('link');
+              setIsExpanded(true);
+            }}
+          >
+            <Plus size={20} />
+            <span>New Share</span>
+          </button>
         </div>
       ) : (
         <div className="create-post-form-card">
           <div className="create-post-form-header">
-            <h3>{shareType === 'link' ? 'Share Link' : 'New Post'}</h3>
+            <h3>{shareType === 'link' ? 'Share Reel' : 'New Post'}</h3>
           </div>
 
           {shareType === 'link' ? (
             <div className="share-link-fields-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
               <div className="link-input-group">
-                <label style={{ fontSize: '14px', fontWeight: '600', color: '#353945', marginBottom: '6px', display: 'block' }}>Destination Link</label>
-                <input
-                  type="text"
-                  className="post-textarea-premium"
-                  style={{ width: '100%', padding: '12px', fontSize: '14px', borderRadius: '8px', border: '1px solid #DDE2EE', height: 'auto' }}
-                  placeholder="Share an article, video, trend, or discovery with your connections"
-                  value={shareLink}
-                  onChange={(e) => setShareLink(e.target.value)}
-                />
+                <label style={{ fontSize: '14px', fontWeight: '600', color: '#353945', marginBottom: '6px', display: 'block' }}>Upload Reel (.mp4) <span style={{ color: '#EA650A' }}>*</span></label>
+                <div 
+                  className="video-upload-area" 
+                  onClick={() => fileInputRef.current.click()}
+                  style={{ 
+                    border: '2px dashed #DDE2EE', 
+                    borderRadius: '8px', 
+                    padding: '24px', 
+                    textAlign: 'center', 
+                    cursor: 'pointer', 
+                    background: '#F8F9FB',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <Plus size={24} color="#EA650A" />
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#353945' }}>
+                    {attachments.length > 0 ? attachments[0].name : "Choose .mp4 reel file"}
+                  </span>
+                  <span style={{ fontSize: '12px', color: '#777E90' }}>Max file size 50MB</span>
+                </div>
               </div>
 
-              {/* Dynamic Link Preview */}
-              {loadingPreview && (
-                <div style={{ fontSize: '12px', color: '#777E90', padding: '8px', fontStyle: 'italic' }}>Fetching link preview...</div>
-              )}
-              {linkPreview && linkPreview.url && (
-                <div className="post-link-preview-edit" style={{ display: 'flex', gap: '16px', border: '1px solid #E8EDF3', borderRadius: '8px', overflow: 'hidden', background: '#F8F9FB', marginTop: '-8px' }}>
-                  {linkPreview.image && (
-                    <img src={linkPreview.image} alt="preview" style={{ width: '150px', height: '100px', objectFit: 'cover', flexShrink: 0 }} />
-                  )}
-                  <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
-                    <h5 style={{ fontSize: '14px', fontWeight: '700', margin: '0 0 6px 0', color: '#09122E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{linkPreview.title || 'External Link'}</h5>
-                    {linkPreview.description && (
-                      <p style={{ fontSize: '12px', color: '#777E90', margin: '0 0 8px 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{linkPreview.description}</p>
-                    )}
-                    <a href={linkPreview.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#EA650A', fontWeight: '600', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{linkPreview.url}</a>
-                  </div>
+              {/* Video Preview if selected */}
+              {attachments.length > 0 && (attachments[0].type.startsWith('video/') || attachments[0].name.toLowerCase().endsWith('.mp4')) && (
+                <div style={{ width: '100%', borderRadius: '8px', overflow: 'hidden', background: '#000', maxHeight: '300px' }}>
+                  <video 
+                    src={URL.createObjectURL(attachments[0])} 
+                    controls 
+                    style={{ width: '100%', maxHeight: '300px', display: 'block' }} 
+                  />
                 </div>
               )}
 
@@ -337,7 +323,7 @@ const CreatePost = ({ onPostCreated }) => {
           {/* Target Audience Segment Selection */}
           <div className="target-audience-section" style={{ borderTop: '1px solid #E8EDF3', paddingTop: '16px', marginTop: '16px', marginBottom: '16px' }}>
             <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#09122E', marginBottom: '12px', textAlign: 'left' }}>Target Audience</h4>
-            
+
             {/* Share Scope Selector */}
             <div style={{ display: 'flex', gap: '20px', marginBottom: '16px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#353945' }}>
@@ -396,7 +382,7 @@ const CreatePost = ({ onPostCreated }) => {
             ) : (
               <>
                 <div className="target-segments-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                  
+
                   {/* Connections Target */}
                   <div className="target-segment-card" style={{ border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#F8F9FB' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#353945' }}>
@@ -497,7 +483,7 @@ const CreatePost = ({ onPostCreated }) => {
 
           </div>
 
-          {attachments.length > 0 && (
+          {attachments.length > 0 && shareType !== 'link' && (
             <div className="attachment-previews-grid">
               {attachments.map((file, index) => (
                 <div key={index} className="att-preview-box">
@@ -519,21 +505,22 @@ const CreatePost = ({ onPostCreated }) => {
 
           <div className="create-post-footer-actions">
             <div className="footer-left">
-              <button
-                type="button"
-                className="attach-trigger-btn"
-                onClick={() => fileInputRef.current.click()}
-                title="Attach media"
-              >
-                <Paperclip size={18} />
-                <span>Add Media</span>
-              </button>
+              {shareType !== 'link' && (
+                <button
+                  type="button"
+                  className="attach-trigger-btn"
+                  onClick={() => fileInputRef.current.click()}
+                  title="Attach media"
+                >
+                  <Paperclip size={18} />
+                  <span>Add Media</span>
+                </button>
+              )}
               <input
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
-                multiple
-                accept="image/*,.pdf,.doc,.docx"
+                accept={shareType === 'link' ? "video/mp4" : "image/*,.pdf,.doc,.docx"}
                 style={{ display: 'none' }}
               />
             </div>
