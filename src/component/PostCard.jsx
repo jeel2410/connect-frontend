@@ -183,6 +183,10 @@ const PostCard = ({ post, onReact }) => {
             alt={displayName}
             className="post-user-avatar"
             onClick={handleProfileClick}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = fallbackAvatar;
+            }}
             style={{ objectFit: userDetail?.isBusinessProfile ? 'contain' : 'cover', backgroundColor: userDetail?.isBusinessProfile ? '#fff' : 'transparent' }}
           />
           <div className="post-user-info">
@@ -296,6 +300,12 @@ const PostCard = ({ post, onReact }) => {
                 : (resolveImageUrl(sharedPostId.userId?.userDetailId?.profileImage) || getAvatar(sharedPostId.userId?.userDetailId?.gender, sharedPostId.userId?.userDetailId?.dateOfBirth))
               }
               alt={sharedPostId.userId?.userDetailId?.fullName || 'User'}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = sharedPostId.userId?.userDetailId?.isBusinessProfile
+                  ? '/default-avatar.png'
+                  : getAvatar(sharedPostId.userId?.userDetailId?.gender, sharedPostId.userId?.userDetailId?.dateOfBirth);
+              }}
               style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
             />
             <div>

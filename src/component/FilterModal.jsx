@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getAvatar, resolveImageUrl } from "../utils/avatarHelper";
 import closeICon from "../../src/assets/image/close_icon.png";
 import { X } from "lucide-react";
 import API_BASE_URL from "../utils/config";
@@ -654,8 +655,12 @@ const FilterModal = ({ isOpen, onClose, onApply, onClear, onUnskip }) => {
                   <div key={user._id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: "8px", backgroundColor: "#f9fafb" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       <img
-                        src={user.profileImage || "https://res.cloudinary.com/demo/image/upload/d_avatar.png/avatar.png"}
+                        src={resolveImageUrl(user.profileImage) || getAvatar(user.gender, user.dateOfBirth)}
                         alt={user.fullName}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = getAvatar(user.gender, user.dateOfBirth);
+                        }}
                         style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", border: "1px solid #ddd" }}
                       />
                       <div>

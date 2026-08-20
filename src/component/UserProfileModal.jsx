@@ -113,12 +113,25 @@ export default function UserProfileModal({ userId }) {
       if (bgElement) {
         const coverImg = profileData.isBusinessProfile ? profileData.businessCoverImage : profileData.coverImage;
         if (coverImg) {
-          bgElement.style.backgroundImage = `url(${resolveImageUrl(coverImg)})`;
-          bgElement.style.backgroundSize = 'cover';
-          bgElement.style.backgroundPosition = 'center';
-          if (overlayElement) {
-            overlayElement.style.display = 'none';
-          }
+          const resolvedCover = resolveImageUrl(coverImg);
+          const img = new Image();
+          img.src = resolvedCover;
+          img.onload = () => {
+            bgElement.style.backgroundImage = `url(${resolvedCover})`;
+            bgElement.style.backgroundSize = 'cover';
+            bgElement.style.backgroundPosition = 'center';
+            if (overlayElement) {
+              overlayElement.style.display = 'none';
+            }
+          };
+          img.onerror = () => {
+            bgElement.style.backgroundImage = '';
+            bgElement.style.backgroundSize = '';
+            bgElement.style.backgroundPosition = '';
+            if (overlayElement) {
+              overlayElement.style.display = '';
+            }
+          };
         } else {
           bgElement.style.backgroundImage = '';
           bgElement.style.backgroundSize = '';
@@ -497,6 +510,10 @@ export default function UserProfileModal({ userId }) {
             alt={displayName}
             className="user-profile-avatar"
             onClick={() => setIsImagePopupOpen(true)}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = defaultAvatar;
+            }}
             style={{ cursor: 'pointer', objectFit: isBusiness ? 'contain' : 'cover', backgroundColor: isBusiness ? '#fff' : 'transparent', border: isBusiness ? '1px solid #e5e7eb' : 'none' }}
           />
           <div className="user-profile-name-location">
@@ -747,6 +764,10 @@ export default function UserProfileModal({ userId }) {
               src={displayLogo}
               alt={displayName}
               className="image-popup-img"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = defaultAvatar;
+              }}
               style={{ objectFit: isBusiness ? 'contain' : 'cover', backgroundColor: isBusiness ? '#fff' : 'transparent' }}
             />
           </div>

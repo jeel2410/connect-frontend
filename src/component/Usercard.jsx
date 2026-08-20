@@ -166,6 +166,10 @@ export default function Usercard({
                   src={profile.image}
                   alt={profile.name}
                   className="profile-image"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = profile.fallbackImage;
+                  }}
                   style={{ objectFit: profile.isBusiness ? 'contain' : 'cover', backgroundColor: profile.isBusiness ? '#fff' : 'transparent' }}
                 />
               </div>

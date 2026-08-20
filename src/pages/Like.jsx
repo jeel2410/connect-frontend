@@ -7,7 +7,7 @@ import searchIcon from "../../src/assets/image/serachIcon.png";
 import outlineHeart from "../../src/assets/image/outline_icon.png"
 import blackHeart from "../../src/assets/image/black_icon.png"
 import heartIcon from "../../src/assets/image/favourite_Icon.png";
-import { getAvatar } from "../utils/avatarHelper";
+import { getAvatar, resolveImageUrl } from "../utils/avatarHelper";
 import { getCookie } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 
@@ -150,9 +150,9 @@ const Likes = () => {
 
   const getProfileImage = (user) => {
     if (user.isBusinessProfile) {
-      return user.businessLogo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop";
+      return resolveImageUrl(user.businessLogo) || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop";
     }
-    return user.profileImage || user.image || getAvatar(user.gender, user.dateOfBirth || user.age);
+    return resolveImageUrl(user.profileImage || user.image) || getAvatar(user.gender, user.dateOfBirth || user.age);
   };
 
   const getProfileName = (user) => {
@@ -279,6 +279,12 @@ const Likes = () => {
                             src={getProfileImage(user)}
                             alt={getProfileName(user)}
                             className="like-avatar"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = user.isBusinessProfile 
+                                ? "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop" 
+                                : getAvatar(user.gender, user.dateOfBirth || user.age);
+                            }}
                             style={{ objectFit: user.isBusinessProfile ? 'contain' : 'cover', backgroundColor: user.isBusinessProfile ? '#fff' : 'transparent' }}
                           />
                           <div className="like-info">
@@ -340,6 +346,12 @@ const Likes = () => {
                             src={getProfileImage(user)}
                             alt={getProfileName(user)}
                             className="like-avatar"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = user.isBusinessProfile 
+                                ? "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop" 
+                                : getAvatar(user.gender, user.dateOfBirth || user.age);
+                            }}
                             style={{ objectFit: user.isBusinessProfile ? 'contain' : 'cover', backgroundColor: user.isBusinessProfile ? '#fff' : 'transparent' }}
                           />
                           <div className="like-info">

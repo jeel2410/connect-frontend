@@ -72,6 +72,10 @@ export default function Sidebar({ profileData = null }) {
             <img 
               src={displayImage} 
               alt="Profile" 
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = defaultAvatar;
+              }}
               style={{ objectFit: cachedProfile?.isBusinessProfile ? 'contain' : 'cover', backgroundColor: cachedProfile?.isBusinessProfile ? '#fff' : 'transparent' }}
             />
           </div>

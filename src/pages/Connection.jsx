@@ -779,6 +779,12 @@ const Connection = () => {
                               src={getProfileImage(connection)}
                               alt={getProfileName(connection)}
                               className="connections-page-avatar"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = connection.isBusinessProfile 
+                                  ? "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop" 
+                                  : getAvatar(connection.gender, connection.dateOfBirth || connection.age);
+                              }}
                               style={{ objectFit: connection.isBusinessProfile ? 'contain' : 'cover', backgroundColor: connection.isBusinessProfile ? '#fff' : 'transparent' }}
                             />
                             <div className="connection-name-content">
@@ -899,6 +905,12 @@ const Connection = () => {
                               src={getProfileImage(request)}
                               alt={getProfileName(request)}
                               className="connections-page-avatar"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = request.isBusinessProfile 
+                                  ? "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop" 
+                                  : getAvatar(request.gender, request.dateOfBirth || request.age);
+                              }}
                               style={{ objectFit: request.isBusinessProfile ? 'contain' : 'cover', backgroundColor: request.isBusinessProfile ? '#fff' : 'transparent' }}
                             />
                             <div className="connection-name-content">
@@ -969,6 +981,12 @@ const Connection = () => {
                               src={getProfileImage(request)}
                               alt={getProfileName(request)}
                               className="connections-page-avatar"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = request.isBusinessProfile 
+                                  ? "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop" 
+                                  : getAvatar(request.gender, request.dateOfBirth || request.age);
+                              }}
                               style={{ objectFit: request.isBusinessProfile ? 'contain' : 'cover', backgroundColor: request.isBusinessProfile ? '#fff' : 'transparent' }}
                             />
                             <div className="connection-name-content">
@@ -1123,7 +1141,7 @@ const Connection = () => {
                               group.connections.map((member) => {
                                 const details = member.userDetailId || member;
                                 const isBiz = details.isBusinessProfile === true;
-                                const avatarImg = isBiz ? (details.businessLogo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop") : (details.profileImage || getAvatar(details.gender, details.dateOfBirth));
+                                const avatarImg = isBiz ? (resolveImageUrl(details.businessLogo) || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop") : (resolveImageUrl(details.profileImage) || getAvatar(details.gender, details.dateOfBirth));
                                 const name = isBiz ? details.businessName : (details.fullName || "User");
                                 return (
                                   <img
@@ -1131,6 +1149,12 @@ const Connection = () => {
                                     src={avatarImg}
                                     alt={name}
                                     title={name}
+                                    onError={(e) => {
+                                      e.target.onerror = null;
+                                      e.target.src = isBiz 
+                                        ? "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop" 
+                                        : getAvatar(details.gender, details.dateOfBirth);
+                                    }}
                                     style={{
                                       width: '32px',
                                       height: '32px',
@@ -1282,7 +1306,7 @@ const Connection = () => {
                               const isSelected = selectedConnections.includes(connId);
                               const details = conn.userDetailId || conn;
                               const isBiz = details.isBusinessProfile === true;
-                              const avatarImg = isBiz ? (details.businessLogo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop") : (details.profileImage || getAvatar(details.gender, details.dateOfBirth));
+                              const avatarImg = isBiz ? (resolveImageUrl(details.businessLogo) || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop") : (resolveImageUrl(details.profileImage) || getAvatar(details.gender, details.dateOfBirth));
                               const name = isBiz ? details.businessName : (details.fullName || "User");
                               
                               return (
@@ -1313,6 +1337,12 @@ const Connection = () => {
                                   <img
                                     src={avatarImg}
                                     alt={name}
+                                    onError={(e) => {
+                                      e.target.onerror = null;
+                                      e.target.src = isBiz 
+                                        ? "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop" 
+                                        : getAvatar(details.gender, details.dateOfBirth);
+                                    }}
                                     style={{
                                       width: '32px',
                                       height: '32px',

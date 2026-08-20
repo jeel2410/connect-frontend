@@ -6,7 +6,7 @@ import Header from '../component/Header'
 import Footer from '../component/Footer'
 import Sidebar from '../component/Sidebar'
 import searchIcon from '../assets/image/serachIcon.png'
-import { getAvatar } from '../utils/avatarHelper'
+import { getAvatar, resolveImageUrl } from '../utils/avatarHelper'
 import sendIcon from "../assets/image/sendIcon.png"
 import { getCookie, getUserProfile } from '../utils/auth'
 import API_BASE_URL from '../utils/config'
@@ -460,8 +460,12 @@ export default function Chat() {
                     >
                       <div className="contact-avatar">
                         <img 
-                          src={chat.profileImage || getAvatar(chat.gender, chat.dateOfBirth)}
+                          src={resolveImageUrl(chat.profileImage) || getAvatar(chat.gender, chat.dateOfBirth)}
                           alt={chat.fullName || "User"} 
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = getAvatar(chat.gender, chat.dateOfBirth);
+                          }}
                         />
                         {chat.unseenCount > 0 && (
                           <span className="unread-badge">{chat.unseenCount}</span>
@@ -502,10 +506,16 @@ export default function Chat() {
                     <img 
                       src={
                         selectedUserProfile.isBusinessProfile 
-                          ? (selectedUserProfile.businessLogo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop")
-                          : (selectedUserProfile.profileImage || getAvatar(selectedUserProfile.gender, selectedUserProfile.dateOfBirth || selectedUserProfile.age || selectedUserProfile.birthDate))
+                          ? (resolveImageUrl(selectedUserProfile.businessLogo) || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop")
+                          : (resolveImageUrl(selectedUserProfile.profileImage) || getAvatar(selectedUserProfile.gender, selectedUserProfile.dateOfBirth || selectedUserProfile.age || selectedUserProfile.birthDate))
                       }
                       alt={selectedUserProfile.isBusinessProfile ? selectedUserProfile.businessName : (selectedUserProfile.fullName || "User")} 
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = selectedUserProfile.isBusinessProfile 
+                          ? "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop"
+                          : getAvatar(selectedUserProfile.gender, selectedUserProfile.dateOfBirth || selectedUserProfile.age || selectedUserProfile.birthDate);
+                      }}
                       style={{ objectFit: selectedUserProfile.isBusinessProfile ? 'contain' : 'cover', backgroundColor: selectedUserProfile.isBusinessProfile ? '#fff' : 'transparent' }}
                     />
                   </div>

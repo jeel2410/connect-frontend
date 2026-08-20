@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { getAvatar, resolveImageUrl } from "../utils/avatarHelper";
 import editIcon from "../../src/assets/image/edit (1).png";
 import passwordIcon from "../../src/assets/image/passwordIcon.png";
@@ -17,6 +17,23 @@ export default function ProfilecardHeader({ showChangePassword = true, profileDa
   const displayImage = isBusiness ? (resolveImageUrl(profileData?.businessLogo) || businessPlaceholderLogo) : (resolveImageUrl(profileData?.profileImage) || defaultAvatar);
   const displayCover = isBusiness ? (resolveImageUrl(profileData?.businessCoverImage || profileData?.coverImage)) : resolveImageUrl(profileData?.coverImage);
 
+  const [validatedCover, setValidatedCover] = useState(null);
+
+  useEffect(() => {
+    if (displayCover) {
+      const img = new Image();
+      img.src = displayCover;
+      img.onload = () => {
+        setValidatedCover(displayCover);
+      };
+      img.onerror = () => {
+        setValidatedCover(null);
+      };
+    } else {
+      setValidatedCover(null);
+    }
+  }, [displayCover]);
+
   const handleImageClick = () => {
     if (fileInputRef.current && showImageUpload) {
       fileInputRef.current.click();
@@ -27,7 +44,7 @@ export default function ProfilecardHeader({ showChangePassword = true, profileDa
     <div className="dating-profile-header">
       <div
         className="dating-profile-header-background"
-        style={displayCover ? { backgroundImage: `url(${displayCover})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+        style={validatedCover ? { backgroundImage: `url(${validatedCover})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
       ></div>
       <div className="dating-profile-header-content">
         <div className="dating-profile-header-avatar-wrapper">
@@ -36,6 +53,10 @@ export default function ProfilecardHeader({ showChangePassword = true, profileDa
               src={displayImage}
               alt="Profile"
               className="dating-profile-header-avatar"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = defaultAvatar;
+              }}
               style={{ objectFit: isBusiness ? 'contain' : 'cover', backgroundColor: isBusiness ? '#fff' : 'transparent', border: isBusiness ? '1px solid #e5e7eb' : 'none' }}
             />
             {showImageUpload && onImageChange && (
