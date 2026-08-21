@@ -137,7 +137,7 @@ const PostCard = ({ post, onReact }) => {
     if (att.type === 'video') {
       return (
         <div key={index} className="post-attachment-video" style={{ width: '100%', maxWidth: '100%', margin: '12px 0', borderRadius: '8px', overflow: 'hidden', background: '#000' }}>
-          <video src={resolvedUrl} controls style={{ width: '100%', maxHeight: '450px', display: 'block', outline: 'none' }} />
+          <video src={resolvedUrl} controls autoPlay muted playsInline loop style={{ width: '100%', maxHeight: '450px', display: 'block', outline: 'none' }} />
         </div>
       );
     }
@@ -347,7 +347,7 @@ const PostCard = ({ post, onReact }) => {
       )}
 
       {/* Reactions & Reshares count display */}
-      {(totalReactionsCount > 0 || (reshareCount && reshareCount > 0)) && (
+      {(totalReactionsCount > 0 || (reshareCount !== undefined && reshareCount > 0)) ? (
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '14px' }}>
           {totalReactionsCount > 0 && (
             <div className="post-reactions-display" style={{ marginTop: 0 }}>
@@ -369,7 +369,7 @@ const PostCard = ({ post, onReact }) => {
             </div>
           )}
 
-          {reshareCount && reshareCount > 0 && (
+          {reshareCount > 0 && (
             <div className="post-reactions-display" style={{ marginTop: 0, cursor: 'default' }}>
               <Share2 size={14} color="#777E90" />
               <span className="reaction-total-count" style={{ marginLeft: '4px' }}>
@@ -378,7 +378,7 @@ const PostCard = ({ post, onReact }) => {
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
     </div>
   );

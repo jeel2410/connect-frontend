@@ -290,6 +290,10 @@ const CreatePost = ({ onPostCreated }) => {
                   <video 
                     src={URL.createObjectURL(attachments[0])} 
                     controls 
+                    autoPlay 
+                    muted 
+                    playsInline 
+                    loop 
                     style={{ width: '100%', maxHeight: '300px', display: 'block' }} 
                   />
                 </div>

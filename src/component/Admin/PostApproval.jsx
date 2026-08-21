@@ -1,13 +1,40 @@
 import React, { useState, useEffect } from "react";
-import { Check, X, ShieldAlert, Users, MapPin, Briefcase, Calendar, FileText } from "lucide-react";
+import { Check, X, ShieldAlert, Users, MapPin, Briefcase, Calendar, FileText, File, Share2 } from "lucide-react";
 import API_BASE_URL from "../../utils/config";
 import { getCookie } from "../../utils/auth";
 import { toast } from "react-toastify";
+import { resolveImageUrl } from "../../utils/avatarHelper";
 
 const PostApproval = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const renderAttachment = (att, index) => {
+    const resolvedUrl = resolveImageUrl(att.url);
+    if (att.type === 'image') {
+      return (
+        <div key={index} className="post-attachment-image" style={{ width: '100%', maxWidth: '300px', margin: '8px 0', borderRadius: '8px', overflow: 'hidden', border: '1px solid #E8EDF3' }}>
+          <img src={resolvedUrl} alt={att.name || 'attachment'} style={{ width: '100%', display: 'block' }} />
+        </div>
+      );
+    }
+
+    if (att.type === 'video') {
+      return (
+        <div key={index} className="post-attachment-video" style={{ width: '100%', maxWidth: '400px', margin: '8px 0', borderRadius: '8px', overflow: 'hidden', background: '#000' }}>
+          <video src={resolvedUrl} controls style={{ width: '100%', maxHeight: '300px', display: 'block', outline: 'none' }} />
+        </div>
+      );
+    }
+
+    return (
+      <a key={index} href={resolvedUrl} target="_blank" rel="noopener noreferrer" className="post-attachment-file" style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #E8EDF3', borderRadius: '6px', padding: '8px 12px', background: '#F8F9FB', textDecoration: 'none', color: '#353945', fontSize: '12px', width: 'fit-content' }}>
+        {att.type === 'pdf' ? <FileText size={18} color="#EA650A" /> : <File size={18} color="#EA650A" />}
+        <span style={{ fontWeight: "500" }}>{att.name || (att.type === 'pdf' ? 'PDF Document' : 'Document')}</span>
+      </a>
+    );
+  };
 
   const fetchPendingPosts = async () => {
     try {
@@ -118,7 +145,9 @@ const PostApproval = () => {
             const author = post.userId?.userDetailId || {};
             const segments = post.targetSegments || {};
             const authorName = author.isBusinessProfile ? author.businessName : author.fullName;
-            const authorImage = author.isBusinessProfile ? author.businessLogo : author.profileImage;
+            const authorImage = author.isBusinessProfile 
+              ? (resolveImageUrl(author.businessLogo) || "/default-avatar.png") 
+              : (resolveImageUrl(author.profileImage) || "/default-avatar.png");
             
             return (
               <div key={post._id} className="pending-post-card" style={{ background: "#ffffff", border: "1px solid #E8EDF3", borderRadius: "12px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
@@ -126,7 +155,7 @@ const PostApproval = () => {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                     <img
-                      src={authorImage || "/default-avatar.png"}
+                      src={authorImage}
                       alt={authorName || "User"}
                       style={{ width: "48px", height: "48px", borderRadius: "50%", objectFit: "cover", border: "2px solid #E8EDF3" }}
                       onError={(e) => { e.target.src = "/default-avatar.png"; }}
@@ -168,7 +197,7 @@ const PostApproval = () => {
                 {post.linkPreview && post.linkPreview.url && (
                   <div style={{ display: "flex", gap: "16px", border: "1px solid #E8EDF3", borderRadius: "8px", overflow: "hidden", background: "#F8F9FB" }}>
                     {post.linkPreview.image && (
-                      <img src={post.linkPreview.image} alt="preview" style={{ width: "150px", height: "100px", objectFit: "cover" }} />
+                      <img src={resolveImageUrl(post.linkPreview.image)} alt="preview" style={{ width: "150px", height: "100px", objectFit: "cover" }} />
                     )}
                     <div style={{ padding: "12px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                       <h5 style={{ fontSize: "14px", fontWeight: "700", margin: "0 0 6px 0", color: "#09122E" }}>{post.linkPreview.title || "External Link"}</h5>
@@ -182,13 +211,71 @@ const PostApproval = () => {
 
                 {/* Attachments (if present) */}
                 {post.attachments && post.attachments.length > 0 && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
-                    {post.attachments.map((file, idx) => (
-                      <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px", border: "1px solid #E8EDF3", borderRadius: "6px", padding: "8px 12px", background: "#F8F9FB" }}>
-                        <FileText size={18} color="#EA650A" />
-                        <span style={{ fontSize: "12px", color: "#353945", fontWeight: "500" }}>{file.name || "Attachment"}</span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    {post.attachments.map((file, idx) => renderAttachment(file, idx))}
+                  </div>
+                )}
+
+                {/* Reshared Post Box (if present) */}
+                {post.sharedPostId && (
+                  <div className="reshared-post-box" style={{
+                    border: '1px solid #E8EDF3',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    background: '#F8F9FB',
+                    marginTop: '12px',
+                    textAlign: 'left'
+                  }}>
+                    <div className="reshared-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      <img
+                        src={post.sharedPostId.userId?.userDetailId?.isBusinessProfile
+                          ? (resolveImageUrl(post.sharedPostId.userId?.userDetailId?.businessLogo) || '/default-avatar.png')
+                          : (resolveImageUrl(post.sharedPostId.userId?.userDetailId?.profileImage) || '/default-avatar.png')
+                        }
+                        alt={post.sharedPostId.userId?.userDetailId?.fullName || 'User'}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/default-avatar.png';
+                        }}
+                        style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
+                      />
+                      <div>
+                        <h5 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#09122E' }}>
+                          {post.sharedPostId.userId?.userDetailId?.isBusinessProfile
+                            ? post.sharedPostId.userId?.userDetailId?.businessName
+                            : post.sharedPostId.userId?.userDetailId?.fullName || 'User'
+                          }
+                        </h5>
+                        <span style={{ fontSize: '11px', color: '#777E90' }}>
+                          {new Date(post.sharedPostId.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
-                    ))}
+                    </div>
+
+                    <div className="reshared-content" style={{ fontSize: '13px', color: '#353945', marginBottom: '12px' }}>
+                      <p style={{ whiteSpace: 'pre-line', margin: 0 }}>{post.sharedPostId.content}</p>
+                    </div>
+
+                    {post.sharedPostId.attachments && post.sharedPostId.attachments.length > 0 && (
+                      <div className="post-attachments" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {post.sharedPostId.attachments.map((att, index) => renderAttachment(att, index))}
+                      </div>
+                    )}
+
+                    {post.sharedPostId.linkPreview && post.sharedPostId.linkPreview.url && (
+                      <div className="post-link-preview" style={{ display: 'flex', gap: '16px', border: '1px solid #E8EDF3', borderRadius: '8px', overflow: 'hidden', background: '#ffffff', marginBottom: '0px', marginTop: '8px' }}>
+                        {post.sharedPostId.linkPreview.image && (
+                          <img src={resolveImageUrl(post.sharedPostId.linkPreview.image)} alt="preview" style={{ width: '120px', height: '80px', objectFit: 'cover', flexShrink: 0 }} />
+                        )}
+                        <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
+                          <h5 style={{ fontSize: '13px', fontWeight: '700', margin: '0 0 4px 0', color: '#09122E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.sharedPostId.linkPreview.title || 'External Link'}</h5>
+                          {post.sharedPostId.linkPreview.description && (
+                            <p style={{ fontSize: '11px', color: '#777E90', margin: '0 0 4px 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{post.sharedPostId.linkPreview.description}</p>
+                          )}
+                          <a href={post.sharedPostId.linkPreview.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '10px', color: '#EA650A', fontWeight: '600', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.sharedPostId.linkPreview.url}</a>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
