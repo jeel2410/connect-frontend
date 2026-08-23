@@ -2042,6 +2042,43 @@ export const getCardClicks = async (cardId, days = "all") => {
   }
 };
 
+export const getAllCardClicksCount = async (days = 15) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/cards/broadcast-all/count?days=${days}`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch all clickers count");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching all clickers count:", error);
+    throw error;
+  }
+};
+
+export const broadcastAllCardsMailer = async (subject, htmlContent, days = 15) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/cards/broadcast-all`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ subject, htmlContent, days }),
+    });
+    if (!response.ok) {
+      const errData = await response.json();
+      throw new Error(errData.message || "Failed to send broadcast mail to all offers");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending broadcast to all offers:", error);
+    throw error;
+  }
+};
+
 export const broadcastCardMailer = async (cardId, subject, htmlContent, days = "all") => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/admin/cards/${cardId}/broadcast`, {

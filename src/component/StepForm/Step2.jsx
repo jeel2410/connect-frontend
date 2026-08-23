@@ -58,7 +58,7 @@ const Step2 = ({ data, updateData, errors, touched }) => {
               onBlur={() => updateData("_touched_gender", true)}
               className={touched?.gender && errors?.gender ? "input-error" : ""}
             >
-              <option value="">Select Gender</option>
+              <option value="">Select</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
               <option value="Other">Other</option>

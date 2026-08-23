@@ -196,7 +196,7 @@ const BusinessStep2 = ({ data, updateData, errors, touched, phoneNumber }) => {
               className={touched?.city && errors?.city ? "input-error" : ""}
               disabled={loadingCities}
             >
-              <option value="">{loadingCities ? "Loading cities..." : "Select City"}</option>
+              <option value="">{loadingCities ? "Loading cities..." : "Select"}</option>
               {cities.map((city) => (
                 <option key={city._id || city.name} value={city._id}>
                   {city.name.charAt(0).toUpperCase() + city.name.slice(1)}
@@ -233,7 +233,7 @@ const BusinessStep2 = ({ data, updateData, errors, touched, phoneNumber }) => {
               }}
               onBlur={() => updateData("_touched_pincode", true)}
               className={`form-input ${touched?.pincode && errors?.pincode ? "input-error" : ""}`}
-              placeholder="Enter Pincode"
+              placeholder="Enter"
             />
             {touched?.pincode && errors?.pincode && (
               <div className="field-error-message">{errors.pincode}</div>

@@ -121,7 +121,7 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
               className={touched?.city && errors?.city ? "input-error" : ""}
               disabled={loadingCities}
             >
-              <option value="">{loadingCities ? "Loading cities..." : "Select City"}</option>
+              <option value="">{loadingCities ? "Loading cities..." : "Select"}</option>
               {cities.map((city) => (
                 <option key={city._id || city.name} value={city._id}>
                   {city.name.charAt(0).toUpperCase() + city.name.slice(1)}
@@ -157,7 +157,7 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
               }}
               onBlur={() => updateData("_touched_pincode", true)}
               className={`form-input ${touched?.pincode && errors?.pincode ? "input-error" : ""}`}
-              placeholder="Enter Pincode"
+              placeholder="Enter"
             />
             {touched?.pincode && errors?.pincode && (
               <div className="field-error-message">{errors.pincode}</div>
@@ -171,14 +171,14 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
             <img src={religionIcon} alt="Religion"></img>
           </div>
           <div className="input-content">
-            <label className="input-label">Select Religion</label>
+            <label className="input-label">Religion</label>
             <select
               value={data.religion || ""}
               onChange={(e) => updateData("religion", e.target.value)}
               onBlur={() => updateData("_touched_religion", true)}
               className={touched?.religion && errors?.religion ? "input-error" : ""}
             >
-              <option value="">Select Religion</option>
+              <option value="">Select</option>
 
               <option value="Hinduism">Hinduism</option>
               <option value="Islam">Islam</option>
@@ -200,14 +200,14 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
             <img src={statusIcon} alt="Status"></img>
           </div>
           <div className="input-content">
-            <label className="input-label">Select Marital Status</label>
+            <label className="input-label">Marital Status</label>
             <select
               value={data.maritalStatus || ""}
               onChange={(e) => updateData("maritalStatus", e.target.value)}
               onBlur={() => updateData("_touched_maritalStatus", true)}
               className={touched?.maritalStatus && errors?.maritalStatus ? "input-error" : ""}
             >
-              <option value="">Select Marital Status</option>
+              <option value="">Select</option>
               <option value="Single">Single</option>
               <option value="Married">Married</option>
               <option value="Divorced">Divorced</option>

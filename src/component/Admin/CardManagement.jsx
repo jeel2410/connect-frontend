@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Search, Plus, Edit2, Trash2, X, Save, ChevronLeft, ChevronRight, XCircle, Users, Download, Mail, MessageSquare } from "lucide-react";
-import { getCards, createCard, updateCard, deleteCard, getPopupSetting, updatePopupSetting, getCities, getPositions, getCardClicks, broadcastCardMailer, broadcastCardSms, getOfferCategories, createOfferCategory } from "../../utils/adminApi";
+import { getCards, createCard, updateCard, deleteCard, getPopupSetting, updatePopupSetting, getCities, getPositions, getCardClicks, broadcastCardMailer, broadcastCardSms, getOfferCategories, createOfferCategory, getAllCardClicksCount, broadcastAllCardsMailer } from "../../utils/adminApi";
 import { resolveImageUrl } from "../../utils/avatarHelper";
 
 const CardManagement = () => {
@@ -61,6 +61,9 @@ const CardManagement = () => {
   const [sendingSms, setSendingSms] = useState(false);
   const itemsPerPage = 10;
   const [clickFilterDays, setClickFilterDays] = useState("all");
+  const [broadcastScope, setBroadcastScope] = useState("single"); // "single" or "all"
+  const [allClickersCount, setAllClickersCount] = useState(0);
+  const [loadingAllClickersCount, setLoadingAllClickersCount] = useState(false);
 
   // Fetch cards and settings from API
   const fetchCards = async () => {
@@ -239,6 +242,7 @@ const CardManagement = () => {
   };
 
   const handleOpenBroadcast = () => {
+    setBroadcastScope("single");
     setIsClicksModalOpen(false);
     setBroadcastSubject(`Exclusive Offer: ${selectedCardForClicks?.name || "Special Offer"}`);
     
@@ -275,6 +279,42 @@ const CardManagement = () => {
     setIsBroadcastModalOpen(true);
   };
 
+  const handleOpenAllBroadcast = async () => {
+    setBroadcastScope("all");
+    setBroadcastSubject("Exclusive Offers for Connect Members");
+    
+    const defaultTemplate = `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+  <h2 style="color: #EC7523; margin-top: 0;">Hello {{name}},</h2>
+  <p>We noticed you have been exploring our exclusive card offers on Connect.</p>
+  
+  <p style="margin-bottom: 25px; line-height: 1.6;">Don't miss out on these opportunities! Visit the offers page on Connect to view all personalized deals and partner benefits tailored for you.</p>
+  
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="https://connect.in/offer" target="_blank" style="background-color: #EC7523; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Explore All Offers</a>
+  </div>
+
+  <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
+  <p style="color: #9ca3af; font-size: 12px; text-align: center;">You received this email because you clicked on offers in Connect within the last 15 days.</p>
+</div>
+    `.trim();
+    
+    setBroadcastHtml(defaultTemplate);
+    setIsBroadcastModalOpen(true);
+    
+    setLoadingAllClickersCount(true);
+    try {
+      const response = await getAllCardClicksCount(15);
+      if (response.success && response.data) {
+        setAllClickersCount(response.data.count);
+      }
+    } catch (err) {
+      console.error("Failed to load clickers count:", err);
+    } finally {
+      setLoadingAllClickersCount(false);
+    }
+  };
+
   const handleSendBroadcast = async () => {
     if (!broadcastSubject.trim() || !broadcastHtml.trim()) {
       alert("Subject and body cannot be empty");
@@ -283,10 +323,18 @@ const CardManagement = () => {
 
     setSendingBroadcast(true);
     try {
-      const response = await broadcastCardMailer(selectedCardForClicks._id, broadcastSubject, broadcastHtml, clickFilterDays);
-      if (response.success) {
-        alert(`Mailer sent successfully to ${response.data.sent} users! (${response.data.skipped} skipped)`);
-        setIsBroadcastModalOpen(false);
+      if (broadcastScope === "all") {
+        const response = await broadcastAllCardsMailer(broadcastSubject, broadcastHtml, 15);
+        if (response.success) {
+          alert(`Mailer sent successfully to all offers clickers: ${response.data.sent} users! (${response.data.skipped} skipped)`);
+          setIsBroadcastModalOpen(false);
+        }
+      } else {
+        const response = await broadcastCardMailer(selectedCardForClicks._id, broadcastSubject, broadcastHtml, clickFilterDays);
+        if (response.success) {
+          alert(`Mailer sent successfully to ${response.data.sent} users! (${response.data.skipped} skipped)`);
+          setIsBroadcastModalOpen(false);
+        }
       }
     } catch (err) {
       alert(err.message || "Failed to send mailer broadcast");
@@ -625,6 +673,17 @@ const CardManagement = () => {
             </button>
           </div>
 
+          <div className="search-container">
+            <Search size={20} className="search-icon" />
+            <input
+              type="text"
+              placeholder="search offers"
+              className="search-input"
+              value={searchTerm}
+              onChange={handleSearch}
+            />
+          </div>
+
           <select
             value={selectedCategoryFilter}
             onChange={(e) => {
@@ -649,17 +708,14 @@ const CardManagement = () => {
               <option key={cat._id} value={cat._id}>{cat.name}</option>
             ))}
           </select>
-
-          <div className="search-container">
-            <Search size={20} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search offers..."
-              className="search-input"
-              value={searchTerm}
-              onChange={handleSearch}
-            />
-          </div>
+                  <button 
+            className="add-btn" 
+            style={{ backgroundColor: "#EC7523", borderColor: "#EC7523", color: "white" }} 
+            onClick={handleOpenAllBroadcast}
+          >
+            <Mail size={20} />
+            Bulk Mail All Offers (15d)
+          </button>
           <button className="add-btn" onClick={handleAdd}>
             <Plus size={20} />
             Add Offer
@@ -1859,6 +1915,7 @@ const CardManagement = () => {
                     <option value="all">All Time</option>
                     <option value="1">Last 24 Hours</option>
                     <option value="7">Last 7 Days</option>
+                    <option value="15">Last 15 Days</option>
                     <option value="30">Last 30 Days</option>
                   </select>
                 </div>
@@ -1956,9 +2013,15 @@ const CardManagement = () => {
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "650px", maxHeight: "90vh", overflowY: "auto", display: "flex", flexDirection: "column" }}>
             <div className="modal-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e5e7eb", paddingBottom: "12px" }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#1f2937" }}>Send Broadcast Mailer</h3>
+                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#1f2937" }}>
+                  {broadcastScope === "all" ? "Send Bulk Mail (All Offers - Last 15 Days)" : "Send Broadcast Mailer"}
+                </h3>
                 <p style={{ margin: "4px 0 0 0", fontSize: "0.875rem", color: "#EC7523" }}>
-                  To users who clicked: <strong>{selectedCardForClicks?.name}</strong> ({selectedCardClicks.filter(c => !!c.email).length} users with email)
+                  {broadcastScope === "all" ? (
+                    loadingAllClickersCount ? "Loading recipient count..." : `To all users who clicked any offer in the last 15 days (${allClickersCount} users with email)`
+                  ) : (
+                    `To users who clicked: ${selectedCardForClicks?.name || ''} (${selectedCardClicks.filter(c => !!c.email).length} users with email)`
+                  )}
                 </p>
               </div>
               <button className="modal-close-btn" onClick={() => setIsBroadcastModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af" }}>
@@ -2004,12 +2067,14 @@ const CardManagement = () => {
                   className="btn-secondary"
                   onClick={() => {
                     setIsBroadcastModalOpen(false);
-                    setIsClicksModalOpen(true); // go back to clicks modal
+                    if (broadcastScope === "single") {
+                      setIsClicksModalOpen(true); // go back to clicks modal only for single offer scope
+                    }
                   }}
                   disabled={sendingBroadcast}
                   style={{ padding: "8px 16px", borderRadius: "6px", fontSize: "14px", cursor: "pointer" }}
                 >
-                  Back
+                  {broadcastScope === "all" ? "Cancel" : "Back"}
                 </button>
                 <button
                   type="button"
