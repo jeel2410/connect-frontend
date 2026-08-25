@@ -569,7 +569,7 @@ const ScheduledMailers = () => {
                 style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "12px", fontFamily: "monospace", minHeight: "100px", resize: "vertical" }}
                 placeholder="Enter HTML email body..."
               />
-              <span style={{ fontSize: "10px", color: "#777E90" }}>Placeholders: <strong>{"{name}"}</strong>, <strong>{"{offerName}"}</strong>, <strong>{"{offerDescription}"}</strong>, <strong>{"{offerLogo}"}</strong>, <strong>{"{offerImage}"}</strong>, <strong>{"{offerFeatures}"}</strong></span>
+              <span style={{ fontSize: "10px", color: "#777E90" }}>Placeholders: <strong>{"{name}"}</strong>, <strong>{"{offerName}"}</strong>, <strong>{"{offerDescription}"}</strong>, <strong>{"{offerLogo}"}</strong>, <strong>{"{offerImage}"}</strong>, <strong>{"{offerImageUrl}"}</strong>, <strong>{"{offerUrl}"}</strong>, <strong>{"{offerFeatures}"}</strong></span>
             </div>
             <button 
               onClick={() => handleSaveSettings("OFFER_OF_THE_DAY")}
