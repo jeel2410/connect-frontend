@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Search, Plus, Edit2, Trash2, X, Save, ChevronLeft, ChevronRight, XCircle, Users, Download, Mail, MessageSquare } from "lucide-react";
-import { getCards, createCard, updateCard, deleteCard, getPopupSetting, updatePopupSetting, getCities, getPositions, getCardClicks, broadcastCardMailer, broadcastCardSms, getOfferCategories, createOfferCategory, getAllCardClicksCount, broadcastAllCardsMailer } from "../../utils/adminApi";
+import { getCards, createCard, updateCard, deleteCard, getPopupSetting, updatePopupSetting, getCities, getPositions, getCardClicks, broadcastCardMailer, broadcastCardSms, getOfferCategories, createOfferCategory, getAllCardClicksCount, broadcastAllCardsMailer, sendTestCardEmail } from "../../utils/adminApi";
 import { resolveImageUrl } from "../../utils/avatarHelper";
 
 const CardManagement = () => {
@@ -35,7 +35,8 @@ const CardManagement = () => {
     isActive: true,
     showInPopup: true,
     showInMailer: true,
-    category: ""
+    category: "",
+    customHtml: ""
   });
   const [offerCategories, setOfferCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
@@ -64,6 +65,41 @@ const CardManagement = () => {
   const [broadcastScope, setBroadcastScope] = useState("single"); // "single" or "all"
   const [allClickersCount, setAllClickersCount] = useState(0);
   const [loadingAllClickersCount, setLoadingAllClickersCount] = useState(false);
+
+  const [testEmailAddress, setTestEmailAddress] = useState("");
+  const [testingMail, setTestingMail] = useState(false);
+  const [testMailFeedback, setTestMailFeedback] = useState(null);
+
+  const handleSendTestCardMail = async (e) => {
+    if (e) e.preventDefault();
+    if (!testEmailAddress) {
+      setTestMailFeedback({ type: "error", message: "Please enter a recipient email address" });
+      return;
+    }
+    
+    try {
+      setTestingMail(true);
+      setTestMailFeedback(null);
+      
+      const testData = {
+        email: testEmailAddress,
+        customHtml: formData.customHtml,
+        name: formData.name,
+        description: formData.description,
+        url: formData.url,
+        logo_image: formData.logo_image_preview,
+        offer_image: formData.offer_image_preview,
+        features: formData.features
+      };
+      
+      const result = await sendTestCardEmail(testData);
+      setTestMailFeedback({ type: "success", message: result.message || "Test email sent successfully" });
+    } catch (err) {
+      setTestMailFeedback({ type: "error", message: err.message || "Failed to send test email" });
+    } finally {
+      setTestingMail(false);
+    }
+  };
 
   // Fetch cards and settings from API
   const fetchCards = async () => {
@@ -385,12 +421,15 @@ const CardManagement = () => {
       isActive: true,
       showInPopup: true,
       showInMailer: true,
-      category: ""
+      category: "",
+      customHtml: ""
     });
     setNewFeature("");
     setNewEligible("");
     setNewCity("");
     setNewPosition("");
+    setTestEmailAddress("");
+    setTestMailFeedback(null);
     setIsAddModalOpen(true);
   };
 
@@ -413,12 +452,15 @@ const CardManagement = () => {
       isActive: card.isActive !== undefined ? card.isActive : true,
       showInPopup: card.showInPopup !== undefined ? card.showInPopup : true,
       showInMailer: card.showInMailer !== undefined ? card.showInMailer : true,
-      category: card.category ? (typeof card.category === 'object' ? card.category._id : card.category) : ""
+      category: card.category ? (typeof card.category === 'object' ? card.category._id : card.category) : "",
+      customHtml: card.customHtml || ""
     });
     setNewFeature("");
     setNewEligible("");
     setNewCity("");
     setNewPosition("");
+    setTestEmailAddress("");
+    setTestMailFeedback(null);
     setIsEditModalOpen(true);
   };
 
@@ -566,7 +608,8 @@ const CardManagement = () => {
         isActive: formData.isActive,
         showInPopup: formData.showInPopup,
         showInMailer: formData.showInMailer,
-        category: formData.category || null
+        category: formData.category || null,
+        customHtml: formData.customHtml
       };
 
       if (isEditModalOpen) {
@@ -594,7 +637,8 @@ const CardManagement = () => {
         isActive: true,
         showInPopup: true,
         showInMailer: true,
-        category: ""
+        category: "",
+        customHtml: ""
       });
       setNewFeature("");
       setNewEligible("");
@@ -1406,7 +1450,64 @@ const CardManagement = () => {
                     ))}
                   </div>
                 )}
-              </div> */}
+              {/* Custom HTML Template Section */}
+              <div style={{ borderTop: "1px solid #eee", paddingTop: "15px", marginTop: "15px", marginBottom: "15px" }}>
+                <h4 style={{ marginBottom: "12px", color: "#ff6f00" }}>Custom Email Source Code (Optional)</h4>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <label style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", textTransform: "uppercase" }}>Custom Email HTML Body</label>
+                  <textarea 
+                    value={formData.customHtml || ""} 
+                    onChange={(e) => setFormData({ ...formData, customHtml: e.target.value })}
+                    style={{ 
+                      padding: "8px 12px", 
+                      borderRadius: "8px", 
+                      border: "1px solid #E4E6EB", 
+                      fontSize: "12px", 
+                      fontFamily: "monospace", 
+                      minHeight: "150px", 
+                      resize: "vertical",
+                      width: "100%",
+                      boxSizing: "border-box"
+                    }}
+                    placeholder="Enter custom HTML source code..."
+                    disabled={submitting}
+                  />
+                  <span style={{ fontSize: "10px", color: "#777E90" }}>
+                    If provided, this custom HTML will be sent directly instead of the default layout. Supported Placeholders: <strong>{"{name}"}</strong>, <strong>{"{fullName}"}</strong>, <strong>{"{offerName}"}</strong>, <strong>{"{offerDescription}"}</strong>, <strong>{"{offerImageUrl}"}</strong>, <strong>{"{offerUrl}"}</strong>
+                  </span>
+                  
+                  {/* Test Mail Section inside card modal */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+                    <input
+                      type="email"
+                      placeholder="Enter test email address..."
+                      className="form-input"
+                      value={testEmailAddress}
+                      onChange={(e) => setTestEmailAddress(e.target.value)}
+                      style={{ flex: 1, padding: "8px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
+                      disabled={submitting || testingMail}
+                    />
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={handleSendTestCardMail}
+                      style={{ padding: "8px 16px", whiteSpace: "nowrap" }}
+                      disabled={submitting || testingMail}
+                    >
+                      {testingMail ? "Sending..." : "Test Mail"}
+                    </button>
+                  </div>
+                  {testMailFeedback && (
+                    <div style={{ 
+                      fontSize: "12px", 
+                      color: testMailFeedback.type === "success" ? "#16a34a" : "#dc2626",
+                      marginTop: "4px"
+                    }}>
+                      {testMailFeedback.message}
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <div className="modal-actions">
                 <button
@@ -1857,7 +1958,64 @@ const CardManagement = () => {
                     ))}
                   </div>
                 )}
-              </div> */}
+              {/* Custom HTML Template Section */}
+              <div style={{ borderTop: "1px solid #eee", paddingTop: "15px", marginTop: "15px", marginBottom: "15px" }}>
+                <h4 style={{ marginBottom: "12px", color: "#ff6f00" }}>Custom Email Source Code (Optional)</h4>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <label style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", textTransform: "uppercase" }}>Custom Email HTML Body</label>
+                  <textarea 
+                    value={formData.customHtml || ""} 
+                    onChange={(e) => setFormData({ ...formData, customHtml: e.target.value })}
+                    style={{ 
+                      padding: "8px 12px", 
+                      borderRadius: "8px", 
+                      border: "1px solid #E4E6EB", 
+                      fontSize: "12px", 
+                      fontFamily: "monospace", 
+                      minHeight: "150px", 
+                      resize: "vertical",
+                      width: "100%",
+                      boxSizing: "border-box"
+                    }}
+                    placeholder="Enter custom HTML source code..."
+                    disabled={submitting}
+                  />
+                  <span style={{ fontSize: "10px", color: "#777E90" }}>
+                    If provided, this custom HTML will be sent directly instead of the default layout. Supported Placeholders: <strong>{"{name}"}</strong>, <strong>{"{fullName}"}</strong>, <strong>{"{offerName}"}</strong>, <strong>{"{offerDescription}"}</strong>, <strong>{"{offerImageUrl}"}</strong>, <strong>{"{offerUrl}"}</strong>
+                  </span>
+                  
+                  {/* Test Mail Section inside card modal */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+                    <input
+                      type="email"
+                      placeholder="Enter test email address..."
+                      className="form-input"
+                      value={testEmailAddress}
+                      onChange={(e) => setTestEmailAddress(e.target.value)}
+                      style={{ flex: 1, padding: "8px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
+                      disabled={submitting || testingMail}
+                    />
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={handleSendTestCardMail}
+                      style={{ padding: "8px 16px", whiteSpace: "nowrap" }}
+                      disabled={submitting || testingMail}
+                    >
+                      {testingMail ? "Sending..." : "Test Mail"}
+                    </button>
+                  </div>
+                  {testMailFeedback && (
+                    <div style={{ 
+                      fontSize: "12px", 
+                      color: testMailFeedback.type === "success" ? "#16a34a" : "#dc2626",
+                      marginTop: "4px"
+                    }}>
+                      {testMailFeedback.message}
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <div className="modal-actions">
                 <button

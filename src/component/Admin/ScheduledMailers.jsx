@@ -511,7 +511,7 @@ const ScheduledMailers = () => {
               <h3>Offer of the Day Mailers</h3>
               <p>Daily batch distributed hourly</p>
               <span style={{ fontSize: "11px", color: "#777E90", display: "block", marginTop: "2px" }}>
-                Runs: <strong>Daily at 9:00 PM</strong> | Sends: <strong>Hourly</strong>
+                Runs: <strong>Daily at 12:00 PM</strong> | Sends: <strong>Hourly</strong>
               </span>
             </div>
           </div>

@@ -1324,6 +1324,9 @@ export const createCard = async (cardData) => {
     if (cardData.category !== undefined && cardData.category !== null) {
       formData.append("category", cardData.category.toString());
     }
+    if (cardData.customHtml !== undefined && cardData.customHtml !== null) {
+      formData.append("customHtml", cardData.customHtml);
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/admin/cards`, {
       method: "POST",
@@ -1426,6 +1429,9 @@ export const updateCard = async (cardId, cardData) => {
     }
     if (cardData.category !== undefined) {
       formData.append("category", cardData.category !== null ? cardData.category.toString() : "");
+    }
+    if (cardData.customHtml !== undefined) {
+      formData.append("customHtml", cardData.customHtml || "");
     }
 
     const response = await fetch(`${API_BASE_URL}/api/admin/cards/${cardId}`, {
@@ -2353,6 +2359,27 @@ export const createOfferCategory = async (name) => {
     return await response.json();
   } catch (error) {
     console.error("Error creating offer category:", error);
+    throw error;
+  }
+};
+
+export const sendTestCardEmail = async (testData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/cards/test-email`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(testData),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to send test email");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending test card email:", error);
     throw error;
   }
 };
