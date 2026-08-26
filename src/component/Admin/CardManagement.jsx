@@ -67,6 +67,7 @@ const CardManagement = () => {
   const [loadingAllClickersCount, setLoadingAllClickersCount] = useState(false);
 
   const [testEmailAddress, setTestEmailAddress] = useState("");
+  const [testSubject, setTestSubject] = useState("");
   const [testingMail, setTestingMail] = useState(false);
   const [testMailFeedback, setTestMailFeedback] = useState(null);
 
@@ -83,6 +84,7 @@ const CardManagement = () => {
       
       const testData = {
         email: testEmailAddress,
+        subject: testSubject.trim(),
         customHtml: formData.customHtml,
         name: formData.name,
         description: formData.description,
@@ -280,7 +282,7 @@ const CardManagement = () => {
   const handleOpenBroadcast = () => {
     setBroadcastScope("single");
     setIsClicksModalOpen(false);
-    setBroadcastSubject(`Exclusive Offer: ${selectedCardForClicks?.name || "Special Offer"}`);
+    setBroadcastSubject(selectedCardForClicks?.name || "Special Offer");
     
     // Set a premium styled HTML template pre-filled with the offer information
     const defaultTemplate = `
@@ -429,6 +431,7 @@ const CardManagement = () => {
     setNewCity("");
     setNewPosition("");
     setTestEmailAddress("");
+    setTestSubject("");
     setTestMailFeedback(null);
     setIsAddModalOpen(true);
   };
@@ -460,6 +463,7 @@ const CardManagement = () => {
     setNewCity("");
     setNewPosition("");
     setTestEmailAddress("");
+    setTestSubject("");
     setTestMailFeedback(null);
     setIsEditModalOpen(true);
   };
@@ -1477,25 +1481,36 @@ const CardManagement = () => {
                   </span>
                   
                   {/* Test Mail Section inside card modal */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
                     <input
-                      type="email"
-                      placeholder="Enter test email address..."
+                      type="text"
+                      placeholder="Enter email subject (optional)..."
                       className="form-input"
-                      value={testEmailAddress}
-                      onChange={(e) => setTestEmailAddress(e.target.value)}
-                      style={{ flex: 1, padding: "8px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
+                      value={testSubject}
+                      onChange={(e) => setTestSubject(e.target.value)}
+                      style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
                       disabled={submitting || testingMail}
                     />
-                    <button
-                      type="button"
-                      className="btn-secondary"
-                      onClick={handleSendTestCardMail}
-                      style={{ padding: "8px 16px", whiteSpace: "nowrap" }}
-                      disabled={submitting || testingMail}
-                    >
-                      {testingMail ? "Sending..." : "Test Mail"}
-                    </button>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <input
+                        type="email"
+                        placeholder="Enter test email address..."
+                        className="form-input"
+                        value={testEmailAddress}
+                        onChange={(e) => setTestEmailAddress(e.target.value)}
+                        style={{ flex: 1, padding: "8px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
+                        disabled={submitting || testingMail}
+                      />
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={handleSendTestCardMail}
+                        style={{ padding: "8px 16px", whiteSpace: "nowrap" }}
+                        disabled={submitting || testingMail}
+                      >
+                        {testingMail ? "Sending..." : "Test Mail"}
+                      </button>
+                    </div>
                   </div>
                   {testMailFeedback && (
                     <div style={{ 
@@ -1985,25 +2000,36 @@ const CardManagement = () => {
                   </span>
                   
                   {/* Test Mail Section inside card modal */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
                     <input
-                      type="email"
-                      placeholder="Enter test email address..."
+                      type="text"
+                      placeholder="Enter email subject (optional)..."
                       className="form-input"
-                      value={testEmailAddress}
-                      onChange={(e) => setTestEmailAddress(e.target.value)}
-                      style={{ flex: 1, padding: "8px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
+                      value={testSubject}
+                      onChange={(e) => setTestSubject(e.target.value)}
+                      style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
                       disabled={submitting || testingMail}
                     />
-                    <button
-                      type="button"
-                      className="btn-secondary"
-                      onClick={handleSendTestCardMail}
-                      style={{ padding: "8px 16px", whiteSpace: "nowrap" }}
-                      disabled={submitting || testingMail}
-                    >
-                      {testingMail ? "Sending..." : "Test Mail"}
-                    </button>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <input
+                        type="email"
+                        placeholder="Enter test email address..."
+                        className="form-input"
+                        value={testEmailAddress}
+                        onChange={(e) => setTestEmailAddress(e.target.value)}
+                        style={{ flex: 1, padding: "8px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
+                        disabled={submitting || testingMail}
+                      />
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={handleSendTestCardMail}
+                        style={{ padding: "8px 16px", whiteSpace: "nowrap" }}
+                        disabled={submitting || testingMail}
+                      >
+                        {testingMail ? "Sending..." : "Test Mail"}
+                      </button>
+                    </div>
                   </div>
                   {testMailFeedback && (
                     <div style={{ 
