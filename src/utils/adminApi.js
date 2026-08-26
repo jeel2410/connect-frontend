@@ -1273,14 +1273,14 @@ export const createCard = async (cardData) => {
     formData.append("url", cardData.url || "");
     formData.append("targetAgeMin", cardData.targetAgeMin !== undefined && cardData.targetAgeMin !== null ? cardData.targetAgeMin : "");
     formData.append("targetAgeMax", cardData.targetAgeMax !== undefined && cardData.targetAgeMax !== null ? cardData.targetAgeMax : "");
-    
+
     // Append features array
     if (cardData.features && Array.isArray(cardData.features)) {
       cardData.features.forEach((feature) => {
         formData.append("features[]", feature);
       });
     }
-    
+
     // Append eligibles array
     if (cardData.eligibles && Array.isArray(cardData.eligibles)) {
       cardData.eligibles.forEach((eligible) => {
@@ -1301,7 +1301,7 @@ export const createCard = async (cardData) => {
         formData.append("targetPositions[]", position);
       });
     }
-    
+
     // Append logo image if it's a File
     if (cardData.logo_image instanceof File) {
       formData.append("logo_image", cardData.logo_image);
@@ -1326,6 +1326,9 @@ export const createCard = async (cardData) => {
     }
     if (cardData.customHtml !== undefined && cardData.customHtml !== null) {
       formData.append("customHtml", cardData.customHtml);
+    }
+    if (cardData.customSubject !== undefined && cardData.customSubject !== null) {
+      formData.append("customSubject", cardData.customSubject);
     }
 
     const response = await fetch(`${API_BASE_URL}/api/admin/cards`, {
@@ -1379,14 +1382,14 @@ export const updateCard = async (cardId, cardData) => {
     if (cardData.targetAgeMax !== undefined) {
       formData.append("targetAgeMax", cardData.targetAgeMax !== null ? cardData.targetAgeMax : "");
     }
-    
+
     // Append features array
     if (cardData.features && Array.isArray(cardData.features)) {
       cardData.features.forEach((feature) => {
         formData.append("features[]", feature);
       });
     }
-    
+
     // Append eligibles array
     if (cardData.eligibles && Array.isArray(cardData.eligibles)) {
       cardData.eligibles.forEach((eligible) => {
@@ -1407,7 +1410,7 @@ export const updateCard = async (cardId, cardData) => {
         formData.append("targetPositions[]", position);
       });
     }
-    
+
     // Append logo image if it's a File (only if it's a new file)
     if (cardData.logo_image instanceof File) {
       formData.append("logo_image", cardData.logo_image);
@@ -1432,6 +1435,9 @@ export const updateCard = async (cardId, cardData) => {
     }
     if (cardData.customHtml !== undefined) {
       formData.append("customHtml", cardData.customHtml || "");
+    }
+    if (cardData.customSubject !== undefined) {
+      formData.append("customSubject", cardData.customSubject || "");
     }
 
     const response = await fetch(`${API_BASE_URL}/api/admin/cards/${cardId}`, {

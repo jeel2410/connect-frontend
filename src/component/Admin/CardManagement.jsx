@@ -18,10 +18,10 @@ const CardManagement = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
-  const [formData, setFormData] = useState({ 
-    name: "", 
-    description: "", 
-    url: "", 
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    url: "",
     logo_image: null,
     logo_image_preview: null,
     features: [],
@@ -36,6 +36,7 @@ const CardManagement = () => {
     showInPopup: true,
     showInMailer: true,
     category: "",
+    customSubject: "",
     customHtml: ""
   });
   const [offerCategories, setOfferCategories] = useState([]);
@@ -67,7 +68,6 @@ const CardManagement = () => {
   const [loadingAllClickersCount, setLoadingAllClickersCount] = useState(false);
 
   const [testEmailAddress, setTestEmailAddress] = useState("");
-  const [testSubject, setTestSubject] = useState("");
   const [testingMail, setTestingMail] = useState(false);
   const [testMailFeedback, setTestMailFeedback] = useState(null);
 
@@ -77,14 +77,14 @@ const CardManagement = () => {
       setTestMailFeedback({ type: "error", message: "Please enter a recipient email address" });
       return;
     }
-    
+
     try {
       setTestingMail(true);
       setTestMailFeedback(null);
-      
+
       const testData = {
         email: testEmailAddress,
-        subject: testSubject.trim(),
+        subject: formData.customSubject ? formData.customSubject.trim() : "",
         customHtml: formData.customHtml,
         name: formData.name,
         description: formData.description,
@@ -93,7 +93,7 @@ const CardManagement = () => {
         offer_image: formData.offer_image_preview,
         features: formData.features
       };
-      
+
       const result = await sendTestCardEmail(testData);
       setTestMailFeedback({ type: "success", message: result.message || "Test email sent successfully" });
     } catch (err) {
@@ -109,7 +109,7 @@ const CardManagement = () => {
       setLoading(true);
       setError(null);
       const response = await getCards(currentPage, itemsPerPage, searchTerm, null, selectedCategoryFilter);
-      
+
       if (response.success && response.data) {
         setCards(response.data.cards || []);
         setPagination(response.data.pagination || {
@@ -283,7 +283,7 @@ const CardManagement = () => {
     setBroadcastScope("single");
     setIsClicksModalOpen(false);
     setBroadcastSubject(selectedCardForClicks?.name || "Special Offer");
-    
+
     // Set a premium styled HTML template pre-filled with the offer information
     const defaultTemplate = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
@@ -312,7 +312,7 @@ const CardManagement = () => {
   <p style="color: #9ca3af; font-size: 12px; text-align: center;">You received this email because you clicked on this offer in Connect.</p>
 </div>
     `.trim();
-    
+
     setBroadcastHtml(defaultTemplate);
     setIsBroadcastModalOpen(true);
   };
@@ -320,7 +320,7 @@ const CardManagement = () => {
   const handleOpenAllBroadcast = async () => {
     setBroadcastScope("all");
     setBroadcastSubject("Exclusive Offers for Connect Members");
-    
+
     const defaultTemplate = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
   <h2 style="color: #EC7523; margin-top: 0;">Hello {{name}},</h2>
@@ -336,10 +336,10 @@ const CardManagement = () => {
   <p style="color: #9ca3af; font-size: 12px; text-align: center;">You received this email because you clicked on offers in Connect within the last 15 days.</p>
 </div>
     `.trim();
-    
+
     setBroadcastHtml(defaultTemplate);
     setIsBroadcastModalOpen(true);
-    
+
     setLoadingAllClickersCount(true);
     try {
       const response = await getAllCardClicksCount(15);
@@ -385,7 +385,7 @@ const CardManagement = () => {
   const handleSendSmsBroadcast = async () => {
     const activeCount = selectedCardClicks.length;
     const confirmMessage = `Are you sure you want to send the eligibility SMS to the ${activeCount} user(s) who clicked "${selectedCardForClicks?.name}" in the selected timeframe?`;
-    
+
     if (!window.confirm(confirmMessage)) {
       return;
     }
@@ -406,10 +406,10 @@ const CardManagement = () => {
   };
 
   const handleAdd = () => {
-    setFormData({ 
-      name: "", 
-      description: "", 
-      url: "", 
+    setFormData({
+      name: "",
+      description: "",
+      url: "",
       logo_image: null,
       logo_image_preview: null,
       features: [],
@@ -424,6 +424,7 @@ const CardManagement = () => {
       showInPopup: true,
       showInMailer: true,
       category: "",
+      customSubject: "",
       customHtml: ""
     });
     setNewFeature("");
@@ -431,14 +432,13 @@ const CardManagement = () => {
     setNewCity("");
     setNewPosition("");
     setTestEmailAddress("");
-    setTestSubject("");
     setTestMailFeedback(null);
     setIsAddModalOpen(true);
   };
 
   const handleEdit = (card) => {
     setEditingCard(card);
-    setFormData({ 
+    setFormData({
       name: card.name || "",
       description: card.description || "",
       url: card.url || "",
@@ -456,6 +456,7 @@ const CardManagement = () => {
       showInPopup: card.showInPopup !== undefined ? card.showInPopup : true,
       showInMailer: card.showInMailer !== undefined ? card.showInMailer : true,
       category: card.category ? (typeof card.category === 'object' ? card.category._id : card.category) : "",
+      customSubject: card.customSubject || "",
       customHtml: card.customHtml || ""
     });
     setNewFeature("");
@@ -463,7 +464,6 @@ const CardManagement = () => {
     setNewCity("");
     setNewPosition("");
     setTestEmailAddress("");
-    setTestSubject("");
     setTestMailFeedback(null);
     setIsEditModalOpen(true);
   };
@@ -613,6 +613,7 @@ const CardManagement = () => {
         showInPopup: formData.showInPopup,
         showInMailer: formData.showInMailer,
         category: formData.category || null,
+        customSubject: formData.customSubject,
         customHtml: formData.customHtml
       };
 
@@ -624,10 +625,10 @@ const CardManagement = () => {
 
       setIsAddModalOpen(false);
       setIsEditModalOpen(false);
-      setFormData({ 
-        name: "", 
-        description: "", 
-        url: "", 
+      setFormData({
+        name: "",
+        description: "",
+        url: "",
         logo_image: null,
         logo_image_preview: null,
         features: [],
@@ -642,6 +643,7 @@ const CardManagement = () => {
         showInPopup: true,
         showInMailer: true,
         category: "",
+        customSubject: "",
         customHtml: ""
       });
       setNewFeature("");
@@ -664,9 +666,9 @@ const CardManagement = () => {
         <div className="admin-actions" style={{ display: "flex", alignItems: "center", gap: "15px", flexWrap: "wrap" }}>
           <div className="popup-toggle-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '10px' }}>
             <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px', margin: 0 }}>
-              <input 
-                type="checkbox" 
-                checked={isPopupEnabled} 
+              <input
+                type="checkbox"
+                checked={isPopupEnabled}
                 onChange={handleTogglePopupSetting}
                 style={{ opacity: 0, width: 0, height: 0 }}
               />
@@ -684,9 +686,9 @@ const CardManagement = () => {
           </div>
 
           <div className="category-adder-inline" style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '1px solid #eee', paddingLeft: '15px', marginRight: '10px' }}>
-            <input 
-              type="text" 
-              placeholder="New Category Name..." 
+            <input
+              type="text"
+              placeholder="New Category Name..."
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
               style={{
@@ -699,7 +701,7 @@ const CardManagement = () => {
               }}
               disabled={loadingCategories}
             />
-            <button 
+            <button
               type="button"
               onClick={handleCreateCategory}
               disabled={loadingCategories || !newCategoryName.trim()}
@@ -756,9 +758,9 @@ const CardManagement = () => {
               <option key={cat._id} value={cat._id}>{cat.name}</option>
             ))}
           </select>
-                  <button 
-            className="add-btn" 
-            style={{ backgroundColor: "#EC7523", borderColor: "#EC7523", color: "white" }} 
+          <button
+            className="add-btn"
+            style={{ backgroundColor: "#EC7523", borderColor: "#EC7523", color: "white" }}
             onClick={handleOpenAllBroadcast}
           >
             <Mail size={20} />
@@ -815,9 +817,9 @@ const CardManagement = () => {
                 <tr key={card._id}>
                   <td>
                     {card.logo_image ? (
-                      <img 
-                        src={resolveImageUrl(card.logo_image)} 
-                        alt={card.name} 
+                      <img
+                        src={resolveImageUrl(card.logo_image)}
+                        alt={card.name}
                         style={{ width: "50px", height: "50px", objectFit: "cover", borderRadius: "4px" }}
                       />
                     ) : (
@@ -881,9 +883,9 @@ const CardManagement = () => {
                   </td>
                   <td>
                     <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '34px', height: '18px', margin: 0 }}>
-                      <input 
-                        type="checkbox" 
-                        checked={card.isActive !== false} 
+                      <input
+                        type="checkbox"
+                        checked={card.isActive !== false}
                         onChange={() => handleToggleActive(card)}
                         style={{ opacity: 0, width: 0, height: 0 }}
                         disabled={loading}
@@ -901,9 +903,9 @@ const CardManagement = () => {
                   </td>
                   <td>
                     <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '34px', height: '18px', margin: 0 }}>
-                      <input 
-                        type="checkbox" 
-                        checked={card.showInPopup !== false} 
+                      <input
+                        type="checkbox"
+                        checked={card.showInPopup !== false}
                         onChange={() => handleToggleShowInPopup(card)}
                         style={{ opacity: 0, width: 0, height: 0 }}
                         disabled={loading}
@@ -921,9 +923,9 @@ const CardManagement = () => {
                   </td>
                   <td>
                     <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '34px', height: '18px', margin: 0 }}>
-                      <input 
-                        type="checkbox" 
-                        checked={card.showInMailer !== false} 
+                      <input
+                        type="checkbox"
+                        checked={card.showInMailer !== false}
                         onChange={() => handleToggleShowInMailer(card)}
                         style={{ opacity: 0, width: 0, height: 0 }}
                         disabled={loading}
@@ -1003,9 +1005,8 @@ const CardManagement = () => {
                     <span className="pagination-ellipsis">...</span>
                   )}
                   <button
-                    className={`pagination-number ${
-                      currentPage === page ? "active" : ""
-                    }`}
+                    className={`pagination-number ${currentPage === page ? "active" : ""
+                      }`}
                     onClick={() => handlePageChange(page)}
                   >
                     {page}
@@ -1096,9 +1097,9 @@ const CardManagement = () => {
                 />
                 {formData.logo_image_preview && (
                   <div style={{ marginTop: "10px" }}>
-                    <img 
-                      src={resolveImageUrl(formData.logo_image_preview)} 
-                      alt="Preview" 
+                    <img
+                      src={resolveImageUrl(formData.logo_image_preview)}
+                      alt="Preview"
                       style={{ maxWidth: "200px", maxHeight: "200px", borderRadius: "4px" }}
                     />
                   </div>
@@ -1114,9 +1115,9 @@ const CardManagement = () => {
                 />
                 {formData.offer_image_preview && (
                   <div style={{ marginTop: "10px" }}>
-                    <img 
-                      src={resolveImageUrl(formData.offer_image_preview)} 
-                      alt="Offer Preview" 
+                    <img
+                      src={resolveImageUrl(formData.offer_image_preview)}
+                      alt="Offer Preview"
                       style={{ maxWidth: "200px", maxHeight: "200px", borderRadius: "4px" }}
                     />
                   </div>
@@ -1191,9 +1192,9 @@ const CardManagement = () => {
                 <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "15px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px', margin: 0 }}>
-                      <input 
-                        type="checkbox" 
-                        checked={formData.isActive} 
+                      <input
+                        type="checkbox"
+                        checked={formData.isActive}
                         onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                         style={{ opacity: 0, width: 0, height: 0 }}
                         disabled={submitting}
@@ -1213,9 +1214,9 @@ const CardManagement = () => {
 
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px', margin: 0 }}>
-                      <input 
-                        type="checkbox" 
-                        checked={formData.showInPopup} 
+                      <input
+                        type="checkbox"
+                        checked={formData.showInPopup}
                         onChange={(e) => setFormData({ ...formData, showInPopup: e.target.checked })}
                         style={{ opacity: 0, width: 0, height: 0 }}
                         disabled={submitting}
@@ -1235,9 +1236,9 @@ const CardManagement = () => {
 
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px', margin: 0 }}>
-                      <input 
-                        type="checkbox" 
-                        checked={formData.showInMailer} 
+                      <input
+                        type="checkbox"
+                        checked={formData.showInMailer}
                         onChange={(e) => setFormData({ ...formData, showInMailer: e.target.checked })}
                         style={{ opacity: 0, width: 0, height: 0 }}
                         disabled={submitting}
@@ -1260,7 +1261,7 @@ const CardManagement = () => {
               {/* Targeting Criteria Section */}
               <div style={{ borderTop: "1px solid #eee", paddingTop: "15px", marginTop: "15px" }}>
                 <h4 style={{ marginBottom: "10px", color: "#ff6f00" }}>Targeting Criteria (Optional)</h4>
-                
+
                 <div style={{ display: "flex", gap: "15px", marginBottom: "15px" }}>
                   <div className="form-groups" style={{ flex: 1 }}>
                     <label>Min Age</label>
@@ -1459,16 +1460,16 @@ const CardManagement = () => {
                 <h4 style={{ marginBottom: "12px", color: "#ff6f00" }}>Custom Email Source Code (Optional)</h4>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   <label style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", textTransform: "uppercase" }}>Custom Email HTML Body</label>
-                  <textarea 
-                    value={formData.customHtml || ""} 
+                  <textarea
+                    value={formData.customHtml || ""}
                     onChange={(e) => setFormData({ ...formData, customHtml: e.target.value })}
-                    style={{ 
-                      padding: "8px 12px", 
-                      borderRadius: "8px", 
-                      border: "1px solid #E4E6EB", 
-                      fontSize: "12px", 
-                      fontFamily: "monospace", 
-                      minHeight: "150px", 
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid #E4E6EB",
+                      fontSize: "12px",
+                      fontFamily: "monospace",
+                      minHeight: "150px",
                       resize: "vertical",
                       width: "100%",
                       boxSizing: "border-box"
@@ -1479,15 +1480,15 @@ const CardManagement = () => {
                   <span style={{ fontSize: "10px", color: "#777E90" }}>
                     If provided, this custom HTML will be sent directly instead of the default layout. Supported Placeholders: <strong>{"{name}"}</strong>, <strong>{"{fullName}"}</strong>, <strong>{"{offerName}"}</strong>, <strong>{"{offerDescription}"}</strong>, <strong>{"{offerImageUrl}"}</strong>, <strong>{"{offerUrl}"}</strong>
                   </span>
-                  
+
                   {/* Test Mail Section inside card modal */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
                     <input
                       type="text"
                       placeholder="Enter email subject (optional)..."
                       className="form-input"
-                      value={testSubject}
-                      onChange={(e) => setTestSubject(e.target.value)}
+                      value={formData.customSubject || ""}
+                      onChange={(e) => setFormData({ ...formData, customSubject: e.target.value })}
                       style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
                       disabled={submitting || testingMail}
                     />
@@ -1513,8 +1514,8 @@ const CardManagement = () => {
                     </div>
                   </div>
                   {testMailFeedback && (
-                    <div style={{ 
-                      fontSize: "12px", 
+                    <div style={{
+                      fontSize: "12px",
                       color: testMailFeedback.type === "success" ? "#16a34a" : "#dc2626",
                       marginTop: "4px"
                     }}>
@@ -1615,9 +1616,9 @@ const CardManagement = () => {
                 />
                 {formData.logo_image_preview && (
                   <div style={{ marginTop: "10px" }}>
-                    <img 
-                      src={resolveImageUrl(formData.logo_image_preview)} 
-                      alt="Preview" 
+                    <img
+                      src={resolveImageUrl(formData.logo_image_preview)}
+                      alt="Preview"
                       style={{ maxWidth: "200px", maxHeight: "200px", borderRadius: "4px" }}
                     />
                   </div>
@@ -1633,9 +1634,9 @@ const CardManagement = () => {
                 />
                 {formData.offer_image_preview && (
                   <div style={{ marginTop: "10px" }}>
-                    <img 
-                      src={resolveImageUrl(formData.offer_image_preview)} 
-                      alt="Offer Preview" 
+                    <img
+                      src={resolveImageUrl(formData.offer_image_preview)}
+                      alt="Offer Preview"
                       style={{ maxWidth: "200px", maxHeight: "200px", borderRadius: "4px" }}
                     />
                   </div>
@@ -1710,9 +1711,9 @@ const CardManagement = () => {
                 <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "15px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px', margin: 0 }}>
-                      <input 
-                        type="checkbox" 
-                        checked={formData.isActive} 
+                      <input
+                        type="checkbox"
+                        checked={formData.isActive}
                         onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                         style={{ opacity: 0, width: 0, height: 0 }}
                         disabled={submitting}
@@ -1732,9 +1733,9 @@ const CardManagement = () => {
 
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px', margin: 0 }}>
-                      <input 
-                        type="checkbox" 
-                        checked={formData.showInPopup} 
+                      <input
+                        type="checkbox"
+                        checked={formData.showInPopup}
                         onChange={(e) => setFormData({ ...formData, showInPopup: e.target.checked })}
                         style={{ opacity: 0, width: 0, height: 0 }}
                         disabled={submitting}
@@ -1754,9 +1755,9 @@ const CardManagement = () => {
 
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '40px', height: '20px', margin: 0 }}>
-                      <input 
-                        type="checkbox" 
-                        checked={formData.showInMailer} 
+                      <input
+                        type="checkbox"
+                        checked={formData.showInMailer}
                         onChange={(e) => setFormData({ ...formData, showInMailer: e.target.checked })}
                         style={{ opacity: 0, width: 0, height: 0 }}
                         disabled={submitting}
@@ -1779,7 +1780,7 @@ const CardManagement = () => {
               {/* Targeting Criteria Section */}
               <div style={{ borderTop: "1px solid #eee", paddingTop: "15px", marginTop: "15px" }}>
                 <h4 style={{ marginBottom: "10px", color: "#ff6f00" }}>Targeting Criteria (Optional)</h4>
-                
+
                 <div style={{ display: "flex", gap: "15px", marginBottom: "15px" }}>
                   <div className="form-groups" style={{ flex: 1 }}>
                     <label>Min Age</label>
@@ -1978,16 +1979,16 @@ const CardManagement = () => {
                 <h4 style={{ marginBottom: "12px", color: "#ff6f00" }}>Custom Email Source Code (Optional)</h4>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   <label style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", textTransform: "uppercase" }}>Custom Email HTML Body</label>
-                  <textarea 
-                    value={formData.customHtml || ""} 
+                  <textarea
+                    value={formData.customHtml || ""}
                     onChange={(e) => setFormData({ ...formData, customHtml: e.target.value })}
-                    style={{ 
-                      padding: "8px 12px", 
-                      borderRadius: "8px", 
-                      border: "1px solid #E4E6EB", 
-                      fontSize: "12px", 
-                      fontFamily: "monospace", 
-                      minHeight: "150px", 
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid #E4E6EB",
+                      fontSize: "12px",
+                      fontFamily: "monospace",
+                      minHeight: "150px",
                       resize: "vertical",
                       width: "100%",
                       boxSizing: "border-box"
@@ -1998,15 +1999,15 @@ const CardManagement = () => {
                   <span style={{ fontSize: "10px", color: "#777E90" }}>
                     If provided, this custom HTML will be sent directly instead of the default layout. Supported Placeholders: <strong>{"{name}"}</strong>, <strong>{"{fullName}"}</strong>, <strong>{"{offerName}"}</strong>, <strong>{"{offerDescription}"}</strong>, <strong>{"{offerImageUrl}"}</strong>, <strong>{"{offerUrl}"}</strong>
                   </span>
-                  
+
                   {/* Test Mail Section inside card modal */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
                     <input
                       type="text"
                       placeholder="Enter email subject (optional)..."
                       className="form-input"
-                      value={testSubject}
-                      onChange={(e) => setTestSubject(e.target.value)}
+                      value={formData.customSubject || ""}
+                      onChange={(e) => setFormData({ ...formData, customSubject: e.target.value })}
                       style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #E4E6EB", fontSize: "13px" }}
                       disabled={submitting || testingMail}
                     />
@@ -2032,8 +2033,8 @@ const CardManagement = () => {
                     </div>
                   </div>
                   {testMailFeedback && (
-                    <div style={{ 
-                      fontSize: "12px", 
+                    <div style={{
+                      fontSize: "12px",
                       color: testMailFeedback.type === "success" ? "#16a34a" : "#dc2626",
                       marginTop: "4px"
                     }}>
@@ -2103,7 +2104,7 @@ const CardManagement = () => {
                     <option value="30">Last 30 Days</option>
                   </select>
                 </div>
-                
+
                 {!loadingClicks && !clicksError && selectedCardClicks.length > 0 && (
                   <div style={{ display: "flex", gap: "10px" }}>
                     <button
