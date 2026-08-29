@@ -1,16 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Image as ImageIcon, FileText, File, X, Send, Paperclip, Plus } from 'lucide-react';
+import { Image as ImageIcon, FileText, File, X, Send, Paperclip, Plus, Briefcase, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import API_BASE_URL from '../utils/config';
 import { getCookie, getUserProfile } from '../utils/auth';
 import { toast } from 'react-toastify';
 
-const CreatePost = ({ onPostCreated }) => {
+const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: propSetIsExpanded }) => {
   const [content, setContent] = useState('');
   const [shareLink, setShareLink] = useState('');
   const [sharingReason, setSharingReason] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [isPosting, setIsPosting] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [localIsExpanded, setLocalIsExpanded] = useState(false);
+  const isExpanded = propIsExpanded !== undefined ? propIsExpanded : localIsExpanded;
+  const setIsExpanded = propSetIsExpanded !== undefined ? propSetIsExpanded : setLocalIsExpanded;
   const [showOptions, setShowOptions] = useState(false);
   const [shareType, setShareType] = useState('link'); // 'post' or 'link'
   const [targetConnections, setTargetConnections] = useState(true);
@@ -20,12 +22,24 @@ const CreatePost = ({ onPostCreated }) => {
   const [industriesList, setIndustriesList] = useState([]);
   const [linkPreview, setLinkPreview] = useState(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
+  const [isIndustriesOpen, setIsIndustriesOpen] = useState(false);
+  const [isAgeGroupsOpen, setIsAgeGroupsOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   // Connection Groups states
   const [connectionGroups, setConnectionGroups] = useState([]);
   const [shareScope, setShareScope] = useState('all'); // 'all' or 'group'
   const [selectedGroup, setSelectedGroup] = useState('');
+  const [previewUrls, setPreviewUrls] = useState([]);
+
+  useEffect(() => {
+    const urls = attachments.map(file => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+
+    return () => {
+      urls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [attachments]);
 
   useEffect(() => {
     if (!shareLink) {
@@ -250,14 +264,17 @@ const CreatePost = ({ onPostCreated }) => {
         </div>
       ) : (
         <div className="create-post-form-card">
-          <div className="create-post-form-header">
-            <h3>{shareType === 'link' ? 'Share Reel' : 'New Post'}</h3>
+          <div className="create-post-form-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', marginBottom: '20px' }}>
+            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#09122E' }}>Create Share</h3>
+            <p style={{ margin: 0, fontSize: '13px', color: '#777E90', textAlign: 'left' }}>
+              Share a <span style={{ color: '#EA650A', fontWeight: '600' }}>reel</span> or <span style={{ color: '#EA650A', fontWeight: '600' }}>ask a question</span> with your network and communities.
+            </p>
           </div>
 
           {shareType === 'link' ? (
             <div className="share-link-fields-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
               <div className="link-input-group">
-                <label style={{ fontSize: '14px', fontWeight: '600', color: '#353945', marginBottom: '6px', display: 'block' }}>Upload Reel (.mp4)</label>
+                <label style={{ fontSize: '14px', fontWeight: '600', color: '#353945', marginBottom: '6px', display: 'block', textAlign: 'left' }}>Reel Video (MP4)</label>
                 <div 
                   className="video-upload-area" 
                   onClick={() => fileInputRef.current.click()}
@@ -273,22 +290,22 @@ const CreatePost = ({ onPostCreated }) => {
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '8px'
+                    gap: '4px'
                   }}
                 >
                   <Plus size={24} color="#EA650A" />
                   <span style={{ fontSize: '14px', fontWeight: '600', color: '#353945' }}>
-                    {attachments.length > 0 ? attachments[0].name : "Choose .mp4 reel file"}
+                    {attachments.length > 0 ? attachments[0].name : "Choose Video"}
                   </span>
-                  <span style={{ fontSize: '12px', color: '#777E90' }}>Max file size 50MB</span>
+                  <span style={{ fontSize: '12px', color: '#777E90' }}>MP4 · Max file size 50MB</span>
                 </div>
               </div>
 
               {/* Video Preview if selected */}
-              {attachments.length > 0 && (attachments[0].type.startsWith('video/') || attachments[0].name.toLowerCase().endsWith('.mp4')) && (
+              {attachments.length > 0 && previewUrls.length > 0 && (attachments[0].type.startsWith('video/') || attachments[0].name.toLowerCase().endsWith('.mp4')) && (
                 <div style={{ width: '100%', borderRadius: '8px', overflow: 'hidden', background: '#000', maxHeight: '300px' }}>
                   <video 
-                    src={URL.createObjectURL(attachments[0])} 
+                    src={previewUrls[0]} 
                     controls 
                     autoPlay 
                     muted 
@@ -299,14 +316,20 @@ const CreatePost = ({ onPostCreated }) => {
                 </div>
               )}
 
-              <div className="reason-input-group">
+              <div className="reason-input-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
+                <label style={{ fontSize: '14px', fontWeight: '600', color: '#353945', display: 'block' }}>Caption (Optional)</label>
                 <textarea
                   className="post-textarea-premium"
                   rows={4}
-                  placeholder="Tell us your thoughts, why this matters, or ask the community a question."
+                  maxLength={2000}
+                  placeholder="Add a caption, thought, or question..."
                   value={sharingReason}
                   onChange={(e) => setSharingReason(e.target.value)}
+                  style={{ marginBottom: '4px' }}
                 />
+                <div style={{ textAlign: 'right', fontSize: '12px', color: '#777E90' }}>
+                  {sharingReason.length}/2000
+                </div>
               </div>
             </div>
           ) : (
@@ -321,7 +344,7 @@ const CreatePost = ({ onPostCreated }) => {
 
           {/* Target Audience Segment Selection */}
           <div className="target-audience-section" style={{ borderTop: '1px solid #E8EDF3', paddingTop: '16px', marginTop: '16px', marginBottom: '16px' }}>
-            <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#09122E', marginBottom: '12px', textAlign: 'left' }}>Target Audience</h4>
+            <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#09122E', marginBottom: '12px', textAlign: 'left' }}>Audience</h4>
 
             {/* Share Scope Selector */}
             <div style={{ display: 'flex', gap: '20px', marginBottom: '16px' }}>
@@ -333,7 +356,7 @@ const CreatePost = ({ onPostCreated }) => {
                   onChange={() => setShareScope('all')}
                   style={{ accentColor: '#EA650A' }}
                 />
-                All Connections & Segments
+                All Available Audiences
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#353945' }}>
                 <input
@@ -343,14 +366,14 @@ const CreatePost = ({ onPostCreated }) => {
                   onChange={() => setShareScope('group')}
                   style={{ accentColor: '#EA650A' }}
                 />
-                Specific Connection Group
+                Specific Group
               </label>
             </div>
 
             {shareScope === 'group' ? (
               <div style={{ border: '1px solid #E8EDF3', borderRadius: '8px', padding: '16px', background: '#F8F9FB', textAlign: 'left' }}>
                 <label style={{ fontSize: '13px', fontWeight: '600', color: '#353945', marginBottom: '8px', display: 'block' }}>
-                  Select Connection Group
+                  Select Group
                 </label>
                 {connectionGroups.length === 0 ? (
                   <p style={{ fontSize: '12px', color: '#777E90', margin: 0 }}>
@@ -383,7 +406,7 @@ const CreatePost = ({ onPostCreated }) => {
                 <div className="target-segments-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
 
                   {/* Connections Target */}
-                  <div className="target-segment-card" style={{ border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#F8F9FB' }}>
+                  <div className="target-segment-card" style={{ border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#F8F9FB', textAlign: 'left' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#353945' }}>
                       <input
                         type="checkbox"
@@ -397,7 +420,7 @@ const CreatePost = ({ onPostCreated }) => {
                   </div>
 
                   {/* Same City Target */}
-                  <div className="target-segment-card" style={{ border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#F8F9FB' }}>
+                  <div className="target-segment-card" style={{ border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#F8F9FB', textAlign: 'left' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#353945' }}>
                       <input
                         type="checkbox"
@@ -405,7 +428,7 @@ const CreatePost = ({ onPostCreated }) => {
                         onChange={(e) => setTargetCity(e.target.checked)}
                         style={{ accentColor: '#EA650A' }}
                       />
-                      People in my City
+                      People in My City
                     </label>
                     <p style={{ fontSize: '11px', color: '#777E90', margin: '4px 0 0 22px' }}>Share with people in your same city</p>
                   </div>
@@ -414,80 +437,106 @@ const CreatePost = ({ onPostCreated }) => {
 
                 {/* Industry targeting */}
                 <div className="target-collapsible-section" style={{ marginTop: '16px', border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#ffffff', textAlign: 'left' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#353945' }}>Target Specific Industries ({targetIndustries.length} selected)</span>
+                  <div 
+                    onClick={() => setIsIndustriesOpen(!isIndustriesOpen)}
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Briefcase size={18} color="#EA650A" />
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#353945' }}>Industries ({targetIndustries.length} selected)</span>
+                        <span style={{ fontSize: '11px', color: '#777E90' }}>Select industries to refine your audience</span>
+                      </div>
+                    </div>
+                    {isIndustriesOpen ? <ChevronUp size={18} color="#777E90" /> : <ChevronDown size={18} color="#777E90" />}
                   </div>
-                  <div className="industries-multi-select" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px', maxHeight: '120px', overflowY: 'auto', padding: '4px' }}>
-                    {industriesList.map((ind) => {
-                      const isSelected = targetIndustries.includes(ind.name);
-                      return (
-                        <button
-                          key={ind._id}
-                          type="button"
-                          onClick={() => {
-                            if (isSelected) {
-                              setTargetIndustries(targetIndustries.filter(name => name !== ind.name));
-                            } else {
-                              setTargetIndustries([...targetIndustries, ind.name]);
-                            }
-                          }}
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '20px',
-                            border: '1px solid',
-                            borderColor: isSelected ? '#EA650A' : '#E8EDF3',
-                            background: isSelected ? '#FFF1E6' : '#F8F9FB',
-                            color: isSelected ? '#EA650A' : '#353945',
-                            fontSize: '12px',
-                            fontWeight: '500',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          {ind.name}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  {isIndustriesOpen && (
+                    <div className="industries-multi-select" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '14px', maxHeight: '120px', overflowY: 'auto', padding: '4px' }}>
+                      {industriesList.map((ind) => {
+                        const isSelected = targetIndustries.includes(ind.name);
+                        return (
+                          <button
+                            key={ind._id}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setTargetIndustries(targetIndustries.filter(name => name !== ind.name));
+                              } else {
+                                setTargetIndustries([...targetIndustries, ind.name]);
+                              }
+                            }}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: '20px',
+                              border: '1px solid',
+                              borderColor: isSelected ? '#EA650A' : '#E8EDF3',
+                              background: isSelected ? '#FFF1E6' : '#F8F9FB',
+                              color: isSelected ? '#EA650A' : '#353945',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            {ind.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* Age bracket targeting */}
                 <div className="target-collapsible-section" style={{ marginTop: '16px', border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#ffffff', textAlign: 'left' }}>
-                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#353945' }}>Target Specific Age Groups ({targetAgeGroups.length} selected)</span>
-                  <div className="age-bracket-checkboxes" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '10px' }}>
-                    {['20-25', '26-35', '36-50', '51-65', '65+'].map((bracket) => {
-                      const isSelected = targetAgeGroups.includes(bracket);
-                      return (
-                        <label key={bracket} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '500', color: '#353945' }}>
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => {
-                              if (isSelected) {
-                                setTargetAgeGroups(targetAgeGroups.filter(b => b !== bracket));
-                              } else {
-                                setTargetAgeGroups([...targetAgeGroups, bracket]);
-                              }
-                            }}
-                            style={{ accentColor: '#EA650A' }}
-                          />
-                          {bracket}
-                        </label>
-                      );
-                    })}
+                  <div 
+                    onClick={() => setIsAgeGroupsOpen(!isAgeGroupsOpen)}
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Users size={18} color="#EA650A" />
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#353945' }}>Age Groups ({targetAgeGroups.length} selected)</span>
+                        <span style={{ fontSize: '11px', color: '#777E90' }}>Select age groups to refine your audience</span>
+                      </div>
+                    </div>
+                    {isAgeGroupsOpen ? <ChevronUp size={18} color="#777E90" /> : <ChevronDown size={18} color="#777E90" />}
                   </div>
+                  {isAgeGroupsOpen && (
+                    <div className="age-bracket-checkboxes" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '14px' }}>
+                      {['20-25', '26-35', '36-50', '51-65', '65+'].map((bracket) => {
+                        const isSelected = targetAgeGroups.includes(bracket);
+                        return (
+                          <label key={bracket} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '500', color: '#353945' }}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                if (isSelected) {
+                                  setTargetAgeGroups(targetAgeGroups.filter(b => b !== bracket));
+                                } else {
+                                  setTargetAgeGroups([...targetAgeGroups, bracket]);
+                                }
+                              }}
+                              style={{ accentColor: '#EA650A' }}
+                            />
+                            {bracket}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </>
             )}
 
           </div>
 
-          {attachments.length > 0 && shareType !== 'link' && (
+          {attachments.length > 0 && previewUrls.length > 0 && shareType !== 'link' && (
             <div className="attachment-previews-grid">
               {attachments.map((file, index) => (
                 <div key={index} className="att-preview-box">
                   {file.type.startsWith('image/') ? (
-                    <img src={URL.createObjectURL(file)} alt="preview" />
+                    <img src={previewUrls[index]} alt="preview" />
                   ) : (
                     <div className="att-file-placeholder">
                       <FileText size={24} color="#EA650A" />
@@ -534,7 +583,7 @@ const CreatePost = ({ onPostCreated }) => {
                 onClick={handleSubmit}
                 disabled={isPosting}
               >
-                {isPosting ? 'Posting...' : 'Post'}
+                {isPosting ? 'Sharing...' : 'Share'}
                 {!isPosting && <Send size={16} />}
               </button>
             </div>

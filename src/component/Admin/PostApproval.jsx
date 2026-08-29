@@ -55,7 +55,11 @@ const PostApproval = () => {
 
       const result = await response.json();
       if (result.success && result.data) {
-        setPosts(result.data.posts || []);
+        const postsWithOriginals = (result.data.posts || []).map(post => ({
+          ...post,
+          originalSegments: JSON.parse(JSON.stringify(post.targetSegments || {}))
+        }));
+        setPosts(postsWithOriginals);
       } else {
         throw new Error(result.message || "Failed to fetch pending posts");
       }
@@ -67,11 +71,48 @@ const PostApproval = () => {
     }
   };
 
+  const handleToggleSegment = (postId, field, value) => {
+    setPosts(prevPosts => prevPosts.map(post => {
+      if (post._id === postId) {
+        return {
+          ...post,
+          targetSegments: {
+            ...post.targetSegments,
+            [field]: value
+          }
+        };
+      }
+      return post;
+    }));
+  };
+
+  const handleToggleArraySegment = (postId, field, item, isSelected) => {
+    setPosts(prevPosts => prevPosts.map(post => {
+      if (post._id === postId) {
+        const currentList = post.targetSegments?.[field] || [];
+        const newList = isSelected 
+          ? [...currentList, item]
+          : currentList.filter(x => x !== item);
+        return {
+          ...post,
+          targetSegments: {
+            ...post.targetSegments,
+            [field]: newList
+          }
+        };
+      }
+      return post;
+    }));
+  };
+
   useEffect(() => {
     fetchPendingPosts();
   }, []);
 
   const handleApprove = async (postId) => {
+    const postToApprove = posts.find(p => p._id === postId);
+    const targetSegments = postToApprove ? postToApprove.targetSegments : null;
+
     try {
       const token = getCookie("authToken");
       const response = await fetch(`${API_BASE_URL}/api/admin/posts/${postId}/approve`, {
@@ -80,6 +121,7 @@ const PostApproval = () => {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({ targetSegments })
       });
 
       const result = await response.json();
@@ -281,40 +323,142 @@ const PostApproval = () => {
 
                 {/* Target Segments Indicators */}
                 <div style={{ borderTop: "1px solid #E8EDF3", paddingTop: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <h5 style={{ fontSize: "13px", fontWeight: "600", color: "#09122E", margin: "0" }}>Target Segments & Audience</h5>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <h5 style={{ fontSize: "13px", fontWeight: "600", color: "#09122E", margin: "0" }}>Target Segments & Audience</h5>
+                    <span style={{ fontSize: "11px", color: "#777E90" }}>(Uncheck items to deselect them before approving)</span>
+                  </div>
                   
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                    {/* Connections */}
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", background: segments.connections ? "#FFF1E6" : "#F8F9FB", border: `1px solid ${segments.connections ? "#EA650A" : "#E8EDF3"}`, borderRadius: "20px", padding: "6px 12px", fontSize: "12px", color: segments.connections ? "#EA650A" : "#777E90", fontWeight: "500" }}>
-                      <Users size={14} /> My Connections: {segments.connections ? "Yes" : "No"}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    {/* General Toggles */}
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                      {/* Connections Checkbox */}
+                      <label style={{ 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: "8px", 
+                        background: segments.connections ? "#FFF1E6" : "#F8F9FB", 
+                        border: `1px solid ${segments.connections ? "#EA650A" : "#E8EDF3"}`, 
+                        borderRadius: "20px", 
+                        padding: "6px 12px", 
+                        fontSize: "12px", 
+                        color: segments.connections ? "#EA650A" : "#777E90", 
+                        fontWeight: "500",
+                        cursor: "pointer",
+                        userSelect: "none"
+                      }}>
+                        <input 
+                          type="checkbox" 
+                          checked={!!segments.connections} 
+                          onChange={(e) => handleToggleSegment(post._id, 'connections', e.target.checked)}
+                          style={{ cursor: "pointer", accentColor: "#EA650A", width: "14px", height: "14px" }}
+                        />
+                        <Users size={14} /> My Connections
+                      </label>
+
+                      {/* Same City Checkbox */}
+                      <label style={{ 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: "8px", 
+                        background: segments.city ? "#FFF1E6" : "#F8F9FB", 
+                        border: `1px solid ${segments.city ? "#EA650A" : "#E8EDF3"}`, 
+                        borderRadius: "20px", 
+                        padding: "6px 12px", 
+                        fontSize: "12px", 
+                        color: segments.city ? "#EA650A" : "#777E90", 
+                        fontWeight: "500",
+                        cursor: "pointer",
+                        userSelect: "none"
+                      }}>
+                        <input 
+                          type="checkbox" 
+                          checked={!!segments.city} 
+                          onChange={(e) => handleToggleSegment(post._id, 'city', e.target.checked)}
+                          style={{ cursor: "pointer", accentColor: "#EA650A", width: "14px", height: "14px" }}
+                        />
+                        <MapPin size={14} /> Same City ({post.authorCity?.name || "Poster City"})
+                      </label>
                     </div>
 
-                    {/* Same City */}
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", background: segments.city ? "#FFF1E6" : "#F8F9FB", border: `1px solid ${segments.city ? "#EA650A" : "#E8EDF3"}`, borderRadius: "20px", padding: "6px 12px", fontSize: "12px", color: segments.city ? "#EA650A" : "#777E90", fontWeight: "500" }}>
-                      <MapPin size={14} /> Same City: {segments.city ? `Yes (${post.authorCity?.name || "Poster City"})` : "No"}
+                    {/* Industries Segment */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <span style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", display: "flex", alignItems: "center", gap: "4px" }}>
+                        <Briefcase size={12} /> Target Industries:
+                      </span>
+                      {post.originalSegments?.industries && post.originalSegments.industries.length > 0 ? (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                          {post.originalSegments.industries.map((ind) => {
+                            const isChecked = segments.industries?.includes(ind);
+                            return (
+                              <label key={ind} style={{ 
+                                display: "flex", 
+                                alignItems: "center", 
+                                gap: "6px", 
+                                background: isChecked ? "#FFF1E6" : "#F8F9FB", 
+                                border: `1px solid ${isChecked ? "#EA650A" : "#E8EDF3"}`, 
+                                borderRadius: "20px", 
+                                padding: "4px 10px", 
+                                fontSize: "11px", 
+                                color: isChecked ? "#EA650A" : "#777E90", 
+                                fontWeight: "500",
+                                cursor: "pointer",
+                                userSelect: "none"
+                              }}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={!!isChecked} 
+                                  onChange={(e) => handleToggleArraySegment(post._id, 'industries', ind, e.target.checked)}
+                                  style={{ cursor: "pointer", accentColor: "#EA650A", width: "12px", height: "12px" }}
+                                />
+                                {ind}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: "12px", color: "#777E90", fontStyle: "italic", marginLeft: "16px" }}>None specified (all industries)</span>
+                      )}
                     </div>
 
-                    {/* Industries */}
-                    {segments.industries && segments.industries.length > 0 ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#FFF1E6", border: "1px solid #EA650A", borderRadius: "20px", padding: "6px 12px", fontSize: "12px", color: "#EA650A", fontWeight: "500" }}>
-                        <Briefcase size={14} /> Industries: {segments.industries.join(", ")}
-                      </div>
-                    ) : (
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#F8F9FB", border: "1px solid #E8EDF3", borderRadius: "20px", padding: "6px 12px", fontSize: "12px", color: "#777E90", fontWeight: "500" }}>
-                        <Briefcase size={14} /> Industries: None
-                      </div>
-                    )}
-
-                    {/* Age Groups */}
-                    {segments.ageGroups && segments.ageGroups.length > 0 ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#FFF1E6", border: "1px solid #EA650A", borderRadius: "20px", padding: "6px 12px", fontSize: "12px", color: "#EA650A", fontWeight: "500" }}>
-                        <Calendar size={14} /> Age Groups: {segments.ageGroups.join(", ")}
-                      </div>
-                    ) : (
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#F8F9FB", border: "1px solid #E8EDF3", borderRadius: "20px", padding: "6px 12px", fontSize: "12px", color: "#777E90", fontWeight: "500" }}>
-                        <Calendar size={14} /> Age Groups: None
-                      </div>
-                    )}
+                    {/* Age Groups Segment */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <span style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", display: "flex", alignItems: "center", gap: "4px" }}>
+                        <Calendar size={12} /> Target Age Groups:
+                      </span>
+                      {post.originalSegments?.ageGroups && post.originalSegments.ageGroups.length > 0 ? (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                          {post.originalSegments.ageGroups.map((age) => {
+                            const isChecked = segments.ageGroups?.includes(age);
+                            return (
+                              <label key={age} style={{ 
+                                display: "flex", 
+                                alignItems: "center", 
+                                gap: "6px", 
+                                background: isChecked ? "#FFF1E6" : "#F8F9FB", 
+                                border: `1px solid ${isChecked ? "#EA650A" : "#E8EDF3"}`, 
+                                borderRadius: "20px", 
+                                padding: "4px 10px", 
+                                fontSize: "11px", 
+                                color: isChecked ? "#EA650A" : "#777E90", 
+                                fontWeight: "500",
+                                cursor: "pointer",
+                                userSelect: "none"
+                              }}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={!!isChecked} 
+                                  onChange={(e) => handleToggleArraySegment(post._id, 'ageGroups', age, e.target.checked)}
+                                  style={{ cursor: "pointer", accentColor: "#EA650A", width: "12px", height: "12px" }}
+                                />
+                                {age}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: "12px", color: "#777E90", fontStyle: "italic", marginLeft: "16px" }}>None specified (all ages)</span>
+                      )}
+                    </div>
                   </div>
                 </div>
 

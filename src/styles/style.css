@@ -8806,3 +8806,55 @@ like page */
   border-color: #EA650A;
   box-shadow: 0 0 0 3px rgba(234, 101, 10, 0.1);
 }
+
+/* Share Page two-column layout and widgets styling */
+.share-two-column-layout {
+  display: flex;
+  gap: 30px;
+  width: 100%;
+}
+
+@media (max-width: 991px) {
+  .share-two-column-layout {
+    flex-direction: column;
+    gap: 20px;
+  }
+  .share-right-column {
+    position: static !important;
+    flex: 1 !important;
+    width: 100% !important;
+  }
+}
+
+.share-sidebar-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.share-sidebar-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(9, 18, 46, 0.06);
+}
+
+.target-collapsible-section {
+  transition: all 0.2s ease;
+}
+
+.target-collapsible-section:hover {
+  border-color: #EA650A !important;
+}
+
+.video-upload-area {
+  transition: all 0.2s ease;
+}
+
+.video-upload-area:hover {
+  border-color: #EA650A !important;
+  background-color: #FFF9F5 !important;
+}
+
+.share-page-container {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
