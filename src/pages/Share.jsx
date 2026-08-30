@@ -4,9 +4,9 @@ import Footer from '../component/Footer';
 import CreatePost from '../component/CreatePost';
 import PostCard from '../component/PostCard';
 import API_BASE_URL from '../utils/config';
-import { getCookie } from '../utils/auth';
+import { getCookie, setCookie } from '../utils/auth';
 import { getAvatar, resolveImageUrl } from '../utils/avatarHelper';
-import { X } from 'lucide-react';
+import { X, Share2 } from 'lucide-react';
 import '../styles/style.css';
 
 const Share = () => {
@@ -107,15 +107,19 @@ const Share = () => {
   useEffect(() => {
     const checkPopupOffer = async () => {
       try {
+        const cookieName = "lastOfferShownAt_share";
+        if (getCookie(cookieName)) return;
+
         const token = getCookie("authToken");
         if (!token) return;
 
-        const response = await fetch(`${API_BASE_URL}/api/list/popup-offer`, {
+        const response = await fetch(`${API_BASE_URL}/api/list/popup-offer?page=share`, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json"
-          }
+          },
+          credentials: "include"
         });
 
         if (response.ok) {
@@ -123,6 +127,7 @@ const Share = () => {
           if (result.success && result.data && result.data.showPopup && result.data.offer) {
             setPopupOffer(result.data.offer);
             setShowOfferPopup(true);
+            setCookie(cookieName, new Date().toISOString(), 1); // expire in 1 day (24 hours)
           }
         }
       } catch (err) {
@@ -226,7 +231,7 @@ const Share = () => {
 
               {/* Right Column: Widgets */}
               {!isCreateExpanded && (
-                <div className="share-right-column" style={{ flex: '1.1', display: 'flex', flexDirection: 'column', gap: '30px', position: 'sticky', top: '100px' }}>
+                <div className="share-right-column" style={{ flex: '1.1', display: 'flex', flexDirection: 'column', gap: '30px', position: 'sticky', top: '100px', marginTop: '10px' }}>
                   {/* Top Sharers Card */}
                   <div className="share-sidebar-card" style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #DDE2EE', padding: '24px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
@@ -294,7 +299,15 @@ const Share = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       {mostShared.map((reel, idx) => {
                         const title = reel.content || 'Untitled Reel';
-                        const thumbnail = reel.thumbnailUrl || (reel.linkPreview?.image) || 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=120&auto=format&fit=crop&q=60';
+                        const postAttachments = reel.attachments || [];
+                        const sharedAttachments = reel.sharedPostId?.attachments || [];
+                        const allAttachments = [...postAttachments, ...sharedAttachments];
+
+                        const imageAttachment = allAttachments.find(att => att.type === 'image');
+                        const videoAttachment = allAttachments.find(att => att.type === 'video');
+                        const linkPreviewImage = reel.linkPreview?.image || reel.sharedPostId?.linkPreview?.image;
+
+                        const fallbackImage = 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=120&auto=format&fit=crop&q=60';
                         const likes = reel.likesCount || 0;
                         const reshares = reel.reshares || reel.reshareCount || 0;
                         
@@ -303,14 +316,50 @@ const Share = () => {
                           return num;
                         };
 
-                        return (
-                          <div key={reel._id || idx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        const renderThumbnail = () => {
+                          if (imageAttachment) {
+                            return (
+                              <img 
+                                src={resolveImageUrl(imageAttachment.url)} 
+                                alt={title} 
+                                style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
+                                onError={(e) => { e.target.src = fallbackImage; }}
+                              />
+                            );
+                          }
+                          if (videoAttachment) {
+                            return (
+                              <video 
+                                src={resolveImageUrl(videoAttachment.url)} 
+                                style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', background: '#000' }}
+                                muted
+                                playsInline
+                                preload="metadata"
+                              />
+                            );
+                          }
+                          if (linkPreviewImage) {
+                            return (
+                              <img 
+                                src={resolveImageUrl(linkPreviewImage)} 
+                                alt={title} 
+                                style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
+                                onError={(e) => { e.target.src = fallbackImage; }}
+                              />
+                            );
+                          }
+                          return (
                             <img 
-                              src={thumbnail} 
+                              src={fallbackImage} 
                               alt={title} 
                               style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
-                              onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=120&auto=format&fit=crop&q=60'; }}
                             />
+                          );
+                        };
+
+                        return (
+                          <div key={reel._id || idx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            {renderThumbnail()}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1', minWidth: 0 }}>
                               <span style={{ 
                                 fontSize: '12px', 
@@ -328,7 +377,7 @@ const Share = () => {
                                   <span>👍</span> {formatCount(likes)}
                                 </span>
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  <span>🔁</span> {formatCount(reshares)}
+                                  <Share2 size={12} color="#777E90" /> {formatCount(reshares)}
                                 </span>
                               </div>
                             </div>

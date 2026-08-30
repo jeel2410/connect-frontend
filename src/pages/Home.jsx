@@ -480,15 +480,19 @@ export default function Home() {
   useEffect(() => {
     const checkPopupOffer = async () => {
       try {
+        const cookieName = "lastOfferShownAt_people";
+        if (getCookie(cookieName)) return;
+
         const token = getCookie("authToken");
         if (!token) return;
 
-        const response = await fetch(`${API_BASE_URL}/api/list/popup-offer`, {
+        const response = await fetch(`${API_BASE_URL}/api/list/popup-offer?page=people`, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json"
-          }
+          },
+          credentials: "include"
         });
 
         if (response.ok) {
@@ -496,6 +500,7 @@ export default function Home() {
           if (result.success && result.data && result.data.showPopup && result.data.offer) {
             setPopupOffer(result.data.offer);
             setShowOfferPopup(true);
+            setCookie(cookieName, new Date().toISOString(), 1); // expire in 1 day (24 hours)
           }
         }
       } catch (err) {
