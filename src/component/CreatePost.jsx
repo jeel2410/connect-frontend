@@ -401,15 +401,15 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
                   <label style={{ fontSize: '14px', fontWeight: '600', color: '#353945', display: 'block' }}>Caption (Optional)</label>
                   <textarea
                     className="post-textarea-premium"
-                    rows={6}
-                    maxLength={2000}
+                    rows={3}
+                    maxLength={1000}
                     placeholder="Add a caption, thought, or description..."
                     value={sharingReason}
                     onChange={(e) => setSharingReason(e.target.value)}
-                    style={{ marginBottom: '4px', flex: '1', resize: 'none' }}
+                    style={{ marginBottom: '4px', height: '108px', minHeight: '108px', resize: 'none' }}
                   />
                   <div style={{ textAlign: 'right', fontSize: '12px', color: '#777E90' }}>
-                    {sharingReason.length}/2000
+                    {sharingReason.length}/1000
                   </div>
                 </div>
               </div>
@@ -420,7 +420,9 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
               placeholder="Ask a question or share something with your connections..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              rows={5}
+              rows={3}
+              maxLength={1000}
+              style={{ minHeight: '90px', resize: 'none' }}
             />
           )}
 
