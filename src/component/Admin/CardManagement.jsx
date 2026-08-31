@@ -3,6 +3,24 @@ import { Search, Plus, Edit2, Trash2, X, Save, ChevronLeft, ChevronRight, XCircl
 import { getCards, createCard, updateCard, deleteCard, getPopupSetting, updatePopupSetting, getCities, getPositions, getCardClicks, broadcastCardMailer, broadcastCardSms, getOfferCategories, createOfferCategory, getAllCardClicksCount, broadcastAllCardsMailer, sendTestCardEmail } from "../../utils/adminApi";
 import { resolveImageUrl } from "../../utils/avatarHelper";
 
+const DEFAULT_OFFER_MAILER_TEMPLATE = `<h2 style="margin:0 0 8px;color:#081332;font-size:22px;font-weight:700;">Offer of the Day! 🎁</h2>
+<p style="margin:0 0 20px;color:#495057;font-size:15px;line-height:1.7;">
+  Hi <strong>{name}</strong>,<br/>
+  Here is today's exclusive offer handpicked for you on Connect India. Check it out and unlock great benefits today!
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;margin-bottom:24px;overflow:hidden;">
+  {offerLogo}
+  {offerImage}
+  <tr>
+    <td style="padding:20px 24px;">
+      <h3 style="margin:0 0 8px;color:#081332;font-size:18px;font-weight:700;">{offerName}</h3>
+      <p style="margin:0 0 16px;color:#495057;font-size:14px;line-height:1.6;">{offerDescription}</p>
+      {offerFeatures}
+    </td>
+  </tr>
+</table>`;
+
 const CardManagement = () => {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -425,7 +443,7 @@ const CardManagement = () => {
       showInMailer: true,
       category: "",
       customSubject: "",
-      customHtml: ""
+      customHtml: DEFAULT_OFFER_MAILER_TEMPLATE
     });
     setNewFeature("");
     setNewEligible("");
@@ -1457,7 +1475,26 @@ const CardManagement = () => {
                 )}
               {/* Custom HTML Template Section */}
               <div style={{ borderTop: "1px solid #eee", paddingTop: "15px", marginTop: "15px", marginBottom: "15px" }}>
-                <h4 style={{ marginBottom: "12px", color: "#ff6f00" }}>Custom Email Source Code (Optional)</h4>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                  <h4 style={{ margin: 0, color: "#ff6f00" }}>Custom Email Source Code (Optional)</h4>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, customHtml: DEFAULT_OFFER_MAILER_TEMPLATE })}
+                    disabled={submitting}
+                    style={{
+                      background: "#ff6f00",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      padding: "5px 10px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    Include Scheduled Mailer Template
+                  </button>
+                </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   <label style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", textTransform: "uppercase" }}>Custom Email HTML Body</label>
                   <textarea
@@ -1478,7 +1515,7 @@ const CardManagement = () => {
                     disabled={submitting}
                   />
                   <span style={{ fontSize: "10px", color: "#777E90" }}>
-                    If provided, this custom HTML will be sent directly instead of the default layout. Supported Placeholders: <strong>{"{name}"}</strong>, <strong>{"{fullName}"}</strong>, <strong>{"{offerName}"}</strong>, <strong>{"{offerDescription}"}</strong>, <strong>{"{offerImageUrl}"}</strong>, <strong>{"{offerUrl}"}</strong>
+                    Automated email template wrapper will be included to avoid spam issues. Supported Placeholders: <strong>{"{name}"}</strong>, <strong>{"{fullName}"}</strong>, <strong>{"{offerName}"}</strong>, <strong>{"{offerDescription}"}</strong>, <strong>{"{offerLogo}"}</strong>, <strong>{"{offerImage}"}</strong>, <strong>{"{offerFeatures}"}</strong>, <strong>{"{offerImageUrl}"}</strong>, <strong>{"{offerUrl}"}</strong>
                   </span>
 
                   {/* Test Mail Section inside card modal */}
@@ -1976,7 +2013,26 @@ const CardManagement = () => {
                 )}
               {/* Custom HTML Template Section */}
               <div style={{ borderTop: "1px solid #eee", paddingTop: "15px", marginTop: "15px", marginBottom: "15px" }}>
-                <h4 style={{ marginBottom: "12px", color: "#ff6f00" }}>Custom Email Source Code (Optional)</h4>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                  <h4 style={{ margin: 0, color: "#ff6f00" }}>Custom Email Source Code (Optional)</h4>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, customHtml: DEFAULT_OFFER_MAILER_TEMPLATE })}
+                    disabled={submitting}
+                    style={{
+                      background: "#ff6f00",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      padding: "5px 10px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    Include Scheduled Mailer Template
+                  </button>
+                </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   <label style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", textTransform: "uppercase" }}>Custom Email HTML Body</label>
                   <textarea
@@ -1997,7 +2053,7 @@ const CardManagement = () => {
                     disabled={submitting}
                   />
                   <span style={{ fontSize: "10px", color: "#777E90" }}>
-                    If provided, this custom HTML will be sent directly instead of the default layout. Supported Placeholders: <strong>{"{name}"}</strong>, <strong>{"{fullName}"}</strong>, <strong>{"{offerName}"}</strong>, <strong>{"{offerDescription}"}</strong>, <strong>{"{offerImageUrl}"}</strong>, <strong>{"{offerUrl}"}</strong>
+                    Automated email template wrapper will be included to avoid spam issues. Supported Placeholders: <strong>{"{name}"}</strong>, <strong>{"{fullName}"}</strong>, <strong>{"{offerName}"}</strong>, <strong>{"{offerDescription}"}</strong>, <strong>{"{offerLogo}"}</strong>, <strong>{"{offerImage}"}</strong>, <strong>{"{offerFeatures}"}</strong>, <strong>{"{offerImageUrl}"}</strong>, <strong>{"{offerUrl}"}</strong>
                   </span>
 
                   {/* Test Mail Section inside card modal */}
