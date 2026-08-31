@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Header from '../component/Header';
 import Footer from '../component/Footer';
 import CreatePost from '../component/CreatePost';
@@ -6,12 +6,16 @@ import PostCard from '../component/PostCard';
 import API_BASE_URL from '../utils/config';
 import { getCookie, setCookie } from '../utils/auth';
 import { getAvatar, resolveImageUrl } from '../utils/avatarHelper';
-import { X, Share2 } from 'lucide-react';
+import { X, Share2, ChevronDown, ChevronUp } from 'lucide-react';
 import '../styles/style.css';
 
 const Share = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalPosts, setTotalPosts] = useState(0);
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('latest');
   const [topSharers, setTopSharers] = useState([]);
@@ -19,12 +23,30 @@ const Share = () => {
   const [isCreateExpanded, setIsCreateExpanded] = useState(false);
   const [popupOffer, setPopupOffer] = useState(null);
   const [showOfferPopup, setShowOfferPopup] = useState(false);
+  const [isTopSharersExpanded, setIsTopSharersExpanded] = useState(true);
+  const [isMostSharedExpanded, setIsMostSharedExpanded] = useState(true);
 
-  const fetchPosts = async () => {
+  const observerTargetRef = useRef(null);
+
+  useEffect(() => {
+    if (window.innerWidth <= 991) {
+      setIsTopSharersExpanded(false);
+      setIsMostSharedExpanded(false);
+    }
+  }, []);
+
+  const fetchPosts = useCallback(async (pageNum = 1, isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+      setError(null);
+
       const token = getCookie('authToken');
-      const response = await fetch(`${API_BASE_URL}/api/posts?sortBy=${sortBy}`, {
+      const limit = 1;
+      const response = await fetch(`${API_BASE_URL}/api/posts?sortBy=${sortBy}&page=${pageNum}&limit=${limit}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -34,7 +56,21 @@ const Share = () => {
 
       const data = await response.json();
       if (data.success) {
-        setPosts(data.data);
+        const newPosts = Array.isArray(data.data) ? data.data : [];
+        if (isInitial) {
+          setPosts(newPosts);
+        } else {
+          setPosts((prevPosts) => [...prevPosts, ...newPosts]);
+        }
+
+        if (data.pagination) {
+          setHasMore(data.pagination.hasMore);
+          setTotalPosts(data.pagination.totalPosts);
+        } else {
+          setHasMore(newPosts.length === limit);
+          if (isInitial) setTotalPosts(newPosts.length);
+        }
+        setPage(pageNum);
       } else {
         setError(data.message || 'Failed to fetch posts');
       }
@@ -43,8 +79,9 @@ const Share = () => {
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  };
+  }, [sortBy]);
 
   const fetchTopSharers = async () => {
     try {
@@ -81,13 +118,37 @@ const Share = () => {
   };
 
   useEffect(() => {
-    fetchPosts();
-  }, [sortBy]);
+    setPage(1);
+    fetchPosts(1, true);
+  }, [sortBy, fetchPosts]);
 
   useEffect(() => {
     fetchTopSharers();
     fetchMostShared();
   }, []);
+
+  // Infinite Scroll Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+          fetchPosts(page + 1, false);
+        }
+      },
+      { threshold: 0.1, rootMargin: '200px' }
+    );
+
+    const currentRef = observerTargetRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [hasMore, loadingMore, loading, page, fetchPosts]);
 
   const handlePopupCheckNow = async (cardId) => {
     try {
@@ -140,6 +201,7 @@ const Share = () => {
 
   const handlePostCreated = (newPost) => {
     setPosts([newPost, ...posts]);
+    setTotalPosts((prev) => prev + 1);
     fetchTopSharers();
     fetchMostShared();
   };
@@ -161,25 +223,25 @@ const Share = () => {
           <div className="title-div">
             <h1 className="inner-page-title"><span>Shared</span><span className="title-highlight">Feed</span></h1>
           </div>
-          
+
           <div className="share-page-container">
             <div className="share-two-column-layout" style={{ display: 'flex', gap: '30px', width: '100%', alignItems: 'flex-start' }}>
               {/* Left Column: Feed & CreatePost */}
               <div className="share-left-column" style={{ flex: isCreateExpanded ? '1' : '2', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {isCreateExpanded && (
-                  <CreatePost 
-                    onPostCreated={handlePostCreated} 
-                    isExpanded={isCreateExpanded} 
-                    setIsExpanded={setIsCreateExpanded} 
+                  <CreatePost
+                    onPostCreated={handlePostCreated}
+                    isExpanded={isCreateExpanded}
+                    setIsExpanded={setIsCreateExpanded}
                   />
                 )}
 
                 {!isCreateExpanded && (
                   <div className="posts-feed connections-page-card" style={{ marginTop: '10px' }}>
-                    <CreatePost 
-                      onPostCreated={handlePostCreated} 
-                      isExpanded={isCreateExpanded} 
-                      setIsExpanded={setIsCreateExpanded} 
+                    <CreatePost
+                      onPostCreated={handlePostCreated}
+                      isExpanded={isCreateExpanded}
+                      setIsExpanded={setIsCreateExpanded}
                     />
 
                     <div className="feed-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -219,11 +281,23 @@ const Share = () => {
                         <p>No posts to show. Start by sharing something!</p>
                       </div>
                     ) : (
-                      <div className="posts-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        {posts.map((post) => (
-                          <PostCard key={post._id} post={post} onReact={handleReact} />
-                        ))}
-                      </div>
+                      <>
+                        <div className="posts-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                          {posts.map((post) => (
+                            <PostCard key={post._id} post={post} onReact={handleReact} />
+                          ))}
+                        </div>
+
+                        {/* Infinite Scroll Sentinel & Loading Indicator */}
+                        <div ref={observerTargetRef} style={{ marginTop: '24px', padding: '16px 0', textAlign: 'center' }}>
+                          {loadingMore && (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', color: '#EA650A', fontWeight: '600', fontSize: '14px', background: '#FFF6F0', padding: '10px 20px', borderRadius: '30px', border: '1px solid #FFE0D0' }}>
+                              <span className="spinner" style={{ width: '18px', height: '18px', border: '2px solid #EA650A', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block' }}></span>
+                              <span>Loading more posts...</span>
+                            </div>
+                          )}
+                        </div>
+                      </>
                     )}
                   </div>
                 )}
@@ -234,157 +308,177 @@ const Share = () => {
                 <div className="share-right-column" style={{ flex: '1.1', display: 'flex', flexDirection: 'column', gap: '30px', position: 'sticky', top: '100px', marginTop: '10px' }}>
                   {/* Top Sharers Card */}
                   <div className="share-sidebar-card" style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #DDE2EE', padding: '24px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <div
+                      onClick={() => setIsTopSharersExpanded(!isTopSharersExpanded)}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', marginBottom: isTopSharersExpanded ? '4px' : '0' }}
+                    >
                       <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#09122E', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span>🏆</span> Top Sharers
                       </h3>
-                      <a href="#" style={{ fontSize: '12px', fontWeight: '600', color: '#EA650A', textDecoration: 'none' }}>View All</a>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <a href="#" onClick={(e) => e.stopPropagation()} style={{ fontSize: '12px', fontWeight: '600', color: '#EA650A', textDecoration: 'none' }}>View All</a>
+                        {isTopSharersExpanded ? <ChevronUp size={18} color="#777E90" /> : <ChevronDown size={18} color="#777E90" />}
+                      </div>
                     </div>
-                    <p style={{ margin: '0 0 20px 0', fontSize: '11px', color: '#777E90', textAlign: 'left' }}>People making content travel on Connect.in</p>
+                    {isTopSharersExpanded && (
+                      <>
+                        <p style={{ margin: '10px 0 20px 0', fontSize: '11px', color: '#777E90', textAlign: 'left' }}>People making content travel on Connect.in</p>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      {topSharers.map((sharer, idx) => {
-                        const userDetail = sharer.user?.userDetailId || {};
-                        const isBusiness = userDetail.isBusinessProfile;
-                        const fullName = isBusiness 
-                          ? (userDetail.businessName || 'Business')
-                          : (userDetail.fullName || 'User');
-                        const avatar = isBusiness
-                          ? resolveImageUrl(userDetail.businessLogo)
-                          : resolveImageUrl(userDetail.profileImage);
-                        const defaultAvatar = isBusiness
-                          ? "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop"
-                          : getAvatar(userDetail.gender, userDetail.dateOfBirth || userDetail.age);
-                        const sharesCount = sharer.sharesCount || 0;
-                        const rankColors = ['#EA650A', '#FD9043', '#FFB884', '#777E90', '#777E90'];
-                        const rankBgColors = ['#FFF1E6', '#FFF6F0', '#FFFBF7', '#F4F5F6', '#F4F5F6'];
-                        
-                        return (
-                          <div key={sharer.user?._id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <span style={{
-                                width: '24px',
-                                height: '24px',
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '12px',
-                                fontWeight: '700',
-                                color: rankColors[idx] || '#777E90',
-                                background: rankBgColors[idx] || '#F4F5F6'
-                              }}>{idx + 1}</span>
-                              <img 
-                                src={avatar || defaultAvatar} 
-                                alt={fullName} 
-                                style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
-                                onError={(e) => { e.target.src = defaultAvatar; }}
-                              />
-                              <span style={{ fontSize: '13px', fontWeight: '600', color: '#353945' }}>{fullName}</span>
-                            </div>
-                            <span style={{ fontSize: '12px', fontWeight: '500', color: '#777E90' }}>{sharesCount} Shared</span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                          {topSharers.map((sharer, idx) => {
+                            const userDetail = sharer.user?.userDetailId || {};
+                            const isBusiness = userDetail.isBusinessProfile;
+                            const fullName = isBusiness
+                              ? (userDetail.businessName || 'Business')
+                              : (userDetail.fullName || 'User');
+                            const avatar = isBusiness
+                              ? resolveImageUrl(userDetail.businessLogo)
+                              : resolveImageUrl(userDetail.profileImage);
+                            const defaultAvatar = isBusiness
+                              ? "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop"
+                              : getAvatar(userDetail.gender, userDetail.dateOfBirth || userDetail.age);
+                            const sharesCount = sharer.sharesCount || 0;
+                            const rankColors = ['#EA650A', '#FD9043', '#FFB884', '#777E90', '#777E90'];
+                            const rankBgColors = ['#FFF1E6', '#FFF6F0', '#FFFBF7', '#F4F5F6', '#F4F5F6'];
+
+                            return (
+                              <div key={sharer.user?._id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                  <span style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '12px',
+                                    fontWeight: '700',
+                                    color: rankColors[idx] || '#777E90',
+                                    background: rankBgColors[idx] || '#F4F5F6'
+                                  }}>{idx + 1}</span>
+                                  <img
+                                    src={avatar || defaultAvatar}
+                                    alt={fullName}
+                                    style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
+                                    onError={(e) => { e.target.src = defaultAvatar; }}
+                                  />
+                                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#353945' }}>{fullName}</span>
+                                </div>
+                                <span style={{ fontSize: '12px', fontWeight: '500', color: '#777E90' }}>{sharesCount} Shared</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Most Shared Reels Card */}
                   <div className="share-sidebar-card" style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #DDE2EE', padding: '24px' }}>
-                    <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '700', color: '#09122E', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span>🔥</span> Most Shared
-                    </h3>
-                    <p style={{ margin: '0 0 20px 0', fontSize: '11px', color: '#777E90', textAlign: 'left' }}>Top 5 Reels based on Likes and Reshares</p>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      {mostShared.map((reel, idx) => {
-                        const title = reel.content || 'Untitled Reel';
-                        const postAttachments = reel.attachments || [];
-                        const sharedAttachments = reel.sharedPostId?.attachments || [];
-                        const allAttachments = [...postAttachments, ...sharedAttachments];
-
-                        const imageAttachment = allAttachments.find(att => att.type === 'image');
-                        const videoAttachment = allAttachments.find(att => att.type === 'video');
-                        const linkPreviewImage = reel.linkPreview?.image || reel.sharedPostId?.linkPreview?.image;
-
-                        const fallbackImage = 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=120&auto=format&fit=crop&q=60';
-                        const likes = reel.likesCount || 0;
-                        const reshares = reel.reshares || reel.reshareCount || 0;
-                        
-                        const formatCount = (num) => {
-                          if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-                          return num;
-                        };
-
-                        const renderThumbnail = () => {
-                          if (imageAttachment) {
-                            return (
-                              <img 
-                                src={resolveImageUrl(imageAttachment.url)} 
-                                alt={title} 
-                                style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
-                                onError={(e) => { e.target.src = fallbackImage; }}
-                              />
-                            );
-                          }
-                          if (videoAttachment) {
-                            return (
-                              <video 
-                                src={resolveImageUrl(videoAttachment.url)} 
-                                style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', background: '#000' }}
-                                muted
-                                playsInline
-                                preload="metadata"
-                              />
-                            );
-                          }
-                          if (linkPreviewImage) {
-                            return (
-                              <img 
-                                src={resolveImageUrl(linkPreviewImage)} 
-                                alt={title} 
-                                style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
-                                onError={(e) => { e.target.src = fallbackImage; }}
-                              />
-                            );
-                          }
-                          return (
-                            <img 
-                              src={fallbackImage} 
-                              alt={title} 
-                              style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
-                            />
-                          );
-                        };
-
-                        return (
-                          <div key={reel._id || idx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            {renderThumbnail()}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1', minWidth: 0 }}>
-                              <span style={{ 
-                                fontSize: '12px', 
-                                fontWeight: '600', 
-                                color: '#353945', 
-                                overflow: 'hidden', 
-                                textOverflow: 'ellipsis', 
-                                whiteSpace: 'nowrap',
-                                textAlign: 'left'
-                              }}>
-                                {title}
-                              </span>
-                              <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: '#777E90' }}>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  <span>👍</span> {formatCount(likes)}
-                                </span>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  <Share2 size={12} color="#777E90" /> {formatCount(reshares)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                    <div
+                      onClick={() => setIsMostSharedExpanded(!isMostSharedExpanded)}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', marginBottom: isMostSharedExpanded ? '4px' : '0' }}
+                    >
+                      <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#09122E', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>🔥</span> Most Shared
+                      </h3>
+                      {isMostSharedExpanded ? <ChevronUp size={18} color="#777E90" /> : <ChevronDown size={18} color="#777E90" />}
                     </div>
+                    {isMostSharedExpanded && (
+                      <>
+                        <p style={{ margin: '10px 0 20px 0', fontSize: '11px', color: '#777E90', textAlign: 'left' }}>Top 5 Reels based on Likes and Reshares</p>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                          {mostShared.map((reel, idx) => {
+                            const title = reel.content || 'Untitled Reel';
+                            const postAttachments = reel.attachments || [];
+                            const sharedAttachments = reel.sharedPostId?.attachments || [];
+                            const allAttachments = [...postAttachments, ...sharedAttachments];
+
+                            const imageAttachment = allAttachments.find(att => att.type === 'image');
+                            const videoAttachment = allAttachments.find(att => att.type === 'video');
+                            const linkPreviewImage = reel.linkPreview?.image || reel.sharedPostId?.linkPreview?.image;
+
+                            const fallbackImage = 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=120&auto=format&fit=crop&q=60';
+                            const likes = reel.likesCount || 0;
+                            const reshares = reel.reshares || reel.reshareCount || 0;
+
+                            const formatCount = (num) => {
+                              if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+                              return num;
+                            };
+
+                            const renderThumbnail = () => {
+                              if (imageAttachment) {
+                                return (
+                                  <img
+                                    src={resolveImageUrl(imageAttachment.url)}
+                                    alt={title}
+                                    style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
+                                    onError={(e) => { e.target.src = fallbackImage; }}
+                                  />
+                                );
+                              }
+                              if (videoAttachment) {
+                                return (
+                                  <video
+                                    src={resolveImageUrl(videoAttachment.url)}
+                                    style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', background: '#000' }}
+                                    muted
+                                    playsInline
+                                    preload="metadata"
+                                  />
+                                );
+                              }
+                              if (linkPreviewImage) {
+                                return (
+                                  <img
+                                    src={resolveImageUrl(linkPreviewImage)}
+                                    alt={title}
+                                    style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
+                                    onError={(e) => { e.target.src = fallbackImage; }}
+                                  />
+                                );
+                              }
+                              return (
+                                <img
+                                  src={fallbackImage}
+                                  alt={title}
+                                  style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
+                                />
+                              );
+                            };
+
+                            return (
+                              <div key={reel._id || idx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                {renderThumbnail()}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1', minWidth: 0 }}>
+                                  <span style={{
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    color: '#353945',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    textAlign: 'left'
+                                  }}>
+                                    {title}
+                                  </span>
+                                  <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: '#777E90' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                      <span>👍</span> {formatCount(likes)}
+                                    </span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                      <Share2 size={12} color="#777E90" /> {formatCount(reshares)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -417,7 +511,7 @@ const Share = () => {
             animation: "slideUp 0.3s ease-out",
             overflow: "hidden"
           }}>
-            <button 
+            <button
               onClick={() => setShowOfferPopup(false)}
               style={{
                 position: "absolute",
@@ -451,9 +545,9 @@ const Share = () => {
                 alignItems: "center",
                 justifyContent: "center"
               }}>
-                <img 
-                  src={resolveImageUrl(popupOffer.offer_image)} 
-                  alt={popupOffer.name} 
+                <img
+                  src={resolveImageUrl(popupOffer.offer_image)}
+                  alt={popupOffer.name}
                   style={{
                     width: "100%",
                     height: "auto",
@@ -475,9 +569,9 @@ const Share = () => {
                 justifyContent: "center",
                 border: "1px solid #ffe0d0"
               }}>
-                <img 
-                  src={resolveImageUrl(popupOffer.logo_image)} 
-                  alt={popupOffer.name} 
+                <img
+                  src={resolveImageUrl(popupOffer.logo_image)}
+                  alt={popupOffer.name}
                   style={{
                     maxWidth: "120px",
                     maxHeight: "120px",
@@ -558,7 +652,7 @@ const Share = () => {
               >
                 Dismiss
               </button>
-              
+
               <a
                 href={popupOffer.url || "#"}
                 target="_blank"

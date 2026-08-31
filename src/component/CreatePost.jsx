@@ -274,7 +274,7 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
           {shareType === 'link' ? (
             <div className="share-link-fields-wrapper" style={{ display: 'flex', gap: '20px', marginBottom: '16px', flexWrap: 'wrap' }}>
               {/* Left Side: Upload Box & Preview */}
-              <div style={{ flex: '1', minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ flex: '1', minWidth: '240px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div className="link-input-group">
                   <label style={{ fontSize: '14px', fontWeight: '600', color: '#353945', marginBottom: '6px', display: 'block', textAlign: 'left' }}>Reel Video (MP4)</label>
                   <div
@@ -320,7 +320,7 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
               </div>
 
               {/* Right Side: Caption */}
-              <div style={{ flex: '1', minWidth: '280px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ flex: '1', minWidth: '240px', display: 'flex', flexDirection: 'column' }}>
                 <div className="reason-input-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left', height: '100%' }}>
                   <label style={{ fontSize: '14px', fontWeight: '600', color: '#353945', display: 'block' }}>Caption (Optional)</label>
                   <textarea
@@ -442,7 +442,7 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
                 </div>
                 <div style={{ display: 'flex', gap: '16px', marginTop: '16px', flexWrap: 'wrap' }}>
                   {/* Industry targeting */}
-                  <div className="target-collapsible-section" style={{ flex: '1', minWidth: '280px', border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#ffffff', textAlign: 'left' }}>
+                  <div className="target-collapsible-section" style={{ flex: '1', minWidth: '240px', border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#ffffff', textAlign: 'left' }}>
                     <div
                       onClick={() => setIsIndustriesOpen(!isIndustriesOpen)}
                       style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
@@ -493,7 +493,7 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
                   </div>
 
                   {/* Age bracket targeting */}
-                  <div className="target-collapsible-section" style={{ flex: '1', minWidth: '280px', border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#ffffff', textAlign: 'left' }}>
+                  <div className="target-collapsible-section" style={{ flex: '1', minWidth: '240px', border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#ffffff', textAlign: 'left' }}>
                     <div
                       onClick={() => setIsAgeGroupsOpen(!isAgeGroupsOpen)}
                       style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
@@ -532,7 +532,7 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
                       </div>
                     )}
                   </div>
-                </div>>
+                </div>
               </>
             )}
 
