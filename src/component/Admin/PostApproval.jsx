@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Check, X, ShieldAlert, Users, MapPin, Briefcase, Calendar, FileText, File, Share2 } from "lucide-react";
+import { Check, X, ShieldAlert, Users, MapPin, Briefcase, Heart, Calendar, FileText, File, Share2 } from "lucide-react";
 import API_BASE_URL from "../../utils/config";
 import { getCookie } from "../../utils/auth";
 import { toast } from "react-toastify";
@@ -231,7 +231,7 @@ const PostApproval = () => {
                 </div>
 
                 {/* Content */}
-                <div style={{ fontSize: "14px", color: "#353945", whiteSpace: "pre-line", borderLeft: "4px solid #EA650A", paddingLeft: "16px", margin: "0" }}>
+                <div style={{ fontSize: "14px", color: "#353945", whiteSpace: "pre-line", wordBreak: "break-word", overflowWrap: "break-word", borderLeft: "4px solid #EA650A", paddingLeft: "16px", margin: "0" }}>
                   {post.content}
                 </div>
 
@@ -295,7 +295,7 @@ const PostApproval = () => {
                     </div>
 
                     <div className="reshared-content" style={{ fontSize: '13px', color: '#353945', marginBottom: '12px' }}>
-                      <p style={{ whiteSpace: 'pre-line', margin: 0 }}>{post.sharedPostId.content}</p>
+                      <p style={{ whiteSpace: 'pre-line', margin: 0, wordBreak: 'break-word', overflowWrap: 'break-word' }}>{post.sharedPostId.content}</p>
                     </div>
 
                     {post.sharedPostId.attachments && post.sharedPostId.attachments.length > 0 && (
@@ -417,6 +417,46 @@ const PostApproval = () => {
                         </div>
                       ) : (
                         <span style={{ fontSize: "12px", color: "#777E90", fontStyle: "italic", marginLeft: "16px" }}>None specified (all industries)</span>
+                      )}
+                    </div>
+
+                    {/* Interests Segment */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <span style={{ fontSize: "11px", fontWeight: "600", color: "#777E90", display: "flex", alignItems: "center", gap: "4px" }}>
+                        <Heart size={12} /> Target Interests:
+                      </span>
+                      {post.originalSegments?.interests && post.originalSegments.interests.length > 0 ? (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                          {post.originalSegments.interests.map((item) => {
+                            const isChecked = segments.interests?.includes(item);
+                            return (
+                              <label key={item} style={{ 
+                                display: "flex", 
+                                alignItems: "center", 
+                                gap: "6px", 
+                                background: isChecked ? "#FFF1E6" : "#F8F9FB", 
+                                border: `1px solid ${isChecked ? "#EA650A" : "#E8EDF3"}`, 
+                                borderRadius: "20px", 
+                                padding: "4px 10px", 
+                                fontSize: "11px", 
+                                color: isChecked ? "#EA650A" : "#777E90", 
+                                fontWeight: "500",
+                                cursor: "pointer",
+                                userSelect: "none"
+                              }}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={!!isChecked} 
+                                  onChange={(e) => handleToggleArraySegment(post._id, 'interests', item, e.target.checked)}
+                                  style={{ cursor: "pointer", accentColor: "#EA650A", width: "12px", height: "12px" }}
+                                />
+                                {item}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: "12px", color: "#777E90", fontStyle: "italic", marginLeft: "16px" }}>None specified (all interests)</span>
                       )}
                     </div>
 

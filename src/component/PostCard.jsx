@@ -14,8 +14,18 @@ const PostCard = ({ post, onReact }) => {
   const fallbackAvatar = userDetail?.isBusinessProfile ? '/default-avatar.png' : getAvatar(userDetail?.gender, userDetail?.dateOfBirth);
 
   const [showEmojiBar, setShowEmojiBar] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isResharedExpanded, setIsResharedExpanded] = useState(false);
   const likeWrapperRef = useRef(null);
   const navigate = useNavigate();
+
+  const MAX_CAPTION_LENGTH = 300;
+  const isLongContent = content && content.length > MAX_CAPTION_LENGTH;
+  const displayedContent = isLongContent && !isExpanded ? content.slice(0, MAX_CAPTION_LENGTH) : content;
+
+  const resharedContent = sharedPostId?.content || '';
+  const isLongResharedContent = resharedContent && resharedContent.length > MAX_CAPTION_LENGTH;
+  const displayedResharedContent = isLongResharedContent && !isResharedExpanded ? resharedContent.slice(0, MAX_CAPTION_LENGTH) : resharedContent;
 
   const handleProfileClick = () => {
     if (userId?._id) {
@@ -262,7 +272,27 @@ const PostCard = ({ post, onReact }) => {
         </div>
       </div>
       <div className="post-content">
-        <p style={{ whiteSpace: 'pre-line' }}>{content}</p>
+        <p style={{ whiteSpace: 'pre-line', wordBreak: 'break-word', overflowWrap: 'break-word', margin: 0 }}>
+          {displayedContent}
+        </p>
+        {isLongContent && (
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#EA650A',
+              fontWeight: '600',
+              fontSize: '13px',
+              cursor: 'pointer',
+              padding: '4px 0 0 0',
+              marginTop: '4px',
+              display: 'inline-block'
+            }}
+          >
+            {isExpanded ? 'See Less' : '... See More'}
+          </button>
+        )}
       </div>
       {linkPreview && linkPreview.url && (
         <div className="post-link-preview" style={{ display: 'flex', gap: '16px', border: '1px solid #E8EDF3', borderRadius: '8px', overflow: 'hidden', background: '#F8F9FB', marginBottom: '16px', marginTop: '8px' }}>
@@ -320,7 +350,27 @@ const PostCard = ({ post, onReact }) => {
           </div>
 
           <div className="reshared-content" style={{ fontSize: '13px', color: '#353945', marginBottom: '12px' }}>
-            <p style={{ whiteSpace: 'pre-line', margin: 0 }}>{sharedPostId.content}</p>
+            <p style={{ whiteSpace: 'pre-line', margin: 0, wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+              {displayedResharedContent}
+            </p>
+            {isLongResharedContent && (
+              <button
+                onClick={() => setIsResharedExpanded(!isResharedExpanded)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#EA650A',
+                  fontWeight: '600',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  padding: '2px 0 0 0',
+                  marginTop: '4px',
+                  display: 'inline-block'
+                }}
+              >
+                {isResharedExpanded ? 'See Less' : '... See More'}
+              </button>
+            )}
           </div>
 
           {sharedPostId.attachments && sharedPostId.attachments.length > 0 && (

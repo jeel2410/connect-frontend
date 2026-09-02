@@ -8454,6 +8454,8 @@ like page */
   line-height: 1.6;
   color: #353945;
   white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .post-attachments {

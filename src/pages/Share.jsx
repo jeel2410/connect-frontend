@@ -342,8 +342,8 @@ const Share = () => {
                             const rankBgColors = ['#FFF1E6', '#FFF6F0', '#FFFBF7', '#F4F5F6', '#F4F5F6'];
 
                             return (
-                              <div key={sharer.user?._id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div key={sharer.user?._id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
                                   <span style={{
                                     width: '24px',
                                     height: '24px',
@@ -354,17 +354,28 @@ const Share = () => {
                                     fontSize: '12px',
                                     fontWeight: '700',
                                     color: rankColors[idx] || '#777E90',
-                                    background: rankBgColors[idx] || '#F4F5F6'
+                                    background: rankBgColors[idx] || '#F4F5F6',
+                                    flexShrink: 0
                                   }}>{idx + 1}</span>
                                   <img
                                     src={avatar || defaultAvatar}
                                     alt={fullName}
-                                    style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
+                                    style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
                                     onError={(e) => { e.target.src = defaultAvatar; }}
                                   />
-                                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#353945' }}>{fullName}</span>
+                                  <span style={{
+                                    fontSize: '13px',
+                                    fontWeight: '600',
+                                    color: '#353945',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    flex: 1,
+                                    minWidth: 0,
+                                    textAlign: 'left'
+                                  }} title={fullName}>{fullName}</span>
                                 </div>
-                                <span style={{ fontSize: '12px', fontWeight: '500', color: '#777E90' }}>{sharesCount} Shared</span>
+                                <span style={{ fontSize: '12px', fontWeight: '500', color: '#777E90', flexShrink: 0 }}>{sharesCount} Shared</span>
                               </div>
                             );
                           })}
@@ -391,6 +402,7 @@ const Share = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                           {mostShared.map((reel, idx) => {
                             const title = reel.content || 'Untitled Reel';
+                            const cleanTitle = title.trim().replace(/[\r\n]+/g, ' ');
                             const postAttachments = reel.attachments || [];
                             const sharedAttachments = reel.sharedPostId?.attachments || [];
                             const allAttachments = [...postAttachments, ...sharedAttachments];
@@ -413,8 +425,8 @@ const Share = () => {
                                 return (
                                   <img
                                     src={resolveImageUrl(imageAttachment.url)}
-                                    alt={title}
-                                    style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
+                                    alt={cleanTitle}
+                                    style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
                                     onError={(e) => { e.target.src = fallbackImage; }}
                                   />
                                 );
@@ -423,7 +435,7 @@ const Share = () => {
                                 return (
                                   <video
                                     src={resolveImageUrl(videoAttachment.url)}
-                                    style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', background: '#000' }}
+                                    style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', background: '#000', flexShrink: 0 }}
                                     muted
                                     playsInline
                                     preload="metadata"
@@ -434,8 +446,8 @@ const Share = () => {
                                 return (
                                   <img
                                     src={resolveImageUrl(linkPreviewImage)}
-                                    alt={title}
-                                    style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
+                                    alt={cleanTitle}
+                                    style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
                                     onError={(e) => { e.target.src = fallbackImage; }}
                                   />
                                 );
@@ -443,26 +455,33 @@ const Share = () => {
                               return (
                                 <img
                                   src={fallbackImage}
-                                  alt={title}
-                                  style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
+                                  alt={cleanTitle}
+                                  style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
                                 />
                               );
                             };
 
                             return (
-                              <div key={reel._id || idx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div key={reel._id || idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', minWidth: 0 }}>
                                 {renderThumbnail()}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1', minWidth: 0 }}>
-                                  <span style={{
-                                    fontSize: '12px',
-                                    fontWeight: '600',
-                                    color: '#353945',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    textAlign: 'left'
-                                  }}>
-                                    {title}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1', minWidth: 0, overflow: 'hidden' }}>
+                                  <span
+                                    title={cleanTitle}
+                                    style={{
+                                      fontSize: '12px',
+                                      fontWeight: '600',
+                                      color: '#353945',
+                                      display: '-webkit-box',
+                                      WebkitLineClamp: 2,
+                                      WebkitBoxOrient: 'vertical',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      wordBreak: 'break-word',
+                                      lineHeight: '1.35',
+                                      textAlign: 'left'
+                                    }}
+                                  >
+                                    {cleanTitle}
                                   </span>
                                   <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: '#777E90' }}>
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
