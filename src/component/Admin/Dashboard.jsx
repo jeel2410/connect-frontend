@@ -70,6 +70,10 @@ const Dashboard = () => {
   const conversationDepth = stats ? (stats.totalChatMessages / (stats.totalUsers || 1)).toFixed(1) : 0;
   const connectionsRatio = stats ? (stats.totalConnectionRequests / (stats.totalUsers || 1)).toFixed(1) : 0;
 
+  const completionPercentage = stats?.totalUsers > 0
+    ? (stats.completeProfilePercentage ?? ((stats.totalCompleteProfiles / stats.totalUsers) * 100).toFixed(1))
+    : 0;
+
   const statCards = [
     {
       id: "users",
@@ -77,7 +81,7 @@ const Dashboard = () => {
       value: stats?.totalUsers || 0,
       icon: Users,
       color: "blue",
-      description: "Registered members on the platform",
+      description: `${(stats?.totalCompleteProfiles || 0).toLocaleString()} completed (${completionPercentage}%)`,
       accentBg: "linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)",
       iconColor: "#0284C7",
       borderColor: "#38BDF8",
@@ -97,9 +101,10 @@ const Dashboard = () => {
       id: "complete-profiles",
       title: "Completed Profiles",
       value: stats?.totalCompleteProfiles || 0,
+      percentage: completionPercentage,
       icon: Smile,
       color: "emerald",
-      description: "Users who completed full registration",
+      description: `${completionPercentage}% of ${stats?.totalUsers || 0} total profiles completed`,
       accentBg: "linear-gradient(135deg, #ECFDF5 0%, #A7F3D0 100%)",
       iconColor: "#059669",
       borderColor: "#34D399",
@@ -192,9 +197,29 @@ const Dashboard = () => {
                 >
                   <Icon size={24} />
                 </div>
+                {card.percentage !== undefined && (
+                  <span style={{
+                    backgroundColor: "#ECFDF5",
+                    color: "#059669",
+                    border: "1px solid #A7F3D0",
+                    padding: "4px 10px",
+                    borderRadius: "20px",
+                    fontSize: "12px",
+                    fontWeight: "700"
+                  }}>
+                    {card.percentage}% Complete
+                  </span>
+                )}
               </div>
               <div className="card-middle">
-                <span className="card-value">{card.value.toLocaleString()}</span>
+                <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+                  <span className="card-value">{card.value.toLocaleString()}</span>
+                  {card.percentage !== undefined && (
+                    <span style={{ fontSize: "14px", fontWeight: "700", color: "#059669" }}>
+                      ({card.percentage}%)
+                    </span>
+                  )}
+                </div>
                 <h3 className="card-title">{card.title}</h3>
               </div>
               <div className="card-bottom">

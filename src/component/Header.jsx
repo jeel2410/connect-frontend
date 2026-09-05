@@ -6,7 +6,7 @@ import locationIcon from "../assets/image/location.png";
 import notification from "../assets/image/Notification.png";
 import userIcon from "../assets/image/user_icon.png"
 import NotificationModal from "./NotificationModal";
-import { getCookie, logout, isAdmin, getUserProfile, hasToken } from "../utils/auth";
+import { getCookie, logout, isAdmin, getUserProfile, hasToken, getProfileStatus } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 import profileIcon from "../assets/image/firstname.png"
 import "../styles/style.css"
@@ -164,77 +164,77 @@ const Header = () => {
           if (profileData.success && profileData.data && profileData.data.profile) {
             const profile = profileData.data.profile;
 
-             const resolvedName = profile.isBusinessProfile ? profile.businessName : profile.fullName;
-             if (resolvedName) {
-               setUserName(resolvedName);
-             } else {
-               // Fallback to cookie if name not in API response
-               const userProfile = getUserProfile();
-               const resolvedCookieName = userProfile?.isBusinessProfile ? userProfile.businessName : userProfile?.fullName;
-               if (resolvedCookieName) {
-                 setUserName(resolvedCookieName);
-               } else {
-                 setUserName("User");
-               }
-             }
- 
-             // Keep city logic for potential future use
-             const city = profile.city;
-             if (city) {
-               // Check if city is an ID (ObjectId format) or a name
-               // ObjectIds are 24 character hex strings
-               const isObjectId = /^[0-9a-fA-F]{24}$/.test(city);
-               if (isObjectId) {
-                 // If it's an ID, try to get from cookie as fallback, or show loading
-                 const userProfile = getUserProfile();
-                 if (userProfile && userProfile.city && !/^[0-9a-fA-F]{24}$/.test(userProfile.city)) {
-                   setUserCity(userProfile.city);
-                 } else {
-                   setUserCity("Loading...");
-                 }
-               } else {
-                 // It's a name, use it directly
-                 setUserCity(city);
-               }
-             }
-           }
-         } else {
-           // If API fails, try cookie as fallback
-           const userProfile = getUserProfile();
-           if (userProfile) {
-             const resolvedCookieName = userProfile.isBusinessProfile ? userProfile.businessName : userProfile.fullName;
-             if (resolvedCookieName) {
-               setUserName(resolvedCookieName);
-             } else {
-               setUserName("User");
-             }
-             if (userProfile.city) {
-               const isObjectId = /^[0-9a-fA-F]{24}$/.test(userProfile.city);
-               if (!isObjectId) {
-                 setUserCity(userProfile.city);
-               }
-             }
-           }
-         }
-       } catch (err) {
-         console.error("Error fetching user profile:", err);
-         // Fallback to cookie if API fails
-         const userProfile = getUserProfile();
-         if (userProfile) {
-           const resolvedCookieName = userProfile.isBusinessProfile ? userProfile.businessName : userProfile.fullName;
-           if (resolvedCookieName) {
-             setUserName(resolvedCookieName);
-           } else {
-             setUserName("User");
-           }
-           if (userProfile.city) {
-             const isObjectId = /^[0-9a-fA-F]{24}$/.test(userProfile.city);
-             if (!isObjectId) {
-               setUserCity(userProfile.city);
-             }
-           }
-         }
-       }
+            const resolvedName = profile.isBusinessProfile ? profile.businessName : profile.fullName;
+            if (resolvedName) {
+              setUserName(resolvedName);
+            } else {
+              // Fallback to cookie if name not in API response
+              const userProfile = getUserProfile();
+              const resolvedCookieName = userProfile?.isBusinessProfile ? userProfile.businessName : userProfile?.fullName;
+              if (resolvedCookieName) {
+                setUserName(resolvedCookieName);
+              } else {
+                setUserName("User");
+              }
+            }
+
+            // Keep city logic for potential future use
+            const city = profile.city;
+            if (city) {
+              // Check if city is an ID (ObjectId format) or a name
+              // ObjectIds are 24 character hex strings
+              const isObjectId = /^[0-9a-fA-F]{24}$/.test(city);
+              if (isObjectId) {
+                // If it's an ID, try to get from cookie as fallback, or show loading
+                const userProfile = getUserProfile();
+                if (userProfile && userProfile.city && !/^[0-9a-fA-F]{24}$/.test(userProfile.city)) {
+                  setUserCity(userProfile.city);
+                } else {
+                  setUserCity("Loading...");
+                }
+              } else {
+                // It's a name, use it directly
+                setUserCity(city);
+              }
+            }
+          }
+        } else {
+          // If API fails, try cookie as fallback
+          const userProfile = getUserProfile();
+          if (userProfile) {
+            const resolvedCookieName = userProfile.isBusinessProfile ? userProfile.businessName : userProfile.fullName;
+            if (resolvedCookieName) {
+              setUserName(resolvedCookieName);
+            } else {
+              setUserName("User");
+            }
+            if (userProfile.city) {
+              const isObjectId = /^[0-9a-fA-F]{24}$/.test(userProfile.city);
+              if (!isObjectId) {
+                setUserCity(userProfile.city);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching user profile:", err);
+        // Fallback to cookie if API fails
+        const userProfile = getUserProfile();
+        if (userProfile) {
+          const resolvedCookieName = userProfile.isBusinessProfile ? userProfile.businessName : userProfile.fullName;
+          if (resolvedCookieName) {
+            setUserName(resolvedCookieName);
+          } else {
+            setUserName("User");
+          }
+          if (userProfile.city) {
+            const isObjectId = /^[0-9a-fA-F]{24}$/.test(userProfile.city);
+            if (!isObjectId) {
+              setUserCity(userProfile.city);
+            }
+          }
+        }
+      }
     };
 
     fetchUserCity();
@@ -345,10 +345,19 @@ const Header = () => {
     }
   }, [isLoggedIn, location.pathname]);
 
+  const handleLogoClick = (e) => {
+    if (e) e.preventDefault();
+    if (hasToken() && !getProfileStatus()) {
+      logout();
+    } else {
+      navigate("/");
+    }
+  };
+
   return (
     <header className="header">
       <div className="header-container">
-        <div className="logo" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
+        <div className="logo" onClick={handleLogoClick} style={{ cursor: "pointer" }} title="Go to Home / Exit Registration">
           <img src={logo} alt="Connect Logo"></img>
         </div>
 
@@ -464,11 +473,12 @@ const Header = () => {
                 src={logo}
                 alt="Connect Logo"
                 className="mobile-logo"
-                onClick={() => {
-                  navigate("/");
+                onClick={(e) => {
                   setMobileMenuOpen(false);
+                  handleLogoClick(e);
                 }}
                 style={{ cursor: "pointer" }}
+                title="Go to Home / Exit Registration"
               ></img>
               <button
                 className="mobile-menu-close"

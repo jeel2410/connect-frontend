@@ -84,7 +84,7 @@ export const logout = () => {
   deleteCookie("userPhoneNumber");
   deleteCookie("userCurrentLocation");
   localStorage.removeItem("phoneNumber");
-  window.location.href = "/Login";
+  window.location.href = "/";
 };
 
 // ─── Global Fetch Interceptor ─────────────────────────────────────────────────

@@ -302,13 +302,27 @@ const CardManagement = () => {
     setIsClicksModalOpen(false);
     setBroadcastSubject(selectedCardForClicks?.name || "Special Offer");
 
+    const offerImageUrl = resolveImageUrl(selectedCardForClicks?.offer_image);
+    const offerLogoUrl = resolveImageUrl(selectedCardForClicks?.logo_image);
+
     // Set a premium styled HTML template pre-filled with the offer information
     const defaultTemplate = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
   <h2 style="color: #EC7523; margin-top: 0;">Hello {{name}},</h2>
   <p>We noticed you were interested in our offer: <strong>${selectedCardForClicks?.name || ''}</strong>.</p>
   
+  ${offerImageUrl ? `
+  <div style="text-align: center; margin: 20px 0;">
+    <img src="${offerImageUrl}" alt="${selectedCardForClicks?.name || 'Offer'}" style="max-width: 100%; height: auto; border-radius: 8px; max-height: 300px; object-fit: contain;" />
+  </div>
+  ` : ''}
+
   <div style="background-color: #fff7ed; border-left: 4px solid #EC7523; padding: 15px; margin: 20px 0; border-radius: 4px;">
+    ${offerLogoUrl ? `
+    <div style="margin-bottom: 12px;">
+      <img src="${offerLogoUrl}" alt="Logo" style="max-height: 50px; width: auto;" />
+    </div>
+    ` : ''}
     <h3 style="margin-top: 0; color: #d45a09;">${selectedCardForClicks?.name || ''}</h3>
     <p style="color: #4b5563; line-height: 1.5; font-size: 14px;">${selectedCardForClicks?.description || ''}</p>
     

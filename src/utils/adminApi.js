@@ -2330,6 +2330,40 @@ export const updateScheduledMailerSettings = async (settings) => {
   }
 };
 
+export const triggerSundayCron = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/scheduled-mailers/trigger-sunday`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to trigger Sunday cron");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error triggering Sunday cron:", error);
+    throw error;
+  }
+};
+
+export const triggerProcessQueue = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/scheduled-mailers/process-queue`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to process mail queue");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error processing mail queue:", error);
+    throw error;
+  }
+};
+
 export const getOfferCategories = async (search = "") => {
   try {
     const url = `${API_BASE_URL}/api/admin/offer-categories${search ? `?search=${encodeURIComponent(search)}` : ""}`;

@@ -108,6 +108,7 @@ export default function EditProfile() {
 
   // Load current profile data
   useEffect(() => {
+    window.scrollTo(0, 0);
     const fetchProfile = async () => {
       try {
         const token = getCookie("authToken");
@@ -835,6 +836,23 @@ export default function EditProfile() {
     return fieldErrorMap;
   };
 
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const errorElement = document.querySelector(".input-error, .field-error-message, .message-error");
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        const input = errorElement.tagName === "INPUT" || errorElement.tagName === "SELECT"
+          ? errorElement
+          : errorElement.querySelector("input, select");
+        if (input && typeof input.focus === "function") {
+          input.focus({ preventScroll: true });
+        }
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 100);
+  };
+
   const handleSave = async () => {
     try {
       setError("");
@@ -878,6 +896,7 @@ export default function EditProfile() {
       if (Object.keys(errors).length > 0) {
         setFieldErrors(errors);
         setSaving(false);
+        scrollToFirstError();
         return;
       }
 
@@ -950,9 +969,11 @@ export default function EditProfile() {
         if (Object.keys(parsedErrors).length > 0) {
           // Field-specific error found
           setFieldErrors(parsedErrors);
+          scrollToFirstError();
         } else {
           // General error - show at top
           setError(errorMessage);
+          scrollToFirstError();
         }
         throw new Error(errorMessage);
       }
@@ -986,6 +1007,7 @@ export default function EditProfile() {
       // Only set general error if no field-specific errors were set
       if (Object.keys(fieldErrors).length === 0) {
         setError(err.message || "Something went wrong. Please try again.");
+        scrollToFirstError();
       }
     } finally {
       setSaving(false);
@@ -1039,6 +1061,13 @@ export default function EditProfile() {
               onCoverImageChange={handleCoverImageChange}
               showImageUpload={true}
             ></ProfilecardHeader>
+
+            {/* Error Message */}
+            {error && (
+              <div className="message-error" style={{ margin: "20px" }}>
+                {error}
+              </div>
+            )}
 
             {/* Success Message */}
             {success && (

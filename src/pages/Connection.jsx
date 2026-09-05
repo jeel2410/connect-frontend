@@ -689,8 +689,8 @@ const Connection = () => {
                 </button> */}
               </div>
             </div>
-            <div className="connections-page-tabs" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", gap: "10px" }}>
+            <div className="connections-page-tabs" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+              <div style={{ display: "flex", gap: "24px", alignItems: "center", flexWrap: "wrap" }}>
                 <button
                   className={`connections-page-tab ${activeTab === "active" ? "active" : ""}`}
                   onClick={() => {

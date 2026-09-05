@@ -12,6 +12,7 @@ const Profile = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     const fetchProfile = async () => {
       try {
         // Check if user is authenticated

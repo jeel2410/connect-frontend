@@ -9,14 +9,18 @@ import {
   ChevronRight,
   Mail,
   Send,
-  Calendar
+  Calendar,
+  Play,
+  Zap
 } from "lucide-react";
 import {
   getScheduledMailerStats,
   getScheduledMailerLogs,
   sendTestScheduledMailer,
   getScheduledMailerSettings,
-  updateScheduledMailerSettings
+  updateScheduledMailerSettings,
+  triggerSundayCron,
+  triggerProcessQueue
 } from "../../utils/adminApi";
 
 const ScheduledMailers = () => {
@@ -311,8 +315,119 @@ const ScheduledMailers = () => {
 
   const totalPages = pagination.totalPages;
 
+  const [runningCron, setRunningCron] = useState(false);
+  const [cronFeedback, setCronFeedback] = useState({ type: "", message: "" });
+
+  const handleRunSundayCron = async () => {
+    if (!window.confirm("Are you sure you want to run the Sunday scheduled mailer cron right now? This will queue weekly emails for users with incomplete profiles and network matches.")) return;
+    try {
+      setRunningCron(true);
+      setCronFeedback({ type: "", message: "" });
+      const response = await triggerSundayCron();
+      if (response.success) {
+        setCronFeedback({ type: "success", message: `Successfully queued Sunday mailers! (${response.data?.incompleteProfilesScheduled || 0} incomplete profile, ${response.data?.snapshotsScheduled || 0} network snapshot emails)` });
+        fetchStats();
+        fetchLogs();
+      } else {
+        setCronFeedback({ type: "error", message: response.message || "Failed to trigger Sunday cron" });
+      }
+    } catch (err) {
+      setCronFeedback({ type: "error", message: err.message || "Failed to trigger Sunday cron" });
+    } finally {
+      setRunningCron(false);
+    }
+  };
+
+  const handleProcessQueueNow = async () => {
+    try {
+      setRunningCron(true);
+      setCronFeedback({ type: "", message: "" });
+      const response = await triggerProcessQueue();
+      if (response.success) {
+        setCronFeedback({ type: "success", message: `Mail queue processing complete! (Sent: ${response.data?.sent || 0}, Skipped: ${response.data?.skipped || 0}, Failed: ${response.data?.failed || 0})` });
+        fetchStats();
+        fetchLogs();
+      } else {
+        setCronFeedback({ type: "error", message: response.message || "Failed to process queue" });
+      }
+    } catch (err) {
+      setCronFeedback({ type: "error", message: err.message || "Failed to process queue" });
+    } finally {
+      setRunningCron(false);
+    }
+  };
+
   return (
     <div className="admin-section">
+      {/* Top Controls Bar for Manual Cron Execution */}
+      <div style={{ background: "white", padding: "20px 24px", borderRadius: "16px", border: "1px solid #E4E6EB", marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+        <div>
+          <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#081332", margin: 0 }}>Scheduled Mailer Manual Controls</h2>
+          <p style={{ fontSize: "13px", color: "#777E90", margin: "4px 0 0 0" }}>Manually trigger weekly Sunday batch scheduling or process the mail queue on demand.</p>
+        </div>
+        <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+          <button
+            onClick={handleRunSundayCron}
+            disabled={runningCron}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "10px 18px",
+              backgroundColor: "#EA650A",
+              color: "white",
+              border: "none",
+              borderRadius: "10px",
+              fontWeight: "600",
+              fontSize: "14px",
+              cursor: runningCron ? "not-allowed" : "pointer",
+              opacity: runningCron ? 0.7 : 1,
+              boxShadow: "0 2px 8px rgba(234, 101, 10, 0.25)"
+            }}
+          >
+            <Play size={16} fill="white" />
+            {runningCron ? "Executing..." : "Run Sunday Cron Job Now"}
+          </button>
+
+          <button
+            onClick={handleProcessQueueNow}
+            disabled={runningCron}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "10px 18px",
+              backgroundColor: "#081332",
+              color: "white",
+              border: "none",
+              borderRadius: "10px",
+              fontWeight: "600",
+              fontSize: "14px",
+              cursor: runningCron ? "not-allowed" : "pointer",
+              opacity: runningCron ? 0.7 : 1
+            }}
+          >
+            <Zap size={16} fill="white" />
+            {runningCron ? "Processing..." : "Process Mail Queue Now"}
+          </button>
+        </div>
+      </div>
+
+      {cronFeedback.message && (
+        <div style={{
+          padding: "12px 20px",
+          borderRadius: "10px",
+          marginBottom: "20px",
+          fontSize: "14px",
+          fontWeight: "500",
+          backgroundColor: cronFeedback.type === "success" ? "#ECFDF5" : "#FEF2F2",
+          color: cronFeedback.type === "success" ? "#065F46" : "#991B1B",
+          border: `1px solid ${cronFeedback.type === "success" ? "#A7F3D0" : "#FCA5A5"}`
+        }}>
+          {cronFeedback.message}
+        </div>
+      )}
+
       {/* Metrics Cards */}
       <div className="mailer-stats-grid">
         {/* Card 1 */}

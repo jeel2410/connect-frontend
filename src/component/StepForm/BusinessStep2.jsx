@@ -13,12 +13,17 @@ const BusinessStep2 = ({ data, updateData, errors, touched, phoneNumber }) => {
   const [loadingCities, setLoadingCities] = useState(false);
   const [citiesError, setCitiesError] = useState("");
 
-  // Pre-fill WhatsApp number with verified mobile if empty
+  // Pre-fill WhatsApp number with verified mobile once on mount if empty
   useEffect(() => {
-    if (phoneNumber && !data.whatsappNumber) {
-      updateData("whatsappNumber", phoneNumber);
+    const rawMobile = phoneNumber || data.mobileNumber || localStorage.getItem("phoneNumber") || "";
+    if (rawMobile && !data.whatsappNumber) {
+      const cleanPhone = rawMobile.replace(/\D/g, "").slice(-10);
+      if (cleanPhone.length === 10) {
+        updateData("whatsappNumber", cleanPhone);
+      }
     }
-  }, [phoneNumber, data.whatsappNumber, updateData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Fetch cities from API
   useEffect(() => {

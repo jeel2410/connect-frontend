@@ -174,8 +174,8 @@ export default function Usercard({
                 />
               </div>
 
-              <h3 className="profile-name">{profile.name}</h3>
-              <p className="profile-address">{profile.industry}</p>
+              <h3 className="profile-name" title={profile.name}>{profile.name}</h3>
+              <p className="profile-address" title={profile.industry || ""}>{profile.industry || "\u00A0"}</p>
 
               <div
                 className="profile-actions"

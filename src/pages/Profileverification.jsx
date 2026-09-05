@@ -18,7 +18,7 @@ import BusinessStep1 from "../../src/component/StepForm/BusinessStep1";
 import BusinessStep2 from "../../src/component/StepForm/BusinessStep2";
 import BusinessStep3 from "../../src/component/StepForm/BusinessStep3";
 import logo from "../../src/assets/image/connect_logo.png";
-import { getCookie, setCookie } from "../utils/auth";
+import { getCookie, setCookie, logout } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 import DynamicAuthImage from "../component/DynamicAuthImage";
 
@@ -218,7 +218,7 @@ const Profileverification = () => {
       businessCategory: "",
       contactPerson: "",
       website: "",
-      whatsappNumber: "",
+      whatsappNumber: (phoneNumber || localStorage.getItem("phoneNumber") || "").replace(/\D/g, "").slice(-10),
       facebook: "",
       instagram: "",
       linkedIn: "",
@@ -1158,7 +1158,7 @@ const Profileverification = () => {
         case 1:
           return <BusinessStep1 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} phoneNumber={phoneNumber} />;
         case 2:
-          return <BusinessStep2 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
+          return <BusinessStep2 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} phoneNumber={phoneNumber} />;
         case 3:
           return <BusinessStep3 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
         default:
@@ -1198,7 +1198,14 @@ const Profileverification = () => {
         <div className="container">
           <div className="form-card">
             <div className="form-header">
-              <img src={logo} className="logo-image" alt="Connect Logo"></img>
+              <img
+                src={logo}
+                className="logo-image"
+                alt="Connect Logo"
+                onClick={() => logout()}
+                style={{ cursor: "pointer" }}
+                title="Exit Registration"
+              />
               <ProgressSteps
                 currentStep={currentStep}
                 totalSteps={totalSteps}
