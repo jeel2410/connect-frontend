@@ -500,6 +500,7 @@ export default function UserProfileModal({ userId }) {
   const displayLogo = isBusiness ? (resolveImageUrl(profileData.businessLogo) || businessPlaceholderLogo) : (resolveImageUrl(profileData.profileImage) || defaultAvatar);
   const displayName = isBusiness ? profileData.businessName : (profileData.fullName || "User");
   const displayTagline = isBusiness ? profileData.businessTagline : null;
+  const isVerifiedBusiness = isBusiness && (profileData.verified === true || profileData.businessApprovalStatus === 'approved');
 
   return (
     <div>
@@ -517,7 +518,15 @@ export default function UserProfileModal({ userId }) {
             style={{ cursor: 'pointer', objectFit: isBusiness ? 'contain' : 'cover', backgroundColor: isBusiness ? '#fff' : 'transparent', border: isBusiness ? '1px solid #e5e7eb' : 'none' }}
           />
           <div className="user-profile-name-location">
-            <h2>{displayName}</h2>
+            <h2 style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              {displayName}
+              {isVerifiedBusiness && (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#10B981" title="Verified">
+                  <path d="M12 2l2.4 2.4 3.4-.6.8 3.3 3 1.7-1.2 3.2 1.2 3.2-3 1.7-.8 3.3-3.4-.6L12 22l-2.4-2.4-3.4.6-.8-3.3-3-1.7 1.2-3.2-1.2-3.2 3-1.7.8-3.3 3.4.6z" />
+                  <path d="M9 12l2 2 4-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                </svg>
+              )}
+            </h2>
             {displayTagline && (
               <p style={{ fontStyle: "italic", fontSize: "14px", color: "#6b7280", margin: "4px 0" }}>{displayTagline}</p>
             )}

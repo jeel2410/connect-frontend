@@ -6,6 +6,14 @@ import heartfillIcon from "../../src/assets/image/fill_heart.png";
 import heartOutlineIcon from "../../src/assets/image/outline_icon.png";
 import blackcIcon from "../../src/assets/image/black_c.png";
 
+// Helper function to format a connections count compactly (e.g. 1200 -> "1.2k")
+const formatConnectionsCount = (count) => {
+  if (!count) return "0";
+  if (count >= 1000000) return `${(count / 1000000).toFixed(1).replace(/\.0$/, "")}m`;
+  if (count >= 1000) return `${(count / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+  return count.toString();
+};
+
 // Helper function to calculate age from date of birth
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -50,6 +58,7 @@ export default function Usercard({
             fallbackImage: businessLogoPlaceholder,
             verified: item.verified || false,
             featured: item.featured || false,
+            connectionsCount: item.connectionsCount || 0,
             isBusiness: true,
             alreadyConnect: item.alreadyConnect || false,
             sendRequest: item.sendRequest || false,
@@ -174,8 +183,25 @@ export default function Usercard({
                 />
               </div>
 
-              <h3 className="profile-name" title={profile.name}>{profile.name}</h3>
+              <h3 className="profile-name" title={profile.name} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{profile.name}</span>
+                {profile.isBusiness && profile.verified && (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#10B981" title="Verified" style={{ flexShrink: 0 }}>
+                    <path d="M12 2l2.4 2.4 3.4-.6.8 3.3 3 1.7-1.2 3.2 1.2 3.2-3 1.7-.8 3.3-3.4-.6L12 22l-2.4-2.4-3.4.6-.8-3.3-3-1.7 1.2-3.2-1.2-3.2 3-1.7.8-3.3 3.4.6z" />
+                    <path d="M9 12l2 2 4-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  </svg>
+                )}
+              </h3>
               <p className="profile-address" title={profile.industry || ""}>{profile.industry || "\u00A0"}</p>
+              {profile.isBusiness && (
+                <p
+                  className="profile-connections-count"
+                  style={{ fontSize: "12px", color: "#6b7280", margin: "2px 0 0" }}
+                  title={`${profile.connectionsCount} people connected`}
+                >
+                  {formatConnectionsCount(profile.connectionsCount)} connection{profile.connectionsCount === 1 ? "" : "s"}
+                </p>
+              )}
 
               <div
                 className="profile-actions"
