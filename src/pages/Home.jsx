@@ -28,6 +28,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("People");
   const [businessCategories, setBusinessCategories] = useState([]);
   const [selectedBusinessCategory, setSelectedBusinessCategory] = useState("");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [filters, setFilters] = useState({
     ageMin: null,
     ageMax: null,
@@ -124,6 +125,9 @@ export default function Home() {
         }
         if (isSearchActive && searchQuery.trim() !== "") {
           queryParams.append("search", searchQuery.trim());
+        }
+        if (verifiedOnly) {
+          queryParams.append("verifiedOnly", "true");
         }
       } else {
         let genderFilter = filters.gender;
@@ -420,7 +424,7 @@ export default function Home() {
 
     fetchUserProfileAndFeed();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, isSearchActive, searchQuery, activeTab, selectedBusinessCategory]);
+  }, [filters, isSearchActive, searchQuery, activeTab, selectedBusinessCategory, verifiedOnly]);
 
   // Debounced search
   useEffect(() => {
@@ -685,7 +689,22 @@ export default function Home() {
                 ))}
               </select>
             )}
-            
+
+            {activeTab === "Businesses" && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                <input
+                  type="checkbox"
+                  id="verifiedOnly"
+                  checked={verifiedOnly}
+                  onChange={(e) => setVerifiedOnly(e.target.checked)}
+                  style={{ width: "18px", height: "18px", accentColor: "#EA650A", cursor: "pointer" }}
+                />
+                <label htmlFor="verifiedOnly" style={{ fontSize: "14px", fontWeight: "600", color: "#4b5563", cursor: "pointer" }}>
+                  Verified only
+                </label>
+              </div>
+            )}
+
             {activeTab === "People" && (
               <button
                 className="filter-btn"
