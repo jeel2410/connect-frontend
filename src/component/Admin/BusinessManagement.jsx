@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Search, Mail, Phone, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
-import { getUsers, toggleUserStatus, deleteUser } from "../../utils/adminApi";
+import { Search, Mail, Phone, ChevronLeft, ChevronRight, SlidersHorizontal, X, FileText, CheckCircle2, Pencil, Check } from "lucide-react";
+import { getUsers, toggleUserStatus, deleteUser, approveBusiness, rejectBusiness, downloadBusinessDocument, updateBusinessName } from "../../utils/adminApi";
 import API_BASE_URL from "../../utils/config";
 import { getCookie } from "../../utils/auth";
 import { toast } from "react-toastify";
@@ -21,6 +21,10 @@ const BusinessManagement = () => {
     itemsPerPage: 10,
   });
   const itemsPerPage = 10;
+
+  const [editingNameId, setEditingNameId] = useState(null);
+  const [editingNameValue, setEditingNameValue] = useState("");
+  const [savingName, setSavingName] = useState(false);
 
   // Filter option lists
   const [cities, setCities] = useState([]);
@@ -160,6 +164,80 @@ const BusinessManagement = () => {
     }
   };
 
+  const patchBusinessDetails = (businessId, patch) => {
+    setBusinesses(prev => prev.map(b => (
+      b._id === businessId ? { ...b, userDetails: { ...b.userDetails, ...patch } } : b
+    )));
+  };
+
+  const startEditingName = (businessId, currentName) => {
+    setEditingNameId(businessId);
+    setEditingNameValue(currentName || "");
+  };
+
+  const cancelEditingName = () => {
+    setEditingNameId(null);
+    setEditingNameValue("");
+  };
+
+  const saveBusinessName = async (businessId) => {
+    const trimmed = editingNameValue.trim();
+    if (!trimmed) {
+      toast.error("Business name cannot be empty");
+      return;
+    }
+    try {
+      setSavingName(true);
+      const res = await updateBusinessName(businessId, trimmed);
+      if (res.success) {
+        toast.success(res.message || "Business name updated successfully");
+        patchBusinessDetails(businessId, { businessName: trimmed });
+        cancelEditingName();
+      }
+    } catch (err) {
+      toast.error(err.message || "Failed to update business name");
+    } finally {
+      setSavingName(false);
+    }
+  };
+
+  const handleApproveBusiness = async (businessId, businessName) => {
+    if (!window.confirm(`Approve "${businessName || "this business"}" and mark it Verified?`)) {
+      return;
+    }
+    try {
+      const res = await approveBusiness(businessId);
+      if (res.success) {
+        toast.success(res.message || "Business approved");
+        patchBusinessDetails(businessId, { businessApprovalStatus: "approved", businessRejectionReason: null });
+      }
+    } catch (err) {
+      toast.error(err.message || "Failed to approve business");
+    }
+  };
+
+  const handleRejectBusiness = async (businessId) => {
+    const reason = window.prompt("Reason for rejection (optional, shown to the business):", "");
+    if (reason === null) return; // cancelled
+    try {
+      const res = await rejectBusiness(businessId, reason);
+      if (res.success) {
+        toast.success(res.message || "Business rejected");
+        patchBusinessDetails(businessId, { businessApprovalStatus: "rejected", businessRejectionReason: reason });
+      }
+    } catch (err) {
+      toast.error(err.message || "Failed to reject business");
+    }
+  };
+
+  const handleDownloadDocument = async (businessId, businessName) => {
+    try {
+      await downloadBusinessDocument(businessId, `${businessName || "business"}-document`);
+    } catch (err) {
+      toast.error(err.message || "Failed to download document");
+    }
+  };
+
   return (
     <div className="admin-section">
       <div className="admin-section-header">
@@ -252,44 +330,90 @@ const BusinessManagement = () => {
               <th>Email</th>
               <th>Phone Number</th>
               <th>Status</th>
+              <th>Verification</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="8" className="empty-state">
+                <td colSpan="9" className="empty-state">
                   Loading...
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan="8" className="empty-state" style={{ color: "red" }}>
+                <td colSpan="9" className="empty-state" style={{ color: "red" }}>
                   {error}
                 </td>
               </tr>
             ) : businesses.length === 0 ? (
               <tr>
-                <td colSpan="8" className="empty-state">
+                <td colSpan="9" className="empty-state">
                   No businesses found
                 </td>
               </tr>
             ) : (
               businesses.map((biz) => {
                 const isActive = biz.isActive !== false;
+                const approvalStatus = biz.userDetails?.businessApprovalStatus || "pending";
+                const isVerified = approvalStatus === "approved";
                 return (
                   <tr key={biz._id}>
                     <td>
-                      <img 
-                        src={biz.userDetails?.businessLogo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=100&auto=format&fit=crop"} 
-                        alt={biz.userDetails?.businessName || "Business"} 
+                      <img
+                        src={biz.userDetails?.businessLogo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=100&auto=format&fit=crop"}
+                        alt={biz.userDetails?.businessName || "Business"}
                         style={{ width: "40px", height: "40px", borderRadius: "8px", objectFit: "contain", border: "1px solid #eee", backgroundColor: "#fff" }}
                       />
                     </td>
                     <td>
-                      <span style={{ fontWeight: 600, color: "#09122E" }}>
-                        {biz.userDetails?.businessName || biz.userDetails?.fullName || "N/A"}
-                      </span>
+                      {editingNameId === biz._id ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <input
+                            type="text"
+                            value={editingNameValue}
+                            onChange={(e) => setEditingNameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") saveBusinessName(biz._id);
+                              if (e.key === "Escape") cancelEditingName();
+                            }}
+                            autoFocus
+                            disabled={savingName}
+                            style={{ padding: "4px 8px", border: "1px solid #EA650A", borderRadius: "6px", fontSize: "13px", width: "140px" }}
+                          />
+                          <button
+                            onClick={() => saveBusinessName(biz._id)}
+                            disabled={savingName}
+                            title="Save"
+                            style={{ background: "none", border: "none", cursor: "pointer", color: "#10B981", padding: 0, display: "flex" }}
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            onClick={cancelEditingName}
+                            disabled={savingName}
+                            title="Cancel"
+                            style={{ background: "none", border: "none", cursor: "pointer", color: "#EF4444", padding: 0, display: "flex" }}
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={{ fontWeight: 600, color: "#09122E", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                          {biz.userDetails?.businessName || biz.userDetails?.fullName || "N/A"}
+                          {isVerified && (
+                            <CheckCircle2 size={16} color="#10B981" title="Verified" />
+                          )}
+                          <button
+                            onClick={() => startEditingName(biz._id, biz.userDetails?.businessName)}
+                            title="Edit business name"
+                            style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0, display: "flex" }}
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        </span>
+                      )}
                     </td>
                     <td>
                       <span className="table-cell-badge badge-religion" style={{ backgroundColor: "#F3E8FF", color: "#6B21A8" }}>
@@ -324,6 +448,51 @@ const BusinessManagement = () => {
                       >
                         {isActive ? "Active" : "Disabled"}
                       </span>
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px", alignItems: "flex-start" }}>
+                        <span
+                          className="table-cell-badge"
+                          style={{
+                            backgroundColor: isVerified ? "#E6F4EA" : approvalStatus === "rejected" ? "#FCE8E6" : "#FFF3CD",
+                            color: isVerified ? "#137333" : approvalStatus === "rejected" ? "#C5221F" : "#856404",
+                            fontWeight: "600",
+                          }}
+                          title={approvalStatus === "rejected" && biz.userDetails?.businessRejectionReason ? biz.userDetails.businessRejectionReason : undefined}
+                        >
+                          {isVerified ? "Verified" : approvalStatus === "rejected" ? "Rejected" : "Pending"}
+                        </span>
+
+                        {biz.userDetails?.businessDocument ? (
+                          <button
+                            onClick={() => handleDownloadDocument(biz._id, biz.userDetails?.businessName)}
+                            style={{ display: "flex", alignItems: "center", gap: "4px", background: "none", border: "none", color: "#3b82f6", cursor: "pointer", fontSize: "12px", fontWeight: "600", padding: 0 }}
+                          >
+                            <FileText size={14} /> Document
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: "12px", color: "#9ca3af" }}>No document</span>
+                        )}
+
+                        {!isVerified && (
+                          <div style={{ display: "flex", gap: "6px" }}>
+                            <button
+                              onClick={() => handleApproveBusiness(biz._id, biz.userDetails?.businessName)}
+                              style={{ padding: "4px 10px", backgroundColor: "#10B981", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "11px", fontWeight: "600" }}
+                            >
+                              Approve
+                            </button>
+                            {approvalStatus !== "rejected" && (
+                              <button
+                                onClick={() => handleRejectBusiness(biz._id)}
+                                style={{ padding: "4px 10px", backgroundColor: "#EF4444", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "11px", fontWeight: "600" }}
+                              >
+                                Reject
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <div style={{ display: "flex", gap: "8px" }}>

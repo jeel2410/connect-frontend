@@ -14,6 +14,7 @@ export default function ProfilecardHeader({ showChangePassword = true, profileDa
   const defaultAvatar = isBusiness ? businessPlaceholderLogo : getAvatar(profileData?.gender, profileData?.dateOfBirth || profileData?.age || profileData?.birthDate);
 
   const displayName = isBusiness ? (profileData?.businessName || "Business User") : (profileData?.fullName || "User");
+  const isVerifiedBusiness = isBusiness && profileData?.businessApprovalStatus === 'approved';
   const displayImage = isBusiness ? (resolveImageUrl(profileData?.businessLogo) || businessPlaceholderLogo) : (resolveImageUrl(profileData?.profileImage) || defaultAvatar);
   const displayCover = isBusiness ? (resolveImageUrl(profileData?.businessCoverImage || profileData?.coverImage)) : resolveImageUrl(profileData?.coverImage);
 
@@ -108,7 +109,15 @@ export default function ProfilecardHeader({ showChangePassword = true, profileDa
               </>
             )}
           </div>
-          <h2>{displayName}</h2>
+          <h2 style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            {displayName}
+            {isVerifiedBusiness && (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#10B981" title="Verified">
+                <path d="M12 2l2.4 2.4 3.4-.6.8 3.3 3 1.7-1.2 3.2 1.2 3.2-3 1.7-.8 3.3-3.4-.6L12 22l-2.4-2.4-3.4.6-.8-3.3-3-1.7 1.2-3.2-1.2-3.2 3-1.7.8-3.3 3.4.6z" />
+                <path d="M9 12l2 2 4-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              </svg>
+            )}
+          </h2>
         </div>
         <div className="dating-profile-header-actions">
           <button className="dating-profile-edit-btn" onClick={() => navigate('/editProfile')}>

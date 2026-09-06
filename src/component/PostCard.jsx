@@ -10,6 +10,7 @@ const PostCard = ({ post, onReact }) => {
   const { _id: postId, userId, content, attachments, createdAt, reactions, linkPreview, sharedPostId, reshareCount } = post;
   const userDetail = userId?.userDetailId;
   const displayName = userDetail?.isBusinessProfile ? userDetail?.businessName : userDetail?.fullName || 'User';
+  const isVerifiedBusiness = userDetail?.isBusinessProfile && userDetail?.businessApprovalStatus === 'approved';
   const displayImage = userDetail?.isBusinessProfile ? (resolveImageUrl(userDetail?.businessLogo) || '/default-avatar.png') : (resolveImageUrl(userDetail?.profileImage) || getAvatar(userDetail?.gender, userDetail?.dateOfBirth));
   const fallbackAvatar = userDetail?.isBusinessProfile ? '/default-avatar.png' : getAvatar(userDetail?.gender, userDetail?.dateOfBirth);
 
@@ -200,8 +201,14 @@ const PostCard = ({ post, onReact }) => {
             style={{ objectFit: userDetail?.isBusinessProfile ? 'contain' : 'cover', backgroundColor: userDetail?.isBusinessProfile ? '#fff' : 'transparent' }}
           />
           <div className="post-user-info">
-            <h4 className="post-user-name" onClick={handleProfileClick}>
+            <h4 className="post-user-name" onClick={handleProfileClick} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
               {displayName}
+              {isVerifiedBusiness && (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#10B981" title="Verified">
+                  <path d="M12 2l2.4 2.4 3.4-.6.8 3.3 3 1.7-1.2 3.2 1.2 3.2-3 1.7-.8 3.3-3.4-.6L12 22l-2.4-2.4-3.4.6-.8-3.3-3-1.7 1.2-3.2-1.2-3.2 3-1.7.8-3.3 3.4.6z" />
+                  <path d="M9 12l2 2 4-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                </svg>
+              )}
             </h4>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <span className="post-date">{formatDate(createdAt)}</span>

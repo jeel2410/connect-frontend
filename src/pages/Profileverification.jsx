@@ -226,6 +226,7 @@ const Profileverification = () => {
       twitter: "",
       businessLogo: null,
       businessCoverImage: null,
+      businessDocument: null,
       businessTagline: "",
       businessDescription: "",
     },
@@ -283,6 +284,9 @@ const Profileverification = () => {
               const blob = await response.blob();
               formData.append("coverImage", blob, "cover.jpg");
             }
+          }
+          if (values.businessDocument instanceof File) {
+            formData.append("businessDocument", values.businessDocument);
           }
         } else {
           formData.append("fullName", values.fullName);
@@ -794,6 +798,9 @@ const Profileverification = () => {
               const blob = await response.blob();
               formData.append("coverImage", blob, "cover.jpg");
             }
+          }
+          if (formik.values.businessDocument instanceof File) {
+            formData.append("businessDocument", formik.values.businessDocument);
           }
         }
       } else {
