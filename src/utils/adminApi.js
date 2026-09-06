@@ -94,6 +94,113 @@ export const toggleUserStatus = async (userId) => {
   }
 };
 
+export const approveBusiness = async (businessId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/businesses/${businessId}/approve`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to approve business");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error approving business:", error);
+    throw error;
+  }
+};
+
+export const rejectBusiness = async (businessId, reason = "") => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/businesses/${businessId}/reject`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ reason }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to reject business");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error rejecting business:", error);
+    throw error;
+  }
+};
+
+// Returns the authenticated download URL for a business's verification document.
+// Since it needs an Authorization header, we fetch it as a blob and trigger the
+// browser's native download/open instead of using a plain <a href>.
+export const downloadBusinessDocument = async (businessId, filenameHint = "document") => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/businesses/${businessId}/document`, {
+      method: "GET",
+      headers: getAuthHeadersFormData(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to download document");
+    }
+
+    const blob = await response.blob();
+    const disposition = response.headers.get("Content-Disposition") || "";
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    const filename = match ? match[1] : filenameHint;
+
+    const url = window.URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+    return filename;
+  } catch (error) {
+    console.error("Error downloading business document:", error);
+    throw error;
+  }
+};
+
+export const updateBusinessName = async (businessId, businessName) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/businesses/${businessId}/name`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ businessName }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to update business name");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating business name:", error);
+    throw error;
+  }
+};
+
 export const deleteUser = async (userId) => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {

@@ -12,6 +12,7 @@ const BusinessStep1 = ({ data, updateData, errors, touched }) => {
   const [categoriesError, setCategoriesError] = useState("");
   const [logoPreview, setLogoPreview] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
+  const [documentName, setDocumentName] = useState(null);
 
   // Fetch categories from API
   useEffect(() => {
@@ -106,6 +107,31 @@ const BusinessStep1 = ({ data, updateData, errors, touched }) => {
       reader.onloadend = () => setCoverPreview(reader.result);
       reader.readAsDataURL(file);
     }
+  };
+
+  useEffect(() => {
+    if (data.businessDocument instanceof File) {
+      setDocumentName(data.businessDocument.name);
+    } else if (typeof data.businessDocument === "string" && data.businessDocument) {
+      setDocumentName("Document already uploaded");
+    } else {
+      setDocumentName(null);
+    }
+  }, [data.businessDocument]);
+
+  const handleDocumentChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const allowedTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Please upload a PDF, JPG, PNG, or WEBP file");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Document size must be less than 10MB");
+      return;
+    }
+    updateData("businessDocument", file);
   };
 
   return (
@@ -290,6 +316,54 @@ const BusinessStep1 = ({ data, updateData, errors, touched }) => {
             {categories.find(cat => cat._id === data.businessCategory).description}
           </div>
         )}
+      </div>
+
+      {/* Business Verification Document */}
+      <div className="form-group" style={{ marginTop: "20px", marginBottom: "24px" }}>
+        <label className="input-label" style={{ display: "block", marginBottom: "8px" }}>
+          Business Document <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional — e.g. GST certificate, registration certificate)</span>
+        </label>
+        <div
+          style={{
+            border: "2px dashed #DDE2EE",
+            borderRadius: "12px",
+            padding: "16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ fontSize: "13px", color: documentName ? "#09122E" : "#9ca3af" }}>
+            {documentName || "No document uploaded yet"}
+          </div>
+          <label
+            htmlFor="business-document-upload"
+            style={{
+              fontSize: "13px",
+              fontWeight: "600",
+              color: "#3b82f6",
+              cursor: "pointer",
+              padding: "6px 12px",
+              border: "1px solid #3b82f6",
+              borderRadius: "8px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {documentName ? "Replace File" : "Upload File"}
+          </label>
+          <input
+            type="file"
+            id="business-document-upload"
+            accept=".pdf,image/jpeg,image/png,image/webp"
+            onChange={handleDocumentChange}
+            style={{ display: "none" }}
+          />
+        </div>
+        <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "6px" }}>
+          PDF, JPG, PNG, or WEBP — max 10MB. Admin will review this to give your business a Verified badge.
+        </div>
       </div>
     </div>
   );
