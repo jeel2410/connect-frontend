@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import logo from "../../src/assets/image/connect_logo.png"
@@ -14,6 +14,28 @@ const Register = () => {
   const [apiError, setApiError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
+
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const errorElement = document.querySelector(
+        ".input-error, .field-error-message, .message-error, .error-message, .error"
+      );
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        const input =
+          errorElement.tagName === "INPUT" ||
+          errorElement.tagName === "SELECT" ||
+          errorElement.tagName === "TEXTAREA"
+            ? errorElement
+            : errorElement.querySelector("input, select, textarea");
+        if (input && typeof input.focus === "function") {
+          input.focus({ preventScroll: true });
+        }
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 100);
+  };
 
   // Fixed country code for India
   const FIXED_COUNTRY_CODE = "+91";
@@ -113,9 +135,16 @@ const Register = () => {
       } finally {
         setLoading(false);
         setSubmitting(false);
+        scrollToFirstError();
       }
     },
   });
+
+  useEffect(() => {
+    if (apiError || (formik.submitCount > 0 && !formik.isValid)) {
+      scrollToFirstError();
+    }
+  }, [apiError, formik.submitCount, formik.isValid]);
 
   return (
     <div className="auth-page-wrapper">

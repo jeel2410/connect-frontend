@@ -6,7 +6,7 @@ import { getCookie, getUserProfile } from '../utils/auth';
 import API_BASE_URL from '../utils/config';
 import { toast } from 'react-toastify';
 
-const PostCard = ({ post, onReact }) => {
+const PostCard = ({ post, onReact, onPostUpdated, onPostDeleted }) => {
   const { _id: postId, userId, content, attachments, createdAt, reactions, linkPreview, sharedPostId, reshareCount } = post;
   const userDetail = userId?.userDetailId;
   const displayName = userDetail?.isBusinessProfile ? userDetail?.businessName : userDetail?.fullName || 'User';
@@ -17,6 +17,9 @@ const PostCard = ({ post, onReact }) => {
   const [showEmojiBar, setShowEmojiBar] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isResharedExpanded, setIsResharedExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(content || '');
+  const [savingEdit, setSavingEdit] = useState(false);
   const likeWrapperRef = useRef(null);
   const navigate = useNavigate();
 
@@ -36,6 +39,8 @@ const PostCard = ({ post, onReact }) => {
 
   const userProfile = getUserProfile();
   const currentUserId = userProfile?.originalid || userProfile?._id || userProfile?.id;
+  const isOwnPost = !!currentUserId && String(userId?._id) === String(currentUserId);
+  const canEditOrDelete = isOwnPost && post.isApproved === false;
 
   const EMOJIS = ['👍', '❤️', '😃', '🙏', '👏', '👌', '😮', '😢'];
 
@@ -99,6 +104,90 @@ const PostCard = ({ post, onReact }) => {
       }
     } catch (err) {
       console.error('Error reacting to post:', err);
+      toast.error('Something went wrong. Please try again.');
+    }
+  };
+
+  const handleStartEdit = () => {
+    setEditContent(content || '');
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditContent(content || '');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editContent.trim() && (!attachments || attachments.length === 0)) {
+      toast.error('Content is required');
+      return;
+    }
+
+    try {
+      setSavingEdit(true);
+      const token = getCookie('authToken');
+      if (!token) {
+        toast.error('You must be logged in to edit');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: editContent }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Post updated successfully');
+        setIsEditing(false);
+        if (onPostUpdated) {
+          onPostUpdated(postId, data.data.post);
+        }
+      } else {
+        toast.error(data.message || 'Failed to update post');
+      }
+    } catch (err) {
+      console.error('Error updating post:', err);
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeletePost = async () => {
+    const confirmDelete = window.confirm('Delete this reel? This cannot be undone.');
+    if (!confirmDelete) return;
+
+    try {
+      const token = getCookie('authToken');
+      if (!token) {
+        toast.error('You must be logged in to delete');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Post deleted successfully');
+        if (onPostDeleted) {
+          onPostDeleted(postId);
+        }
+      } else {
+        toast.error(data.message || 'Failed to delete post');
+      }
+    } catch (err) {
+      console.error('Error deleting post:', err);
       toast.error('Something went wrong. Please try again.');
     }
   };
@@ -222,6 +311,22 @@ const PostCard = ({ post, onReact }) => {
                   Pending Admin Approval
                 </span>
               )}
+              {canEditOrDelete && !isEditing && (
+                <>
+                  <button
+                    onClick={handleStartEdit}
+                    style={{ background: 'none', border: '1px solid #EA650A', color: '#EA650A', fontSize: '11px', fontWeight: '600', padding: '2px 8px', borderRadius: '12px', cursor: 'pointer' }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={handleDeletePost}
+                    style={{ background: 'none', border: '1px solid #EF4444', color: '#EF4444', fontSize: '11px', fontWeight: '600', padding: '2px 8px', borderRadius: '12px', cursor: 'pointer' }}
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -279,26 +384,66 @@ const PostCard = ({ post, onReact }) => {
         </div>
       </div>
       <div className="post-content">
-        <p style={{ whiteSpace: 'pre-line', wordBreak: 'break-word', overflowWrap: 'break-word', margin: 0 }}>
-          {displayedContent}
-        </p>
-        {isLongContent && (
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#EA650A',
-              fontWeight: '600',
-              fontSize: '13px',
-              cursor: 'pointer',
-              padding: '4px 0 0 0',
-              marginTop: '4px',
-              display: 'inline-block'
-            }}
-          >
-            {isExpanded ? 'See Less' : '... See More'}
-          </button>
+        {isEditing ? (
+          <div>
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              disabled={savingEdit}
+              autoFocus
+              rows={4}
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                padding: '10px 12px',
+                border: '1px solid #EA650A',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+              }}
+            />
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+              <button
+                onClick={handleSaveEdit}
+                disabled={savingEdit}
+                style={{ background: '#EA650A', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 16px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+              >
+                {savingEdit ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                disabled={savingEdit}
+                style={{ background: '#fff', color: '#4b5563', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '6px 16px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p style={{ whiteSpace: 'pre-line', wordBreak: 'break-word', overflowWrap: 'break-word', margin: 0 }}>
+              {displayedContent}
+            </p>
+            {isLongContent && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#EA650A',
+                  fontWeight: '600',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  padding: '4px 0 0 0',
+                  marginTop: '4px',
+                  display: 'inline-block'
+                }}
+              >
+                {isExpanded ? 'See Less' : '... See More'}
+              </button>
+            )}
+          </>
         )}
       </div>
       {linkPreview && linkPreview.url && (

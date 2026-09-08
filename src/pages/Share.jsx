@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../component/Header';
 import Footer from '../component/Footer';
 import CreatePost from '../component/CreatePost';
 import PostCard from '../component/PostCard';
 import API_BASE_URL from '../utils/config';
-import { getCookie, setCookie } from '../utils/auth';
+import { getCookie, setCookie, getUserProfile } from '../utils/auth';
 import { getAvatar, resolveImageUrl } from '../utils/avatarHelper';
 import { X, Share2, ChevronDown, ChevronUp } from 'lucide-react';
 import '../styles/style.css';
 
 const Share = () => {
+  const navigate = useNavigate();
+  const [highlightedPostId, setHighlightedPostId] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -25,6 +28,44 @@ const Share = () => {
   const [showOfferPopup, setShowOfferPopup] = useState(false);
   const [isTopSharersExpanded, setIsTopSharersExpanded] = useState(true);
   const [isMostSharedExpanded, setIsMostSharedExpanded] = useState(true);
+
+  const handleUserClick = (userId) => {
+    if (!userId) return;
+    const currentUser = getUserProfile();
+    const currentUserId = currentUser?._id || currentUser?.id;
+    const targetId = typeof userId === 'object' ? userId._id : userId;
+    if (currentUserId && (currentUserId === targetId)) {
+      navigate('/profile');
+    } else {
+      navigate('/userprofile', { state: { userId: targetId } });
+    }
+  };
+
+  const handleReelClick = (reel) => {
+    if (!reel || !reel._id) return;
+    const reelId = reel._id;
+
+    setPosts((prevPosts) => {
+      const exists = prevPosts.some((p) => p._id === reelId);
+      if (!exists) {
+        return [reel, ...prevPosts];
+      }
+      return prevPosts;
+    });
+
+    setHighlightedPostId(reelId);
+
+    setTimeout(() => {
+      const element = document.getElementById(`post-${reelId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+
+    setTimeout(() => {
+      setHighlightedPostId((current) => (current === reelId ? null : current));
+    }, 3500);
+  };
 
   const observerTargetRef = useRef(null);
 
@@ -215,6 +256,17 @@ const Share = () => {
     fetchMostShared();
   };
 
+  const handlePostUpdated = (postId, updatedPost) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) => (post._id === postId ? updatedPost : post))
+    );
+  };
+
+  const handlePostDeleted = (postId) => {
+    setPosts((prevPosts) => prevPosts.filter((post) => post._id !== postId));
+    setTotalPosts((prev) => Math.max(0, prev - 1));
+  };
+
   return (
     <>
       <Header />
@@ -284,7 +336,18 @@ const Share = () => {
                       <>
                         <div className="posts-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                           {posts.map((post) => (
-                            <PostCard key={post._id} post={post} onReact={handleReact} />
+                            <div
+                              key={post._id}
+                              id={`post-${post._id}`}
+                              style={{
+                                borderRadius: '16px',
+                                transition: 'all 0.3s ease',
+                                border: highlightedPostId === post._id ? '2px solid #EA650A' : '2px solid transparent',
+                                boxShadow: highlightedPostId === post._id ? '0 0 15px rgba(234, 101, 10, 0.4)' : 'none',
+                              }}
+                            >
+                              <PostCard post={post} onReact={handleReact} onPostUpdated={handlePostUpdated} onPostDeleted={handlePostDeleted} />
+                            </div>
                           ))}
                         </div>
 
@@ -342,7 +405,23 @@ const Share = () => {
                             const rankBgColors = ['#FFF1E6', '#FFF6F0', '#FFFBF7', '#F4F5F6', '#F4F5F6'];
 
                             return (
-                              <div key={sharer.user?._id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', minWidth: 0 }}>
+                              <div
+                                key={sharer.user?._id || idx}
+                                onClick={() => handleUserClick(sharer.user?._id)}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  gap: '12px',
+                                  minWidth: 0,
+                                  cursor: 'pointer',
+                                  padding: '6px 8px',
+                                  borderRadius: '8px',
+                                  transition: 'background-color 0.2s',
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f8f9fa')}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                              >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
                                   <span style={{
                                     width: '24px',
@@ -462,7 +541,22 @@ const Share = () => {
                             };
 
                             return (
-                              <div key={reel._id || idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', minWidth: 0 }}>
+                              <div
+                                key={reel._id || idx}
+                                onClick={() => handleReelClick(reel)}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'flex-start',
+                                  gap: '12px',
+                                  minWidth: 0,
+                                  cursor: 'pointer',
+                                  padding: '6px 8px',
+                                  borderRadius: '8px',
+                                  transition: 'background-color 0.2s',
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f8f9fa')}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                              >
                                 {renderThumbnail()}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1', minWidth: 0, overflow: 'hidden' }}>
                                   <span

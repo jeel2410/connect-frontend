@@ -73,6 +73,10 @@ const Dashboard = () => {
   const completionPercentage = stats?.totalUsers > 0
     ? (stats.completeProfilePercentage ?? ((stats.totalCompleteProfiles / stats.totalUsers) * 100).toFixed(1))
     : 0;
+  // Completion rate against NEW profiles (signups in the last 7 days) — this is
+  // what the "Completed Profiles" box and its datewise trend surface, rather
+  // than the all-time completionPercentage above.
+  const newProfilesCompletionPercentage = stats?.newProfilesCompletionPercentage ?? 0;
 
   const statCards = [
     {
@@ -101,10 +105,10 @@ const Dashboard = () => {
       id: "complete-profiles",
       title: "Completed Profiles",
       value: stats?.totalCompleteProfiles || 0,
-      percentage: completionPercentage,
+      percentage: newProfilesCompletionPercentage,
       icon: Smile,
       color: "emerald",
-      description: `${completionPercentage}% of ${stats?.totalUsers || 0} total profiles completed`,
+      description: `${newProfilesCompletionPercentage}% of new profiles completed (last 7 days: ${(stats?.newCompleteProfilesLast7Days || 0)}/${(stats?.newProfilesLast7Days || 0)})`,
       accentBg: "linear-gradient(135deg, #ECFDF5 0%, #A7F3D0 100%)",
       iconColor: "#059669",
       borderColor: "#34D399",
@@ -349,6 +353,36 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                       </span>
                     </div>
                   </>
+                ) : statId === "complete-profiles" ? (
+                  (() => {
+                    const totalNewSignups = data.reduce((sum, d) => sum + (d.newSignups || 0), 0);
+                    const totalCompleted = data.reduce((sum, d) => sum + (d.count || 0), 0);
+                    const overallPercentage = totalNewSignups > 0
+                      ? ((totalCompleted / totalNewSignups) * 100).toFixed(1)
+                      : 0;
+                    return (
+                      <>
+                        <div className="trend-summary-card">
+                          <span className="summary-label">7-Day New Signups</span>
+                          <span className="summary-val" style={{ color: currentTheme.main }}>
+                            {totalNewSignups.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="trend-summary-card">
+                          <span className="summary-label">7-Day Completed</span>
+                          <span className="summary-val" style={{ color: currentTheme.main }}>
+                            {totalCompleted.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="trend-summary-card">
+                          <span className="summary-label">Completion Rate</span>
+                          <span className="summary-val" style={{ color: currentTheme.main }}>
+                            {overallPercentage}%
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()
                 ) : (
                   <>
                     <div className="trend-summary-card">
@@ -380,6 +414,13 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                         <th style={{ textAlign: "right" }}>Shares</th>
                         <th style={{ textAlign: "right" }}>Total</th>
                       </tr>
+                    ) : statId === "complete-profiles" ? (
+                      <tr>
+                        <th>Date</th>
+                        <th style={{ textAlign: "right" }}>New Signups</th>
+                        <th style={{ textAlign: "right" }}>Completed</th>
+                        <th style={{ textAlign: "right" }}>%</th>
+                      </tr>
                     ) : (
                       <tr>
                         <th>Date</th>
@@ -401,6 +442,18 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                             </td>
                             <td className="trend-td-count" style={{ color: currentTheme.main, fontWeight: "700", textAlign: "right" }}>
                               {row.count.toLocaleString()}
+                            </td>
+                          </>
+                        ) : statId === "complete-profiles" ? (
+                          <>
+                            <td className="trend-td-count" style={{ fontWeight: "500", textAlign: "right" }}>
+                              {(row.newSignups || 0).toLocaleString()}
+                            </td>
+                            <td className="trend-td-count" style={{ color: currentTheme.main, fontWeight: "600", textAlign: "right" }}>
+                              {row.count.toLocaleString()}
+                            </td>
+                            <td className="trend-td-count" style={{ color: currentTheme.main, fontWeight: "700", textAlign: "right" }}>
+                              {(row.percentage || 0)}%
                             </td>
                           </>
                         ) : (

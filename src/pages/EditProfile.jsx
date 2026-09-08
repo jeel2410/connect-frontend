@@ -13,6 +13,7 @@ import removeIcom from "../../src/assets/image/removeIcon.png";
 import dropdownIcon from "../../src/assets/image/dropdownIcon.png";
 import { getCookie, setCookie } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
+import { resolveImageUrl } from "../utils/avatarHelper";
 
 export default function EditProfile() {
   const navigate = useNavigate();
@@ -44,6 +45,25 @@ export default function EditProfile() {
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [coverImage, setCoverImage] = useState(null);
   const [coverImageFile, setCoverImageFile] = useState(null);
+  const [businessDocumentFile, setBusinessDocumentFile] = useState(null);
+
+  const handleDocumentChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const allowedTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setError("Please upload a PDF, JPG, PNG, or WEBP file for business document");
+      scrollToFirstError();
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Business document size must be less than 10MB");
+      scrollToFirstError();
+      return;
+    }
+    setBusinessDocumentFile(file);
+    setError("");
+  };
   const [profileId, setProfileId] = useState(null);
   const [industry, setIndustry] = useState("");
   const [company, setCompany] = useState("");
@@ -201,6 +221,7 @@ export default function EditProfile() {
             businessTagline: profile.businessTagline || "",
             businessDescription: profile.businessDescription || "",
             businessCategory: profile.businessCategoryId || "",
+            businessDocument: profile.businessDocument || "",
             facebook: profile.facebook || "",
             instagram: profile.instagram || "",
             linkedIn: profile.linkedIn || "",
@@ -950,6 +971,9 @@ export default function EditProfile() {
       if (profileImageFile) {
         formData.append("profileImage", profileImageFile);
       }
+      if (businessDocumentFile) {
+        formData.append("businessDocument", businessDocumentFile);
+      }
 
       const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
         method: "PUT",
@@ -1383,6 +1407,105 @@ export default function EditProfile() {
                         onChange={(e) => updateData("businessTagline", e.target.value)}
                         placeholder="Enter a tagline for your business"
                         className="form-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Business Verification Document */}
+                <div className="edit-form-group" style={{ gridColumn: "span 2", marginTop: "12px" }}>
+                  <label className="input-label" style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#081332" }}>
+                    Business Document <span style={{ fontWeight: 400, color: "#777E90", fontSize: "12px" }}>(Optional — GST certificate, registration certificate, PDF, PNG, JPG)</span>
+                  </label>
+                  <div
+                    style={{
+                      border: "2px dashed #DDE2EE",
+                      borderRadius: "12px",
+                      padding: "16px 20px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "16px",
+                      flexWrap: "wrap",
+                      backgroundColor: "#FAFBFC",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <div style={{
+                        width: "40px",
+                        height: "40px",
+                        borderRadius: "8px",
+                        backgroundColor: "#FFEFE5",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#EA650A"
+                      }}>
+                        📄
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "14px", fontWeight: "600", color: "#081332" }}>
+                          {businessDocumentFile
+                            ? businessDocumentFile.name
+                            : data.businessDocument
+                            ? "Document Attached"
+                            : "No Document Attached Yet"}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#777E90" }}>
+                          {businessDocumentFile
+                            ? `${(businessDocumentFile.size / 1024 / 1024).toFixed(2)} MB (Selected — will upload on save)`
+                            : data.businessDocument
+                            ? "Your business verification document is on file."
+                            : "Attach proof of business registration or identity to get verified."}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      {data.businessDocument && !businessDocumentFile && (
+                        <a
+                          href={resolveImageUrl(data.businessDocument)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: "600",
+                            color: "#3b82f6",
+                            textDecoration: "none",
+                            padding: "8px 16px",
+                            border: "1px solid #3b82f6",
+                            borderRadius: "8px",
+                            backgroundColor: "#fff",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px"
+                          }}
+                        >
+                          View Current Document
+                        </a>
+                      )}
+                      <label
+                        htmlFor="edit-business-document-upload"
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          color: "#fff",
+                          backgroundColor: "#EA650A",
+                          cursor: "pointer",
+                          padding: "8px 16px",
+                          borderRadius: "8px",
+                          display: "inline-block",
+                          transition: "all 0.2s"
+                        }}
+                      >
+                        {businessDocumentFile || data.businessDocument ? "Upload New File" : "Choose File"}
+                      </label>
+                      <input
+                        type="file"
+                        id="edit-business-document-upload"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        onChange={handleDocumentChange}
+                        style={{ display: "none" }}
                       />
                     </div>
                   </div>

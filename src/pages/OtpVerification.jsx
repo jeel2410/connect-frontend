@@ -18,6 +18,28 @@ const OtpVerification = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const errorElement = document.querySelector(
+        ".input-error, .field-error-message, .message-error, .error-message, .error"
+      );
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        const input =
+          errorElement.tagName === "INPUT" ||
+          errorElement.tagName === "SELECT" ||
+          errorElement.tagName === "TEXTAREA"
+            ? errorElement
+            : errorElement.querySelector("input, select, textarea");
+        if (input && typeof input.focus === "function") {
+          input.focus({ preventScroll: true });
+        }
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 100);
+  };
+
   // Get phone number from location state or localStorage
   const phoneNumber = location.state?.phoneNumber || localStorage.getItem("phoneNumber") || "+91 *********23";
   const storedPhoneNumber = location.state?.phoneNumber || localStorage.getItem("phoneNumber") || "";
@@ -123,9 +145,16 @@ const OtpVerification = () => {
       } finally {
         setLoading(false);
         setSubmitting(false);
+        scrollToFirstError();
       }
     },
   });
+
+  useEffect(() => {
+    if (apiError || (formik.submitCount > 0 && !formik.isValid)) {
+      scrollToFirstError();
+    }
+  }, [apiError, formik.submitCount, formik.isValid]);
 
   const handleOtpChange = (index, value) => {
     // Handle multi-digit input (mobile autofill / OTP suggestion fills full code)

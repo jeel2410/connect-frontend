@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { toast } from "react-toastify";
 import Header from "../component/Header";
@@ -17,6 +17,20 @@ export default function Home() {
   const navigate = useNavigate();
   const [feedData, setFeedData] = useState([]);
   const [loadingFeed, setLoadingFeed] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [feedSeed, setFeedSeed] = useState(() => Date.now().toString());
+
+  const loadingRef = useRef(false);
+  const pageRef = useRef(1);
+  const hasMoreRef = useRef(true);
+  const feedSeedRef = useRef(feedSeed);
+
+  useEffect(() => { pageRef.current = page; }, [page]);
+  useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
+  useEffect(() => { feedSeedRef.current = feedSeed; }, [feedSeed]);
+
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [likedProfiles, setLikedProfiles] = useState(new Set());
@@ -70,8 +84,35 @@ export default function Home() {
     fetchCategories();
   }, []);
 
-  // Function to fetch feed data
-  const fetchFeedData = async () => {
+  // Window scroll listener for infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (loadingRef.current || !hasMoreRef.current) return;
+
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const docHeight = document.documentElement.scrollHeight;
+
+      if (scrollTop + windowHeight >= docHeight - 500) {
+        fetchFeedData(pageRef.current + 1, true);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Function to fetch feed data (batch size: 50)
+  const fetchFeedData = async (pageToFetch = 1, append = false) => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoadingFeed(true);
+    }
+
     try {
       const token = getCookie("authToken");
       if (!token) {
@@ -113,11 +154,20 @@ export default function Home() {
         }
       }
 
-      setLoadingFeed(true);
+      let currentSeed = feedSeedRef.current;
+      if (pageToFetch === 1 && !append) {
+        currentSeed = Date.now().toString();
+        setFeedSeed(currentSeed);
+        feedSeedRef.current = currentSeed;
+      }
 
+      const PAGE_LIMIT = 50;
       const queryParams = new URLSearchParams();
-      queryParams.append("page", "1");
-      queryParams.append("limit", "5000");
+      queryParams.append("page", pageToFetch.toString());
+      queryParams.append("limit", PAGE_LIMIT.toString());
+      if (currentSeed) {
+        queryParams.append("seed", currentSeed);
+      }
 
       if (activeTab === "Businesses") {
         if (selectedBusinessCategory) {
@@ -134,14 +184,6 @@ export default function Home() {
         if (genderFilter === "Any") {
           genderFilter = null;
         }
-
-        const hasFilters = filters.ageMin !== null || filters.ageMax !== null ||
-          filters.language !== null || (filters.habits && filters.habits.length > 0) ||
-          (filters.interests && filters.interests.length > 0) || filters.relationship !== null ||
-          filters.religion !== null || filters.company !== null ||
-          filters.industry !== null || (filters.sports && filters.sports.length > 0) ||
-          (filters.gender !== null && filters.gender !== "Any") ||
-          (isSearchActive && searchQuery.trim() !== "");
 
         if (genderFilter && genderFilter !== "Any" && genderFilter !== "any") {
           queryParams.append("gender", genderFilter);
@@ -209,7 +251,26 @@ export default function Home() {
         const feed = Array.isArray(feedDataResult.data) 
           ? feedDataResult.data 
           : (feedDataResult.data.profiles || feedDataResult.data.feed || []);
-        setFeedData(feed);
+
+        const paginationInfo = feedDataResult.data.pagination;
+        const serverHasMore = paginationInfo
+          ? paginationInfo.hasNextPage
+          : feedDataResult.data.hasMore !== undefined
+            ? feedDataResult.data.hasMore
+            : feed.length >= PAGE_LIMIT;
+
+        setHasMore(serverHasMore);
+        setPage(pageToFetch);
+
+        if (append) {
+          setFeedData(prev => {
+            const existingIds = new Set(prev.map(p => String(p._id || p.id)));
+            const uniqueNew = feed.filter(p => !existingIds.has(String(p._id || p.id)));
+            return [...prev, ...uniqueNew];
+          });
+        } else {
+          setFeedData(feed);
+        }
 
         const newLiked = new Set(
           feed.filter(p => p.isLiked).map(p => String(p._id || p.id))
@@ -220,14 +281,17 @@ export default function Home() {
         const newPending = new Set(
           feed.filter(p => p.sendRequest || (p.isConnected && !p.alreadyConnect)).map(p => String(p._id || p.id))
         );
-        setLikedProfiles(newLiked);
-        setConnectedProfiles(newConnected);
-        setPendingProfiles(newPending);
+
+        setLikedProfiles(prev => append ? new Set([...prev, ...newLiked]) : newLiked);
+        setConnectedProfiles(prev => append ? new Set([...prev, ...newConnected]) : newConnected);
+        setPendingProfiles(prev => append ? new Set([...prev, ...newPending]) : newPending);
       }
     } catch (error) {
       console.error("Error fetching feed data:", error);
     } finally {
       setLoadingFeed(false);
+      setLoadingMore(false);
+      loadingRef.current = false;
     }
   };
 
@@ -552,6 +616,8 @@ export default function Home() {
                 onClick={() => {
                   setActiveTab("People");
                   setFeedData([]);
+                  setPage(1);
+                  setHasMore(true);
                 }}
                 style={{
                   padding: "6px 16px",
@@ -571,6 +637,8 @@ export default function Home() {
                 onClick={() => {
                   setActiveTab("Businesses");
                   setFeedData([]);
+                  setPage(1);
+                  setHasMore(true);
                 }}
                 style={{
                   padding: "6px 16px",
@@ -587,6 +655,20 @@ export default function Home() {
                 Businesses
               </button>
             </div>
+            {activeTab === "Businesses" && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, marginLeft: "4px" }}>
+                <input
+                  type="checkbox"
+                  id="verifiedOnly"
+                  checked={verifiedOnly}
+                  onChange={(e) => setVerifiedOnly(e.target.checked)}
+                  style={{ width: "18px", height: "18px", accentColor: "#EA650A", cursor: "pointer" }}
+                />
+                <label htmlFor="verifiedOnly" style={{ fontSize: "14px", fontWeight: "600", color: "#4b5563", cursor: "pointer" }}>
+                  Verified only
+                </label>
+              </div>
+            )}
           </div>
           <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "nowrap", justifyContent: "flex-end", minWidth: 0 }}>
             <div style={{ position: "relative", display: "flex", alignItems: "center", flex: "0 1 280px", width: "100%", maxWidth: "280px", minWidth: 0 }}>
@@ -690,21 +772,6 @@ export default function Home() {
               </select>
             )}
 
-            {activeTab === "Businesses" && (
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-                <input
-                  type="checkbox"
-                  id="verifiedOnly"
-                  checked={verifiedOnly}
-                  onChange={(e) => setVerifiedOnly(e.target.checked)}
-                  style={{ width: "18px", height: "18px", accentColor: "#EA650A", cursor: "pointer" }}
-                />
-                <label htmlFor="verifiedOnly" style={{ fontSize: "14px", fontWeight: "600", color: "#4b5563", cursor: "pointer" }}>
-                  Verified only
-                </label>
-              </div>
-            )}
-
             {activeTab === "People" && (
               <button
                 className="filter-btn"
@@ -741,6 +808,11 @@ export default function Home() {
           pendingProfiles={pendingProfiles}
           isBusiness={activeTab === "Businesses"}
         ></Usercard>
+        {loadingMore && (
+          <div style={{ textAlign: "center", padding: "20px 0", color: "#EA650A", fontWeight: "600", fontSize: "14px" }}>
+            Loading more profiles...
+          </div>
+        )}
       </div>
 
       <Footer></Footer>
