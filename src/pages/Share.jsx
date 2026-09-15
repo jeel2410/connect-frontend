@@ -7,7 +7,7 @@ import PostCard from '../component/PostCard';
 import API_BASE_URL from '../utils/config';
 import { getCookie, setCookie, getUserProfile } from '../utils/auth';
 import { getAvatar, resolveImageUrl } from '../utils/avatarHelper';
-import { X, Share2, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Share2, ChevronDown, ChevronUp, Target } from 'lucide-react';
 import '../styles/style.css';
 
 const Share = () => {
@@ -28,6 +28,14 @@ const Share = () => {
   const [showOfferPopup, setShowOfferPopup] = useState(false);
   const [isTopSharersExpanded, setIsTopSharersExpanded] = useState(true);
   const [isMostSharedExpanded, setIsMostSharedExpanded] = useState(true);
+
+  // Interest Block States (Loaded 100% dynamically from API)
+  const [userInterests, setUserInterests] = useState([]);
+  const [allAvailableInterests, setAllAvailableInterests] = useState([]);
+  const [isManageInterestsOpen, setIsManageInterestsOpen] = useState(false);
+  const [editingInterests, setEditingInterests] = useState([]);
+  const [savingInterests, setSavingInterests] = useState(false);
+  const [interestsExpanded, setInterestsExpanded] = useState(false);
 
   const handleUserClick = (userId) => {
     if (!userId) return;
@@ -167,6 +175,73 @@ const Share = () => {
     fetchTopSharers();
     fetchMostShared();
   }, []);
+
+  useEffect(() => {
+    const fetchUserProfileAndInterests = async () => {
+      try {
+        const token = getCookie('authToken');
+        if (!token) return;
+
+        // 1. Fetch user profile
+        const profRes = await fetch(`${API_BASE_URL}/api/user/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (profRes.ok) {
+          const profData = await profRes.json();
+          const profile = profData?.data?.profile || profData?.profile || {};
+          if (Array.isArray(profile.interests)) {
+            setUserInterests(profile.interests);
+          }
+        }
+
+        // 2. Fetch master interests list from API
+        const listRes = await fetch(`${API_BASE_URL}/api/list/interest`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (listRes.ok) {
+          const listData = await listRes.json();
+          const interestsArr = listData?.data?.interests || listData?.interests || [];
+          if (Array.isArray(interestsArr)) {
+            const names = interestsArr.map(i => (typeof i === 'string' ? i : i.name)).filter(Boolean);
+            setAllAvailableInterests(names);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading interests from API:', err);
+      }
+    };
+
+    fetchUserProfileAndInterests();
+  }, []);
+
+  const handleSaveInterests = async () => {
+    try {
+      setSavingInterests(true);
+      const token = getCookie('authToken');
+      if (!token) return;
+
+      const formData = new FormData();
+      formData.append('interests', editingInterests.join(','));
+
+      await fetch(`${API_BASE_URL}/api/user/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      setUserInterests(editingInterests);
+      setIsManageInterestsOpen(false);
+      fetchPosts(1, true);
+    } catch (err) {
+      console.error('Error saving interests:', err);
+      setUserInterests(editingInterests);
+      setIsManageInterestsOpen(false);
+    } finally {
+      setSavingInterests(false);
+    }
+  };
 
   // Infinite Scroll Observer
   useEffect(() => {
@@ -369,6 +444,113 @@ const Share = () => {
               {/* Right Column: Widgets */}
               {!isCreateExpanded && (
                 <div className="share-right-column" style={{ flex: '1.1', display: 'flex', flexDirection: 'column', gap: '30px', position: 'sticky', top: '100px', marginTop: '10px' }}>
+                  {/* My Interests Card */}
+                  <div className="share-sidebar-card" style={{ background: '#FFF8F4', borderRadius: '16px', border: '1px solid #FFE4D6', padding: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FFEFE6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Target size={20} color="#EA650A" />
+                        </div>
+                        <div>
+                          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#09122E', textAlign: 'left' }}>My Interests</h3>
+                          <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#777E90', textAlign: 'left' }}>Update your interests to see and share more relevant content.</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingInterests([...userInterests]);
+                          setIsManageInterestsOpen(true);
+                        }}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: '20px',
+                          border: '1px solid #EA650A',
+                          background: '#ffffff',
+                          color: '#EA650A',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          transition: 'all 0.2s',
+                          flexShrink: 0
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#EA650A'; e.currentTarget.style.color = '#fff'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.color = '#EA650A'; }}
+                      >
+                        Manage Interests
+                      </button>
+                    </div>
+
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#353945', marginBottom: '10px', textAlign: 'left' }}>
+                      Your Interest Areas
+                    </div>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {userInterests.length === 0 ? (
+                        <span style={{ fontSize: '12px', color: '#777E90', fontStyle: 'italic', textAlign: 'left' }}>
+                          No interests selected yet. Click 'Manage Interests' to add topics.
+                        </span>
+                      ) : (
+                        <>
+                          {(interestsExpanded ? userInterests : userInterests.slice(0, 5)).map((interest, idx) => (
+                            <span
+                              key={idx}
+                              style={{
+                                padding: '6px 14px',
+                                borderRadius: '20px',
+                                background: '#FFEFE6',
+                                color: '#545A69',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                              }}
+                            >
+                              {interest}
+                            </span>
+                          ))}
+                          {userInterests.length > 5 && !interestsExpanded && (
+                            <span
+                              onClick={() => setInterestsExpanded(true)}
+                              style={{
+                                padding: '6px 14px',
+                                borderRadius: '20px',
+                                background: '#FFE8DB',
+                                color: '#EA650A',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                              }}
+                            >
+                              +{userInterests.length - 5} more
+                            </span>
+                          )}
+                          {userInterests.length > 5 && interestsExpanded && (
+                            <span
+                              onClick={() => setInterestsExpanded(false)}
+                              style={{
+                                padding: '6px 14px',
+                                borderRadius: '20px',
+                                background: '#FFE8DB',
+                                color: '#EA650A',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                              }}
+                            >
+                              Show less
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Top Sharers Card */}
                   <div className="share-sidebar-card" style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #DDE2EE', padding: '24px' }}>
                     <div
@@ -792,6 +974,144 @@ const Share = () => {
               >
                 Check Now
               </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Interests Modal */}
+      {isManageInterestsOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(9, 18, 46, 0.6)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 10000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '20px',
+            maxWidth: '540px',
+            width: '100%',
+            maxHeight: '85vh',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '24px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+            position: 'relative'
+          }}>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#FFEFE6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Target size={18} color="#EA650A" />
+                </div>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#09122E' }}>Manage Your Interests</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsManageInterestsOpen(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <X size={20} color="#777E90" />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '13px', color: '#777E90', marginBottom: '20px', textAlign: 'left', lineHeight: '1.4' }}>
+              Select topics you are interested in. Your feed will automatically optimize and display content matching your choices.
+            </p>
+
+            {/* Interest Options Container */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '24px', overflowY: 'auto', maxHeight: '320px', padding: '4px' }}>
+              {allAvailableInterests.length === 0 ? (
+                <span style={{ fontSize: '13px', color: '#777E90', fontStyle: 'italic', padding: '10px 0' }}>
+                  No available interests found in system.
+                </span>
+              ) : (
+                allAvailableInterests.map((item, idx) => {
+                  const isSelected = editingInterests.includes(item);
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
+                          setEditingInterests(editingInterests.filter(i => i !== item));
+                        } else {
+                          setEditingInterests([...editingInterests, item]);
+                        }
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '24px',
+                        border: isSelected ? '1px solid #EA650A' : '1px solid #E5E7EB',
+                        background: isSelected ? '#EA650A' : '#F9FAFB',
+                        color: isSelected ? '#ffffff' : '#374151',
+                        fontSize: '13px',
+                        fontWeight: isSelected ? '600' : '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      {item}
+                      {isSelected && <span style={{ fontSize: '14px', lineHeight: 1 }}>✓</span>}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer Actions */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F3F4F6', paddingTop: '16px' }}>
+              <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: '500' }}>
+                {editingInterests.length} selected
+              </span>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsManageInterestsOpen(false)}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    border: '1px solid #D1D5DB',
+                    background: '#fff',
+                    color: '#374151',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={savingInterests}
+                  onClick={handleSaveInterests}
+                  style={{
+                    padding: '10px 24px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: '#EA650A',
+                    color: '#fff',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: savingInterests ? 'not-allowed' : 'pointer',
+                    opacity: savingInterests ? 0.7 : 1
+                  }}
+                >
+                  {savingInterests ? 'Saving...' : 'Save Interests'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

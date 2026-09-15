@@ -655,8 +655,10 @@ export default function Home() {
                 Businesses
               </button>
             </div>
+          </div>
+          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "nowrap", justifyContent: "flex-end", minWidth: 0 }}>
             {activeTab === "Businesses" && (
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, marginLeft: "4px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
                 <input
                   type="checkbox"
                   id="verifiedOnly"
@@ -664,13 +666,11 @@ export default function Home() {
                   onChange={(e) => setVerifiedOnly(e.target.checked)}
                   style={{ width: "18px", height: "18px", accentColor: "#EA650A", cursor: "pointer" }}
                 />
-                <label htmlFor="verifiedOnly" style={{ fontSize: "14px", fontWeight: "600", color: "#4b5563", cursor: "pointer" }}>
+                <label htmlFor="verifiedOnly" style={{ fontSize: "14px", fontWeight: "600", color: "#4b5563", cursor: "pointer", whiteSpace: "nowrap" }}>
                   Verified only
                 </label>
               </div>
             )}
-          </div>
-          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "nowrap", justifyContent: "flex-end", minWidth: 0 }}>
             <div style={{ position: "relative", display: "flex", alignItems: "center", flex: "0 1 280px", width: "100%", maxWidth: "280px", minWidth: 0 }}>
               <img
                 src={searchIcon}

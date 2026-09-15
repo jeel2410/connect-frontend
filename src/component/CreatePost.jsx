@@ -225,8 +225,8 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
     const targetSegments = {
       connections: targetConnections,
       city: targetCity,
-      industries: shareType === 'link' ? [] : targetIndustries,
-      interests: shareType === 'link' ? targetInterests : [],
+      industries: targetIndustries,
+      interests: targetInterests,
       ageGroups: targetAgeGroups
     };
     formData.append('targetSegments', JSON.stringify(targetSegments));
@@ -520,109 +520,107 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
                 </div>
                 <div style={{ display: 'flex', gap: '16px', marginTop: '16px', flexWrap: 'wrap' }}>
 
-                  {shareType === 'link' ? (
-                    /* Interests targeting for Reels */
-                    <div className="target-collapsible-section" style={{ flex: '1', minWidth: '240px', border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#ffffff', textAlign: 'left' }}>
-                      <div
-                        onClick={() => setIsInterestsOpen(!isInterestsOpen)}
-                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <Heart size={18} color="#EA650A" />
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontSize: '13px', fontWeight: '600', color: '#353945' }}>Interests ({targetInterests.length} selected)</span>
-                            <span style={{ fontSize: '11px', color: '#777E90' }}>Select interests to refine your reel audience</span>
-                          </div>
+                  {/* Interests targeting */}
+                  <div className="target-collapsible-section" style={{ flex: '1', minWidth: '240px', border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#ffffff', textAlign: 'left' }}>
+                    <div
+                      onClick={() => setIsInterestsOpen(!isInterestsOpen)}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Heart size={18} color="#EA650A" />
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '13px', fontWeight: '600', color: '#353945' }}>Interests ({targetInterests.length} selected)</span>
+                          <span style={{ fontSize: '11px', color: '#777E90' }}>Select interests to refine your audience</span>
                         </div>
-                        {isInterestsOpen ? <ChevronUp size={18} color="#777E90" /> : <ChevronDown size={18} color="#777E90" />}
                       </div>
-                      {isInterestsOpen && (
-                        <div className="interests-multi-select" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '14px', maxHeight: '120px', overflowY: 'auto', padding: '4px' }}>
-                          {interestsList.map((item) => {
-                            const isSelected = targetInterests.includes(item.name);
-                            return (
-                              <button
-                                key={item._id}
-                                type="button"
-                                onClick={() => {
-                                  if (isSelected) {
-                                    setTargetInterests(targetInterests.filter(name => name !== item.name));
-                                  } else {
-                                    setTargetInterests([...targetInterests, item.name]);
-                                  }
-                                }}
-                                style={{
-                                  padding: '6px 12px',
-                                  borderRadius: '20px',
-                                  border: '1px solid',
-                                  borderColor: isSelected ? '#EA650A' : '#E8EDF3',
-                                  background: isSelected ? '#FFF1E6' : '#F8F9FB',
-                                  color: isSelected ? '#EA650A' : '#353945',
-                                  fontSize: '12px',
-                                  fontWeight: '500',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.15s ease'
-                                }}
-                              >
-                                {item.name}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
+                      {isInterestsOpen ? <ChevronUp size={18} color="#777E90" /> : <ChevronDown size={18} color="#777E90" />}
                     </div>
-                  ) : (
-                    /* Industry targeting for Ask Question */
-                    <div className="target-collapsible-section" style={{ flex: '1', minWidth: '240px', border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#ffffff', textAlign: 'left' }}>
-                      <div
-                        onClick={() => setIsIndustriesOpen(!isIndustriesOpen)}
-                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <Briefcase size={18} color="#EA650A" />
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontSize: '13px', fontWeight: '600', color: '#353945' }}>Industries ({targetIndustries.length} selected)</span>
-                            <span style={{ fontSize: '11px', color: '#777E90' }}>Select industries to refine your audience</span>
-                          </div>
-                        </div>
-                        {isIndustriesOpen ? <ChevronUp size={18} color="#777E90" /> : <ChevronDown size={18} color="#777E90" />}
+                    {isInterestsOpen && (
+                      <div className="interests-multi-select" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '14px', maxHeight: '120px', overflowY: 'auto', padding: '4px' }}>
+                        {interestsList.map((item) => {
+                          const isSelected = targetInterests.includes(item.name);
+                          return (
+                            <button
+                              key={item._id}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setTargetInterests(targetInterests.filter(name => name !== item.name));
+                                } else {
+                                  setTargetInterests([...targetInterests, item.name]);
+                                }
+                              }}
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: '20px',
+                                border: '1px solid',
+                                borderColor: isSelected ? '#EA650A' : '#E8EDF3',
+                                background: isSelected ? '#FFF1E6' : '#F8F9FB',
+                                color: isSelected ? '#EA650A' : '#353945',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              {item.name}
+                            </button>
+                          );
+                        })}
                       </div>
-                      {isIndustriesOpen && (
-                        <div className="industries-multi-select" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '14px', maxHeight: '120px', overflowY: 'auto', padding: '4px' }}>
-                          {industriesList.map((ind) => {
-                            const isSelected = targetIndustries.includes(ind.name);
-                            return (
-                              <button
-                                key={ind._id}
-                                type="button"
-                                onClick={() => {
-                                  if (isSelected) {
-                                    setTargetIndustries(targetIndustries.filter(name => name !== ind.name));
-                                  } else {
-                                    setTargetIndustries([...targetIndustries, ind.name]);
-                                  }
-                                }}
-                                style={{
-                                  padding: '6px 12px',
-                                  borderRadius: '20px',
-                                  border: '1px solid',
-                                  borderColor: isSelected ? '#EA650A' : '#E8EDF3',
-                                  background: isSelected ? '#FFF1E6' : '#F8F9FB',
-                                  color: isSelected ? '#EA650A' : '#353945',
-                                  fontSize: '12px',
-                                  fontWeight: '500',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.15s ease'
-                                }}
-                              >
-                                {ind.name}
-                              </button>
-                            );
-                          })}
+                    )}
+                  </div>
+
+                  {/* Industry targeting */}
+                  <div className="target-collapsible-section" style={{ flex: '1', minWidth: '240px', border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#ffffff', textAlign: 'left' }}>
+                    <div
+                      onClick={() => setIsIndustriesOpen(!isIndustriesOpen)}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Briefcase size={18} color="#EA650A" />
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '13px', fontWeight: '600', color: '#353945' }}>Industries ({targetIndustries.length} selected)</span>
+                          <span style={{ fontSize: '11px', color: '#777E90' }}>Select industries to refine your audience</span>
                         </div>
-                      )}
+                      </div>
+                      {isIndustriesOpen ? <ChevronUp size={18} color="#777E90" /> : <ChevronDown size={18} color="#777E90" />}
                     </div>
-                  )}
+                    {isIndustriesOpen && (
+                      <div className="industries-multi-select" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '14px', maxHeight: '120px', overflowY: 'auto', padding: '4px' }}>
+                        {industriesList.map((ind) => {
+                          const isSelected = targetIndustries.includes(ind.name);
+                          return (
+                            <button
+                              key={ind._id}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setTargetIndustries(targetIndustries.filter(name => name !== ind.name));
+                                } else {
+                                  setTargetIndustries([...targetIndustries, ind.name]);
+                                }
+                              }}
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: '20px',
+                                border: '1px solid',
+                                borderColor: isSelected ? '#EA650A' : '#E8EDF3',
+                                background: isSelected ? '#FFF1E6' : '#F8F9FB',
+                                color: isSelected ? '#EA650A' : '#353945',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              {ind.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Age bracket targeting */}
                   <div className="target-collapsible-section" style={{ flex: '1', minWidth: '240px', border: '1px solid #E8EDF3', borderRadius: '8px', padding: '12px', background: '#ffffff', textAlign: 'left' }}>
