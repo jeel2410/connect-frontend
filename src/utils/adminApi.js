@@ -2531,6 +2531,90 @@ export const sendTestCardEmail = async (testData) => {
   }
 };
 
+export const sendTestTargetedEmail = async (data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/notifications/test-targeted-email`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to send test email");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending test targeted email:", error);
+    throw error;
+  }
+};
+
+export const sendTestOfferEmail = async (data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/notifications/test-offer-email`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to send test offer email");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending test offer email:", error);
+    throw error;
+  }
+};
+
+export const sendTestGeneralSms = async (data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/notifications/test-general-sms`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to send test SMS");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending test general SMS:", error);
+    throw error;
+  }
+};
+
+export const sendTestIncompleteSms = async (data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/notifications/test-incomplete-sms`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to send test SMS");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending test incomplete SMS:", error);
+    throw error;
+  }
+};
+
 
 
 

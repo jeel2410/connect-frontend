@@ -22,6 +22,16 @@ import {
   triggerSundayCron,
   triggerProcessQueue
 } from "../../utils/adminApi";
+import { getCookie, getUserProfile } from "../../utils/auth";
+
+const getDefaultTestEmail = () => {
+  try {
+    const profile = getUserProfile();
+    return getCookie("userEmail") || profile?.email || "";
+  } catch (e) {
+    return "";
+  }
+};
 
 const ScheduledMailers = () => {
   const [stats, setStats] = useState({
@@ -168,7 +178,7 @@ const ScheduledMailers = () => {
 
   const handleTestMailClick = (type) => {
     setTestMailType(type);
-    setTestEmail("");
+    setTestEmail(getDefaultTestEmail());
     setTestMailFeedback({ type: "", message: "" });
     setShowTestMailModal(true);
   };

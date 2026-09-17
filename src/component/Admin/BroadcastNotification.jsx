@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Send, Mail, AlertCircle, CheckCircle, Bell, MessageSquare, Users, Download } from "lucide-react";
+import { Send, Mail, AlertCircle, CheckCircle, Bell, MessageSquare, Users, Download, X } from "lucide-react";
 import { 
   broadcastNotification,
   broadcastOfferEmail, 
@@ -8,10 +8,32 @@ import {
   getGeneralUserCount,
   sendGeneralSmsBroadcast,
   getTargetedEmailUserCount,
-  sendTargetedEmailBroadcast
+  sendTargetedEmailBroadcast,
+  sendTestTargetedEmail,
+  sendTestOfferEmail,
+  sendTestGeneralSms,
+  sendTestIncompleteSms
 } from "../../utils/adminApi";
-import { getCookie } from "../../utils/auth";
+import { getCookie, getUserProfile } from "../../utils/auth";
 import API_BASE_URL from "../../utils/config";
+
+const getDefaultTestEmail = () => {
+  try {
+    const profile = getUserProfile();
+    return getCookie("userEmail") || profile?.email || "";
+  } catch (e) {
+    return "";
+  }
+};
+
+const getDefaultTestPhone = () => {
+  try {
+    const profile = getUserProfile();
+    return getCookie("userPhoneNumber") || profile?.phoneNumber || localStorage.getItem("phoneNumber") || "";
+  } catch (e) {
+    return "";
+  }
+};
 
 const StatusBanner = ({ error, success }) => {
   if (error)
@@ -27,6 +49,130 @@ const StatusBanner = ({ error, success }) => {
       </div>
     );
   return null;
+};
+
+const TestModal = ({ isOpen, onClose, title, label, placeholder, value, onChange, onSubmit, loading, feedback, icon: Icon, buttonText }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(9, 18, 46, 0.6)",
+      backdropFilter: "blur(4px)",
+      zIndex: 10000,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "20px"
+    }}>
+      <div style={{
+        background: "#ffffff",
+        borderRadius: "16px",
+        maxWidth: "480px",
+        width: "100%",
+        padding: "24px",
+        boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+        position: "relative"
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Icon size={18} style={{ color: "#3B82F6" }} />
+            </div>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "700", color: "#09122E", fontFamily: "Basier Square, sans-serif" }}>{title}</h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", borderRadius: "50%" }}
+          >
+            <X size={18} color="#777E90" />
+          </button>
+        </div>
+
+        {feedback?.message && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "10px 14px",
+            background: feedback.type === "success" ? "#F0FDF4" : "#FEF2F2",
+            border: feedback.type === "success" ? "1px solid #BBF7D0" : "1px solid #FECACA",
+            borderRadius: 8,
+            color: feedback.type === "success" ? "#166534" : "#DC2626",
+            marginBottom: 16,
+            fontSize: 13
+          }}>
+            {feedback.type === "success" ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+            {feedback.message}
+          </div>
+        )}
+
+        <form onSubmit={onSubmit}>
+          <div className="form-groups" style={{ marginBottom: "20px" }}>
+            <label style={{ fontSize: "13px", fontWeight: "600", color: "#353945", marginBottom: "6px", display: "block" }}>
+              {label} <span style={{ color: "#EC7523" }}>*</span>
+            </label>
+            <input
+              type="text"
+              className="form-input"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder}
+              required
+              disabled={loading}
+              autoFocus
+            />
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              style={{
+                padding: "8px 16px",
+                borderRadius: "8px",
+                border: "1px solid #DDE2EE",
+                background: "#fff",
+                color: "#4B5563",
+                fontSize: "13px",
+                fontWeight: "600",
+                cursor: "pointer"
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                padding: "8px 20px",
+                borderRadius: "8px",
+                border: "none",
+                background: "#3B82F6",
+                color: "#fff",
+                fontSize: "13px",
+                fontWeight: "600",
+                cursor: loading ? "not-allowed" : "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                opacity: loading ? 0.7 : 1
+              }}
+            >
+              <Icon size={14} />
+              {loading ? "Sending..." : buttonText}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 // ─── Push Notification Section ───────────────────────────────────────────────
@@ -117,6 +263,44 @@ function OfferEmailSection() {
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
 
+  // Test Mail states
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
+  const [sendingTest, setSendingTest] = useState(false);
+  const [testFeedback, setTestFeedback] = useState({ type: "", message: "" });
+
+  const handleOpenTestModal = () => {
+    if (!formData.title.trim()) return setError("Please enter an offer title first to send a test mail");
+    if (!formData.description.trim()) return setError("Please enter an offer description first to send a test mail");
+    setTestEmail(getDefaultTestEmail());
+    setTestFeedback({ type: "", message: "" });
+    setShowTestModal(true);
+  };
+
+  const handleSendTestMail = async (e) => {
+    e.preventDefault();
+    if (!testEmail.trim()) return;
+    try {
+      setSendingTest(true);
+      setTestFeedback({ type: "", message: "" });
+      const response = await sendTestOfferEmail({
+        email: testEmail.trim(),
+        title: formData.title.trim(),
+        description: formData.description.trim()
+      });
+      if (response.success) {
+        setTestFeedback({ type: "success", message: "Test mail sent successfully to " + testEmail });
+        setTimeout(() => setShowTestModal(false), 2000);
+      } else {
+        setTestFeedback({ type: "error", message: response.message || "Failed to send test mail" });
+      }
+    } catch (err) {
+      setTestFeedback({ type: "error", message: err.message || "Failed to send test mail" });
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title.trim()) return setError("Please enter an offer title");
@@ -189,11 +373,49 @@ function OfferEmailSection() {
             <Mail size={15} />
             {submitting ? "Sending Emails..." : "Send Offer Email"}
           </button>
-          <p style={{ margin: 0, fontSize: 12, color: "#9CA3AF" }}>
-            Only users with a registered email address will receive this mail.
-          </p>
+
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleOpenTestModal}
+            disabled={submitting}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 18px",
+              borderRadius: 8,
+              border: "1px solid #3B82F6",
+              background: "#EFF6FF",
+              color: "#3B82F6",
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#DBEAFE"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#EFF6FF"; }}
+          >
+            <Send size={15} />
+            Test Mail
+          </button>
         </div>
       </form>
+
+      <TestModal
+        isOpen={showTestModal}
+        onClose={() => setShowTestModal(false)}
+        title="Send Test Offer Mail"
+        label="Test Email Address"
+        placeholder="e.g. admin@connect.in"
+        value={testEmail}
+        onChange={setTestEmail}
+        onSubmit={handleSendTestMail}
+        loading={sendingTest}
+        feedback={testFeedback}
+        icon={Mail}
+        buttonText="Send Test Email"
+      />
     </div>
   );
 }
@@ -209,6 +431,40 @@ function IncompleteProfileSmsSection() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+
+  // Test SMS states
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [testPhone, setTestPhone] = useState("");
+  const [sendingTest, setSendingTest] = useState(false);
+  const [testFeedback, setTestFeedback] = useState({ type: "", message: "" });
+
+  const handleOpenTestModal = () => {
+    setTestPhone(getDefaultTestPhone());
+    setTestFeedback({ type: "", message: "" });
+    setShowTestModal(true);
+  };
+
+  const handleSendTestSms = async (e) => {
+    e.preventDefault();
+    if (!testPhone.trim()) return;
+    try {
+      setSendingTest(true);
+      setTestFeedback({ type: "", message: "" });
+      const response = await sendTestIncompleteSms({
+        phoneNumber: testPhone.trim()
+      });
+      if (response.success) {
+        setTestFeedback({ type: "success", message: "Test SMS sent successfully to " + testPhone });
+        setTimeout(() => setShowTestModal(false), 2000);
+      } else {
+        setTestFeedback({ type: "error", message: response.message || "Failed to send test SMS" });
+      }
+    } catch (err) {
+      setTestFeedback({ type: "error", message: err.message || "Failed to send test SMS" });
+    } finally {
+      setSendingTest(false);
+    }
+  };
 
   useEffect(() => {
     const fetchCount = async () => {
@@ -336,6 +592,32 @@ function IncompleteProfileSmsSection() {
             {submitting ? "Sending SMS..." : "Send SMS Broadcast"}
           </button>
           
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleOpenTestModal}
+            disabled={submitting}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 18px",
+              borderRadius: 8,
+              border: "1px solid #7C3AED",
+              background: "#F5F3FF",
+              color: "#7C3AED",
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#EDE9FE"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#F5F3FF"; }}
+          >
+            <MessageSquare size={15} />
+            Test SMS
+          </button>
+
           <button type="button" className="btn-secondary" onClick={handleDownloadCsv} disabled={userCount === 0}
             style={{ 
               display: "flex", 
@@ -359,6 +641,21 @@ function IncompleteProfileSmsSection() {
           </button>
         </div>
       </form>
+
+      <TestModal
+        isOpen={showTestModal}
+        onClose={() => setShowTestModal(false)}
+        title="Send Test Incomplete Profile SMS"
+        label="Test Mobile Number"
+        placeholder="e.g. 9876543210"
+        value={testPhone}
+        onChange={setTestPhone}
+        onSubmit={handleSendTestSms}
+        loading={sendingTest}
+        feedback={testFeedback}
+        icon={MessageSquare}
+        buttonText="Send Test SMS"
+      />
     </div>
   );
 }
@@ -372,6 +669,45 @@ function GeneralSmsSection() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+
+  // Test SMS states
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [testPhone, setTestPhone] = useState("");
+  const [sendingTest, setSendingTest] = useState(false);
+  const [testFeedback, setTestFeedback] = useState({ type: "", message: "" });
+
+  const handleOpenTestModal = () => {
+    if (!formData.message.trim() && !formData.templateId.trim()) {
+      return setError("Please enter an SMS message or Template ID first to send a test SMS");
+    }
+    setTestPhone(getDefaultTestPhone());
+    setTestFeedback({ type: "", message: "" });
+    setShowTestModal(true);
+  };
+
+  const handleSendTestSms = async (e) => {
+    e.preventDefault();
+    if (!testPhone.trim()) return;
+    try {
+      setSendingTest(true);
+      setTestFeedback({ type: "", message: "" });
+      const response = await sendTestGeneralSms({
+        phoneNumber: testPhone.trim(),
+        message: formData.message.trim(),
+        templateId: formData.templateId.trim()
+      });
+      if (response.success) {
+        setTestFeedback({ type: "success", message: "Test SMS sent successfully to " + testPhone });
+        setTimeout(() => setShowTestModal(false), 2000);
+      } else {
+        setTestFeedback({ type: "error", message: response.message || "Failed to send test SMS" });
+      }
+    } catch (err) {
+      setTestFeedback({ type: "error", message: err.message || "Failed to send test SMS" });
+    } finally {
+      setSendingTest(false);
+    }
+  };
 
   useEffect(() => {
     const fetchCount = async () => {
@@ -495,13 +831,56 @@ function GeneralSmsSection() {
           />
         </div>
 
-        <button type="submit" className="btn-primary" disabled={submitting || userCount === 0} style={{ background: "#DB2777" }}
-          onMouseEnter={e => { if (!submitting && userCount > 0) e.currentTarget.style.background = "#BE185D"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "#DB2777"; }}>
-          <Send size={15} />
-          {submitting ? "Sending SMS..." : "Send SMS Broadcast"}
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <button type="submit" className="btn-primary" disabled={submitting || userCount === 0} style={{ background: "#DB2777" }}
+            onMouseEnter={e => { if (!submitting && userCount > 0) e.currentTarget.style.background = "#BE185D"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#DB2777"; }}>
+            <Send size={15} />
+            {submitting ? "Sending SMS..." : "Send SMS Broadcast"}
+          </button>
+
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleOpenTestModal}
+            disabled={submitting}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 18px",
+              borderRadius: 8,
+              border: "1px solid #DB2777",
+              background: "#FDF2F8",
+              color: "#DB2777",
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#FCE7F3"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#FDF2F8"; }}
+          >
+            <MessageSquare size={15} />
+            Test SMS
+          </button>
+        </div>
       </form>
+
+      <TestModal
+        isOpen={showTestModal}
+        onClose={() => setShowTestModal(false)}
+        title="Send Test General SMS"
+        label="Test Mobile Number"
+        placeholder="e.g. 9876543210"
+        value={testPhone}
+        onChange={setTestPhone}
+        onSubmit={handleSendTestSms}
+        loading={sendingTest}
+        feedback={testFeedback}
+        icon={MessageSquare}
+        buttonText="Send Test SMS"
+      />
     </div>
   );
 }
@@ -515,6 +894,44 @@ function TargetedEmailSection() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+
+  // Test Mail states
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
+  const [sendingTest, setSendingTest] = useState(false);
+  const [testFeedback, setTestFeedback] = useState({ type: "", message: "" });
+
+  const handleOpenTestModal = () => {
+    if (!formData.subject.trim()) return setError("Please enter an email subject first to send a test mail");
+    if (!formData.htmlContent.trim()) return setError("Please enter HTML content first to send a test mail");
+    setTestEmail(getDefaultTestEmail());
+    setTestFeedback({ type: "", message: "" });
+    setShowTestModal(true);
+  };
+
+  const handleSendTestMail = async (e) => {
+    e.preventDefault();
+    if (!testEmail.trim()) return;
+    try {
+      setSendingTest(true);
+      setTestFeedback({ type: "", message: "" });
+      const response = await sendTestTargetedEmail({
+        email: testEmail.trim(),
+        subject: formData.subject.trim(),
+        htmlContent: formData.htmlContent.trim()
+      });
+      if (response.success) {
+        setTestFeedback({ type: "success", message: "Test mail sent successfully to " + testEmail });
+        setTimeout(() => setShowTestModal(false), 2000);
+      } else {
+        setTestFeedback({ type: "error", message: response.message || "Failed to send test mail" });
+      }
+    } catch (err) {
+      setTestFeedback({ type: "error", message: err.message || "Failed to send test mail" });
+    } finally {
+      setSendingTest(false);
+    }
+  };
 
   useEffect(() => {
     const fetchCount = async () => {
@@ -637,13 +1054,56 @@ function TargetedEmailSection() {
           </p>
         </div>
 
-        <button type="submit" className="btn-primary" disabled={submitting || userCount === 0} style={{ background: "#3B82F6" }}
-          onMouseEnter={e => { if (!submitting && userCount > 0) e.currentTarget.style.background = "#2563EB"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "#3B82F6"; }}>
-          <Send size={15} />
-          {submitting ? "Sending Emails..." : "Send Targeted Email"}
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <button type="submit" className="btn-primary" disabled={submitting || userCount === 0} style={{ background: "#3B82F6" }}
+            onMouseEnter={e => { if (!submitting && userCount > 0) e.currentTarget.style.background = "#2563EB"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#3B82F6"; }}>
+            <Send size={15} />
+            {submitting ? "Sending Emails..." : "Send Targeted Email"}
+          </button>
+
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleOpenTestModal}
+            disabled={submitting}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 18px",
+              borderRadius: 8,
+              border: "1px solid #3B82F6",
+              background: "#EFF6FF",
+              color: "#3B82F6",
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#DBEAFE"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#EFF6FF"; }}
+          >
+            <Mail size={15} />
+            Test Mail
+          </button>
+        </div>
       </form>
+
+      <TestModal
+        isOpen={showTestModal}
+        onClose={() => setShowTestModal(false)}
+        title="Send Test Targeted Mail"
+        label="Test Email Address"
+        placeholder="e.g. admin@connect.in"
+        value={testEmail}
+        onChange={setTestEmail}
+        onSubmit={handleSendTestMail}
+        loading={sendingTest}
+        feedback={testFeedback}
+        icon={Mail}
+        buttonText="Send Test Email"
+      />
     </div>
   );
 }
