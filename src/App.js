@@ -170,12 +170,16 @@ function App() {
             }
           />
           <Route
-            path="/share"
+            path="/ask"
             element={
               <ProtectedRoute>
                 <Share />
               </ProtectedRoute>
             }
+          />
+          <Route
+            path="/share"
+            element={<Navigate to="/ask" replace />}
           />
           <Route
             path="/delete-account"

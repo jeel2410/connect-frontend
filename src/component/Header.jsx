@@ -381,8 +381,8 @@ const Header = () => {
                     <span className="chat-badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>
                   )}
                 </a>
-                <a href="/share" className={`nav-link ${location.pathname === "/share" ? "active" : ""}`}>
-                  Share
+                <a href="/ask" className={`nav-link ${location.pathname === "/ask" || location.pathname === "/share" ? "active" : ""}`}>
+                  Ask
                 </a>
                 <a href="/offers" className={`nav-link ${location.pathname === "/offers" ? "active" : ""}`}>
                   Offers
@@ -507,8 +507,8 @@ const Header = () => {
                       <span className="chat-badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>
                     )}
                   </a>
-                  <a href="/share" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                    Share
+                  <a href="/ask" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                    Ask
                   </a>
                   <a href="/offers" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     Offers

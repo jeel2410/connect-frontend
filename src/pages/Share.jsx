@@ -348,7 +348,7 @@ const Share = () => {
       <div className="dating-profile-wrapper">
         <div className="share-page-wrapper" style={{ width: '100%' }}>
           <div className="title-div">
-            <h1 className="inner-page-title"><span>Shared</span><span className="title-highlight">Feed</span></h1>
+            <h1 className="inner-page-title"><span>Ask</span> <span className="title-highlight">Feed</span></h1>
           </div>
 
           <div className="share-page-container">

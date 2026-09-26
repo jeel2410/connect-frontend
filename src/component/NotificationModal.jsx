@@ -238,8 +238,8 @@ const NotificationModal = ({ isOpen, onClose, onNotificationRead }) => {
     } else if (notification.type === 'post') {
       // Close the modal
       onClose();
-      // Navigate to share page
-      navigate('/share');
+      // Navigate to ask page
+      navigate('/ask');
     }
   };
 
