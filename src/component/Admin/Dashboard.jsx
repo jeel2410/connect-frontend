@@ -106,9 +106,11 @@ const Dashboard = () => {
       title: "Completed Profiles",
       value: stats?.totalCompleteProfiles || 0,
       percentage: newProfilesCompletionPercentage,
+      verifiedEmailPercentage: stats?.completedVerifiedEmailPercentage ?? 0,
+      verifiedEmailCount: stats?.completedVerifiedProfiles || 0,
       icon: Smile,
       color: "emerald",
-      description: `${newProfilesCompletionPercentage}% of new profiles completed (last 7 days: ${(stats?.newCompleteProfilesLast7Days || 0)}/${(stats?.newProfilesLast7Days || 0)})`,
+      description: `Email Verified: ${stats?.completedVerifiedEmailPercentage ?? 0}% (${stats?.completedVerifiedProfiles || 0}/${stats?.totalCompleteProfiles || 0}) • 7-day completion: ${newProfilesCompletionPercentage}%`,
       accentBg: "linear-gradient(135deg, #ECFDF5 0%, #A7F3D0 100%)",
       iconColor: "#059669",
       borderColor: "#34D399",
@@ -201,7 +203,19 @@ const Dashboard = () => {
                 >
                   <Icon size={24} />
                 </div>
-                {card.percentage !== undefined && (
+                {card.verifiedEmailPercentage !== undefined ? (
+                  <span style={{
+                    backgroundColor: "#EFF6FF",
+                    color: "#2563EB",
+                    border: "1px solid #BFDBFE",
+                    padding: "4px 10px",
+                    borderRadius: "20px",
+                    fontSize: "12px",
+                    fontWeight: "700"
+                  }}>
+                    {card.verifiedEmailPercentage}% Verified Email
+                  </span>
+                ) : card.percentage !== undefined && (
                   <span style={{
                     backgroundColor: "#ECFDF5",
                     color: "#059669",
@@ -246,6 +260,7 @@ const Dashboard = () => {
           statTitle={selectedStat.title}
           statColor={selectedStat.color}
           statIcon={selectedStat.icon}
+          stats={stats}
         />
       )}
     </div>
@@ -253,7 +268,7 @@ const Dashboard = () => {
 };
 
 // TrendModal sub-component definition
-const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: Icon }) => {
+const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: Icon, stats }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -378,6 +393,12 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                           <span className="summary-label">Completion Rate</span>
                           <span className="summary-val" style={{ color: currentTheme.main }}>
                             {overallPercentage}%
+                          </span>
+                        </div>
+                        <div className="trend-summary-card">
+                          <span className="summary-label">Verified Email %</span>
+                          <span className="summary-val" style={{ color: "#2563EB" }}>
+                            {stats?.completedVerifiedEmailPercentage ?? 0}% ({stats?.completedVerifiedProfiles || 0}/{stats?.totalCompleteProfiles || 0})
                           </span>
                         </div>
                       </>
