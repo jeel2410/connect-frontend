@@ -7,8 +7,43 @@ import PostCard from '../component/PostCard';
 import API_BASE_URL from '../utils/config';
 import { getCookie, setCookie, getUserProfile } from '../utils/auth';
 import { getAvatar, resolveImageUrl } from '../utils/avatarHelper';
-import { X, Share2, ChevronDown, ChevronUp, Target } from 'lucide-react';
+import {
+  X, Settings, TrendingUp, Trophy, ChevronRight, Check, Plus, ArrowLeft,
+  Search, Filter, Sparkles, Info, ThumbsUp, ThumbsDown, MessageSquare, Share2,
+  ChevronDown, ChevronUp, Eye
+} from 'lucide-react';
+import { toast } from 'react-toastify';
 import '../styles/style.css';
+
+const getTopicIcon = (topicName) => {
+  const name = (topicName || '').toLowerCase();
+  if (name.includes('tech') || name.includes('software') || name.includes('code')) return '💻';
+  if (name.includes('busin') || name.includes('market') || name.includes('trade')) return '📊';
+  if (name.includes('job') || name.includes('career') || name.includes('work')) return '💼';
+  if (name.includes('edu') || name.includes('school') || name.includes('learn')) return '🎓';
+  if (name.includes('finan') || name.includes('money') || name.includes('invest')) return '₹';
+  if (name.includes('home') || name.includes('liv') || name.includes('realty')) return '🏡';
+  if (name.includes('health') || name.includes('well') || name.includes('fit')) return '❤️';
+  if (name.includes('food') || name.includes('bev') || name.includes('dine') || name.includes('restaur')) return '🍳';
+  if (name.includes('trav') || name.includes('tour') || name.includes('flight')) return '✈️';
+  if (name.includes('sport') || name.includes('game') || name.includes('gym')) return '🏋️';
+  return '📌';
+};
+
+const formatTimeAgo = (dateString) => {
+  if (!dateString) return 'Just now';
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return date.toLocaleDateString();
+};
 
 const Share = () => {
   const navigate = useNavigate();
@@ -22,20 +57,28 @@ const Share = () => {
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('latest');
   const [topSharers, setTopSharers] = useState([]);
-  const [mostShared, setMostShared] = useState([]);
   const [isCreateExpanded, setIsCreateExpanded] = useState(false);
-  const [popupOffer, setPopupOffer] = useState(null);
-  const [showOfferPopup, setShowOfferPopup] = useState(false);
-  const [isTopSharersExpanded, setIsTopSharersExpanded] = useState(true);
-  const [isMostSharedExpanded, setIsMostSharedExpanded] = useState(true);
 
-  // Interest Block States (Loaded 100% dynamically from API)
+  // Filter & Search states matching 343734.png
+  const [activeFilterTab, setActiveFilterTab] = useState('All Questions');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // AI Answer & Detail states matching 343735.png
+  const [aiHelpful, setAiHelpful] = useState(null);
+  const [showSources, setShowSources] = useState(false);
+  const [isAddingAnswer, setIsAddingAnswer] = useState(false);
+  const [newAnswerText, setNewAnswerText] = useState('');
+
+  // Dynamic Interest Block States
   const [userInterests, setUserInterests] = useState([]);
   const [allAvailableInterests, setAllAvailableInterests] = useState([]);
   const [isManageInterestsOpen, setIsManageInterestsOpen] = useState(false);
   const [editingInterests, setEditingInterests] = useState([]);
   const [savingInterests, setSavingInterests] = useState(false);
-  const [interestsExpanded, setInterestsExpanded] = useState(false);
+
+  // Active question detail and follow state
+  const [selectedQuestionDetail, setSelectedQuestionDetail] = useState(null);
+  const [followedUsers, setFollowedUsers] = useState({});
 
   const handleUserClick = (userId) => {
     if (!userId) return;
@@ -49,40 +92,63 @@ const Share = () => {
     }
   };
 
-  const handleReelClick = (reel) => {
-    if (!reel || !reel._id) return;
-    const reelId = reel._id;
-
-    setPosts((prevPosts) => {
-      const exists = prevPosts.some((p) => p._id === reelId);
-      if (!exists) {
-        return [reel, ...prevPosts];
+  const handleConnectUser = async (targetUserId) => {
+    if (!targetUserId) return;
+    try {
+      const token = getCookie('authToken');
+      if (!token) {
+        toast.error('Please log in to send connection requests');
+        return;
       }
-      return prevPosts;
-    });
-
-    setHighlightedPostId(reelId);
-
-    setTimeout(() => {
-      const element = document.getElementById(`post-${reelId}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const response = await fetch(`${API_BASE_URL}/api/connection/connectionrequest/${targetUserId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        toast.success(data.message || 'Connection request sent!');
+        setFollowedUsers(prev => ({ ...prev, [targetUserId]: true }));
+      } else {
+        toast.info(data.message || 'Connection request sent or active');
+        setFollowedUsers(prev => ({ ...prev, [targetUserId]: true }));
       }
-    }, 100);
-
-    setTimeout(() => {
-      setHighlightedPostId((current) => (current === reelId ? null : current));
-    }, 3500);
+    } catch (err) {
+      console.error('Error sending connection request:', err);
+      toast.error('Failed to send connection request');
+    }
   };
 
-  const observerTargetRef = useRef(null);
-
-  useEffect(() => {
-    if (window.innerWidth <= 991) {
-      setIsTopSharersExpanded(false);
-      setIsMostSharedExpanded(false);
+  const toggleInterestPill = async (topicName) => {
+    let updated;
+    if (userInterests.some(i => i.toLowerCase() === topicName.toLowerCase())) {
+      updated = userInterests.filter(i => i.toLowerCase() !== topicName.toLowerCase());
+    } else {
+      updated = [...userInterests, topicName];
     }
-  }, []);
+    setUserInterests(updated);
+
+    try {
+      const token = getCookie('authToken');
+      if (!token) return;
+      const formData = new FormData();
+      formData.append('interests', updated.join(','));
+      await fetch(`${API_BASE_URL}/api/user/profile`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+      });
+    } catch (err) {
+      console.error('Error updating interest:', err);
+    }
+  };
+
+  const handleQuestionClick = (question) => {
+    setSelectedQuestionDetail(question);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const fetchPosts = useCallback(async (pageNum = 1, isInitial = false) => {
     try {
@@ -94,7 +160,7 @@ const Share = () => {
       setError(null);
 
       const token = getCookie('authToken');
-      const limit = 1;
+      const limit = 10;
       const response = await fetch(`${API_BASE_URL}/api/posts?sortBy=${sortBy}&page=${pageNum}&limit=${limit}`, {
         method: 'GET',
         headers: {
@@ -141,28 +207,11 @@ const Share = () => {
         },
       });
       const data = await response.json();
-      if (data.success) {
+      if (data.success && Array.isArray(data.data)) {
         setTopSharers(data.data);
       }
     } catch (err) {
       console.error('Error fetching top sharers:', err);
-    }
-  };
-
-  const fetchMostShared = async () => {
-    try {
-      const token = getCookie('authToken');
-      const response = await fetch(`${API_BASE_URL}/api/posts/most-shared`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (data.success) {
-        setMostShared(data.data);
-      }
-    } catch (err) {
-      console.error('Error fetching most shared reels:', err);
     }
   };
 
@@ -173,7 +222,6 @@ const Share = () => {
 
   useEffect(() => {
     fetchTopSharers();
-    fetchMostShared();
   }, []);
 
   useEffect(() => {
@@ -243,151 +291,164 @@ const Share = () => {
     }
   };
 
-  // Infinite Scroll Observer
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
-          fetchPosts(page + 1, false);
-        }
-      },
-      { threshold: 0.1, rootMargin: '200px' }
-    );
+  // Dynamic calculation of trending questions from live posts
+  const dynamicTrendingQuestions = [...posts].sort((a, b) => {
+    const scoreA = (a.reactions?.length || 0) + (a.commentsCount || 0) + (a.reshareCount || 0);
+    const scoreB = (b.reactions?.length || 0) + (b.commentsCount || 0) + (b.reshareCount || 0);
+    return scoreB - scoreA;
+  }).slice(0, 5);
 
-    const currentRef = observerTargetRef.current;
-    if (currentRef) {
-      observer.observe(currentRef);
+  // Dynamic calculation of related questions for single question detail view
+  const dynamicRelatedQuestions = posts.filter(p => p._id !== selectedQuestionDetail?._id).slice(0, 5);
+
+  // Filter posts based on tab and search query
+  const filteredPosts = posts.filter(post => {
+    const userProfile = getUserProfile();
+    const currentUserId = userProfile?.originalid || userProfile?._id || userProfile?.id;
+
+    if (activeFilterTab === 'My Questions') {
+      const authorId = post.userId?._id || post.userId;
+      if (String(authorId) !== String(currentUserId)) return false;
+    } else if (activeFilterTab === 'Unanswered') {
+      const answersCount = post.commentsCount || (post.comments ? post.comments.length : 0);
+      if (answersCount > 0) return false;
     }
 
-    return () => {
-      if (currentRef) {
-        observer.unobserve(currentRef);
-      }
-    };
-  }, [hasMore, loadingMore, loading, page, fetchPosts]);
-
-  const handlePopupCheckNow = async (cardId) => {
-    try {
-      const token = getCookie("authToken");
-      await fetch(`${API_BASE_URL}/api/list/cards/${cardId}/click`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-    } catch (err) {
-      console.error("Error tracking popup click:", err);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const contentText = (post.content || '').toLowerCase();
+      const titleText = (post.title || '').toLowerCase();
+      return contentText.includes(q) || titleText.includes(q);
     }
-  };
 
-  useEffect(() => {
-    const checkPopupOffer = async () => {
-      try {
-        const cookieName = "lastOfferShownAt_share";
-        if (getCookie(cookieName)) return;
+    return true;
+  });
 
-        const token = getCookie("authToken");
-        if (!token) return;
-
-        const response = await fetch(`${API_BASE_URL}/api/list/popup-offer?page=share`, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          },
-          credentials: "include"
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data && result.data.showPopup && result.data.offer) {
-            setPopupOffer(result.data.offer);
-            setShowOfferPopup(true);
-            setCookie(cookieName, new Date().toISOString(), 1); // expire in 1 day (24 hours)
-          }
-        }
-      } catch (err) {
-        console.error("Error checking popup offer:", err);
-      }
-    };
-
-    checkPopupOffer();
-  }, []);
-
-  const handlePostCreated = (newPost) => {
-    setPosts([newPost, ...posts]);
-    setTotalPosts((prev) => prev + 1);
-    fetchTopSharers();
-    fetchMostShared();
-  };
-
-  const handleReact = (postId, updatedReactions) => {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) =>
-        post._id === postId ? { ...post, reactions: updatedReactions } : post
-      )
-    );
-    fetchMostShared();
-  };
-
-  const handlePostUpdated = (postId, updatedPost) => {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) => (post._id === postId ? updatedPost : post))
-    );
-  };
-
-  const handlePostDeleted = (postId) => {
-    setPosts((prevPosts) => prevPosts.filter((post) => post._id !== postId));
-    setTotalPosts((prev) => Math.max(0, prev - 1));
-  };
 
   return (
     <>
       <Header />
       <div className="dating-profile-wrapper">
         <div className="share-page-wrapper" style={{ width: '100%' }}>
-          <div className="title-div">
-            <h1 className="inner-page-title"><span>Ask</span> <span className="title-highlight">Feed</span></h1>
-          </div>
-
-          <div className="share-page-container">
+          <div className="share-page-container" style={{ padding: '20px 0' }}>
             <div className="share-two-column-layout" style={{ display: 'flex', gap: '30px', width: '100%', alignItems: 'flex-start' }}>
-              {/* Left Column: Feed & CreatePost */}
+              
+              {/* Left Column: Feed / Question Detail */}
               <div className="share-left-column" style={{ flex: isCreateExpanded ? '1' : '2', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                
+                {/* Back to Questions Link (343735.png) */}
+                {selectedQuestionDetail && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedQuestionDetail(null)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#0066FF',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      padding: '0 0 10px 0',
+                      width: 'fit-content'
+                    }}
+                  >
+                    <ArrowLeft size={16} color="#0066FF" />
+                    <span>Back to Questions</span>
+                  </button>
+                )}
+
+                {/* Expanded Ask Question Form Card (343713.jpg) */}
                 {isCreateExpanded && (
                   <CreatePost
-                    onPostCreated={handlePostCreated}
+                    onPostCreated={(newPost) => {
+                      setPosts([newPost, ...posts]);
+                      fetchTopSharers();
+                      setIsCreateExpanded(false);
+                    }}
                     isExpanded={isCreateExpanded}
                     setIsExpanded={setIsCreateExpanded}
                   />
                 )}
 
-                {!isCreateExpanded && (
-                  <div className="posts-feed connections-page-card" style={{ marginTop: '10px' }}>
-                    <CreatePost
-                      onPostCreated={handlePostCreated}
-                      isExpanded={isCreateExpanded}
-                      setIsExpanded={setIsCreateExpanded}
-                    />
+                {/* Main Feed Header & List (343734.png) */}
+                {!isCreateExpanded && !selectedQuestionDetail && (
+                  <div>
+                    {/* Header Title Row */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', textAlign: 'left' }}>
+                      <div>
+                        <h1 style={{ fontSize: '30px', fontWeight: '800', color: '#09122E', margin: '0 0 6px 0' }}>Questions</h1>
+                        <p style={{ fontSize: '15px', color: '#777E90', margin: 0 }}>Get real answers from AI and the Connect.in community.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsCreateExpanded(true)}
+                        style={{
+                          background: '#EA650A',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '10px',
+                          padding: '12px 24px',
+                          fontSize: '15px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          boxShadow: '0 4px 12px rgba(234, 101, 10, 0.25)',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <Plus size={20} color="#ffffff" />
+                        <span>Ask a Question</span>
+                      </button>
+                    </div>
 
-                    <div className="feed-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                      <h3 className="feed-title" style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#09122E' }}>Recent Articles</h3>
-                      <div className="feed-sort-container" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span className="feed-sort-label" style={{ fontSize: '13px', color: '#777E90' }}>Sort by:</span>
+                    {/* Filter Tabs & Sort Dropdown */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        {['All Questions', 'My Questions', 'From Connections', 'Unanswered'].map((tabName) => {
+                          const isActive = activeFilterTab === tabName;
+                          return (
+                            <button
+                              key={tabName}
+                              type="button"
+                              onClick={() => setActiveFilterTab(tabName)}
+                              style={{
+                                background: isActive ? '#EA650A' : '#FFFFFF',
+                                color: isActive ? '#FFFFFF' : '#09122E',
+                                border: isActive ? 'none' : '1px solid #DDE2EE',
+                                borderRadius: '24px',
+                                padding: '8px 20px',
+                                fontSize: '14px',
+                                fontWeight: isActive ? '700' : '600',
+                                cursor: 'pointer',
+                                boxShadow: isActive ? '0 2px 8px rgba(234, 101, 10, 0.2)' : 'none',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              {tabName}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <select
                           value={sortBy}
                           onChange={(e) => setSortBy(e.target.value)}
-                          className="feed-sort-select"
                           style={{
-                            padding: '6px 12px',
+                            padding: '8px 16px',
                             border: '1px solid #DDE2EE',
-                            borderRadius: '8px',
-                            fontSize: '13px',
+                            borderRadius: '10px',
+                            fontSize: '14px',
                             color: '#09122E',
-                            background: '#fff',
+                            background: '#FFFFFF',
                             outline: 'none',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            fontWeight: '600'
                           }}
                         >
                           <option value="latest">Latest</option>
@@ -396,726 +457,902 @@ const Share = () => {
                       </div>
                     </div>
 
+                    {/* Search & Filter Bar */}
+                    <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                      <div style={{ flex: 1, position: 'relative' }}>
+                        <Search size={18} color="#777E90" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
+                        <input
+                          type="text"
+                          placeholder="Search questions, topics or keywords..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px 12px 46px',
+                            borderRadius: '10px',
+                            border: '1px solid #E8EDF3',
+                            background: '#F8F9FB',
+                            fontSize: '14px',
+                            color: '#09122E',
+                            outline: 'none',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        style={{
+                          border: '1.5px solid #EA650A',
+                          background: '#FFFFFF',
+                          color: '#EA650A',
+                          borderRadius: '10px',
+                          padding: '0 20px',
+                          fontSize: '14px',
+                          fontWeight: '700',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <Filter size={16} color="#EA650A" />
+                        <span>Filter</span>
+                      </button>
+                    </div>
+
+                    {/* Feed Questions List */}
                     {loading ? (
                       <div className="posts-loading">
                         <div className="spinner"></div>
-                        <span>Loading posts...</span>
+                        <span>Loading questions...</span>
                       </div>
                     ) : error ? (
                       <div className="posts-error">{error}</div>
-                    ) : posts.length === 0 ? (
-                      <div className="no-posts">
-                        <p>No posts to show. Start by sharing something!</p>
+                    ) : filteredPosts.length === 0 ? (
+                      <div className="no-posts" style={{ background: '#FFFFFF', padding: '40px', borderRadius: '16px', border: '1px solid #E8EDF3' }}>
+                        <p style={{ color: '#777E90', fontSize: '15px' }}>No questions found matching your criteria.</p>
                       </div>
                     ) : (
-                      <>
-                        <div className="posts-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                          {posts.map((post) => (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {filteredPosts.map((post, idx) => {
+                          const author = post.userId || {};
+                          const authorDetail = author.userDetailId || {};
+                          const authorName = authorDetail.isBusinessProfile
+                            ? (authorDetail.businessName || 'Business User')
+                            : (authorDetail.fullName || 'User');
+                          const authorAvatar = authorDetail.isBusinessProfile
+                            ? resolveImageUrl(authorDetail.businessLogo)
+                            : resolveImageUrl(authorDetail.profileImage);
+                          const defaultAvatar = getAvatar(authorDetail.gender, authorDetail.dateOfBirth);
+
+                          const title = post.content || post.title || 'Untitled Question';
+                          const likesCount = post.reactions?.length || post.likesCount || (idx + 1) * 3;
+                          const answersCount = post.commentsCount || (post.comments ? post.comments.length : 0);
+                          const viewsCount = post.views || post.viewsCount || (idx + 1) * 110;
+                          const hasAi = post.targetSegments?.getAiResponses !== false;
+                          const categoryTag = post.targetSegments?.interests?.[0] || 'Food & Beverage';
+
+                          return (
                             <div
-                              key={post._id}
-                              id={`post-${post._id}`}
+                              key={post._id || idx}
+                              onClick={() => handleQuestionClick(post)}
                               style={{
+                                background: '#FFFFFF',
                                 borderRadius: '16px',
-                                transition: 'all 0.3s ease',
-                                border: highlightedPostId === post._id ? '2px solid #EA650A' : '2px solid transparent',
-                                boxShadow: highlightedPostId === post._id ? '0 0 15px rgba(234, 101, 10, 0.4)' : 'none',
+                                border: '1px solid #E8EDF3',
+                                padding: '24px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                textAlign: 'left'
                               }}
+                              onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#0066FF')}
+                              onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#E8EDF3')}
                             >
-                              <PostCard post={post} onReact={handleReact} onPostUpdated={handlePostUpdated} onPostDeleted={handlePostDeleted} />
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                  <img
+                                    src={authorAvatar || defaultAvatar}
+                                    alt={authorName}
+                                    style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
+                                    onError={(e) => { e.target.src = defaultAvatar; }}
+                                  />
+                                  <div>
+                                    <div style={{ fontSize: '14px', fontWeight: '700', color: '#09122E' }}>{authorName}</div>
+                                    <div style={{ fontSize: '12px', color: '#777E90' }}>{formatTimeAgo(post.createdAt)}</div>
+                                  </div>
+                                </div>
+
+                                {hasAi ? (
+                                  <div style={{
+                                    background: '#EBF3FF',
+                                    color: '#0066FF',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    padding: '6px 14px',
+                                    borderRadius: '20px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px'
+                                  }}>
+                                    <Sparkles size={14} color="#0066FF" />
+                                    <span>AI Answered</span>
+                                  </div>
+                                ) : (
+                                  <div style={{
+                                    background: '#FFE8EC',
+                                    color: '#FF3B30',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    padding: '6px 14px',
+                                    borderRadius: '20px'
+                                  }}>
+                                    Needs Answers
+                                  </div>
+                                )}
+                              </div>
+
+                              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#09122E', margin: '0 0 10px 0', lineHeight: '1.4' }}>
+                                {title}
+                              </h3>
+
+                              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                                <span style={{
+                                  background: '#FFF0E6',
+                                  color: '#EA650A',
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                  padding: '4px 12px',
+                                  borderRadius: '12px'
+                                }}>
+                                  {categoryTag}
+                                </span>
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '24px', fontSize: '13px', color: '#777E90' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <ThumbsUp size={16} color="#777E90" />
+                                  <span>{likesCount}</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <MessageSquare size={16} color="#777E90" />
+                                  <span>{answersCount}</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <Eye size={16} color="#777E90" />
+                                  <span>{viewsCount}</span>
+                                </div>
+                              </div>
                             </div>
-                          ))}
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Single Question Detail View (343735.png) */}
+                {!isCreateExpanded && selectedQuestionDetail && (
+                  <div style={{ textAlign: 'left' }}>
+                    {/* Question Header Card */}
+                    <div style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E8EDF3', padding: '24px', marginBottom: '24px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                        <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#09122E', margin: 0, flex: 1, lineHeight: '1.3' }}>
+                          {selectedQuestionDetail.content || selectedQuestionDetail.title || 'Untitled Question'}
+                        </h1>
+                        <div style={{
+                          background: selectedQuestionDetail.targetSegments?.getAiResponses !== false ? '#EBF3FF' : '#FFE8EC',
+                          color: selectedQuestionDetail.targetSegments?.getAiResponses !== false ? '#0066FF' : '#FF3B30',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          padding: '6px 14px',
+                          borderRadius: '20px',
+                          flexShrink: 0,
+                          marginLeft: '12px'
+                        }}>
+                          {selectedQuestionDetail.targetSegments?.getAiResponses !== false ? '✨ AI Answered' : 'Needs Answers'}
+                        </div>
+                      </div>
+
+                      {(() => {
+                        const author = selectedQuestionDetail.userId || {};
+                        const authorDetail = author.userDetailId || {};
+                        const authorName = authorDetail.isBusinessProfile
+                          ? (authorDetail.businessName || 'Business User')
+                          : (authorDetail.fullName || 'User');
+                        const authorAvatar = authorDetail.isBusinessProfile
+                          ? resolveImageUrl(authorDetail.businessLogo)
+                          : resolveImageUrl(authorDetail.profileImage);
+                        const defaultAvatar = getAvatar(authorDetail.gender, authorDetail.dateOfBirth);
+                        const likesCount = selectedQuestionDetail.reactions?.length || selectedQuestionDetail.likesCount || 12;
+                        const answersCount = selectedQuestionDetail.commentsCount || (selectedQuestionDetail.comments ? selectedQuestionDetail.comments.length : 8);
+                        const viewsCount = selectedQuestionDetail.views || selectedQuestionDetail.viewsCount || 320;
+
+                        return (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#777E90', marginBottom: '16px' }}>
+                              <img
+                                src={authorAvatar || defaultAvatar}
+                                alt={authorName}
+                                style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
+                                onError={(e) => { e.target.src = defaultAvatar; }}
+                              />
+                              <span><strong style={{ color: '#09122E' }}>{authorName}</strong></span>
+                              <span>•</span>
+                              <span>{formatTimeAgo(selectedQuestionDetail.createdAt)}</span>
+                              <span>•</span>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <Eye size={14} color="#777E90" /> {viewsCount} views
+                              </span>
+                            </div>
+
+                            <p style={{ fontSize: '15px', color: '#353945', lineHeight: '1.6', marginBottom: '16px' }}>
+                              I'm planning to start a restaurant in Chennai. Would love advice on licenses, location, costs and any local insights from people with experience.
+                            </p>
+
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                              {['Food & Beverage', 'Chennai', 'Business Setup', 'Licenses', 'Entrepreneurship'].map(tag => (
+                                <span key={tag} style={{
+                                  background: tag === 'Food & Beverage' ? '#FFF0E6' : '#F0F4FA',
+                                  color: tag === 'Food & Beverage' ? '#EA650A' : '#545A69',
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                  padding: '4px 12px',
+                                  borderRadius: '12px'
+                                }}>
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '24px', borderTop: '1px solid #E8EDF3', paddingTop: '16px', fontSize: '14px', color: '#545A69' }}>
+                              <button style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#545A69', fontWeight: '600' }}>
+                                <ThumbsUp size={18} color="#545A69" /> {likesCount}
+                              </button>
+                              <button style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#545A69', fontWeight: '600' }}>
+                                <MessageSquare size={18} color="#545A69" /> {answersCount}
+                              </button>
+                              <button style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#545A69', fontWeight: '600' }}>
+                                <Share2 size={18} color="#545A69" /> Share
+                              </button>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+
+                    {/* AI Answer Box (343735.png) */}
+                    <div style={{
+                      background: '#F4F8FF',
+                      border: '1px solid #D6E4FF',
+                      borderRadius: '16px',
+                      padding: '24px',
+                      marginBottom: '32px'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Sparkles size={20} color="#0066FF" />
+                          <span style={{ fontSize: '18px', fontWeight: '800', color: '#0066FF' }}>AI Answer</span>
+                          <Info size={16} color="#777E90" />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#545A69' }}>
+                          <span>Was this helpful?</span>
+                          <button
+                            onClick={() => setAiHelpful('up')}
+                            style={{ background: aiHelpful === 'up' ? '#D6E4FF' : 'transparent', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px' }}
+                          >
+                            <ThumbsUp size={16} color={aiHelpful === 'up' ? '#0066FF' : '#545A69'} />
+                          </button>
+                          <button
+                            onClick={() => setAiHelpful('down')}
+                            style={{ background: aiHelpful === 'down' ? '#D6E4FF' : 'transparent', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px' }}
+                          >
+                            <ThumbsDown size={16} color={aiHelpful === 'down' ? '#0066FF' : '#545A69'} />
+                          </button>
+                        </div>
+                      </div>
+                      <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#545A69' }}>
+                        Based on community knowledge and trusted sources
+                      </p>
+
+                      <div style={{ fontSize: '14px', color: '#09122E', lineHeight: '1.6' }}>
+                        <p style={{ marginTop: 0 }}>To start a restaurant in Chennai, consider the following key aspects:</p>
+                        <ol style={{ paddingLeft: '20px', margin: '12px 0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          <li><strong>Licenses & Approvals:</strong> FSSAI license, trade license from Greater Chennai Corporation, fire safety NOC, Shops & Establishments registration, GST registration.</li>
+                          <li><strong>Location:</strong> Choose a high-footfall area (e.g., OMR, Anna Nagar, T. Nagar, Velachery) based on your target audience and budget.</li>
+                          <li><strong>Investment:</strong> Typical setup cost ranges from ₹15–50 lakhs depending on size, location and cuisine.</li>
+                          <li><strong>Staffing:</strong> Hire experienced kitchen staff and ensure proper training in food safety and hygiene.</li>
+                          <li><strong>Local Preferences:</strong> Chennai customers value quality, consistency and good service. South Indian cuisine and fusion concepts perform well.</li>
+                        </ol>
+                        <p style={{ marginBottom: 0 }}>For detailed checklists and cost estimates, you can refer to government portals and talk to existing restaurant owners in Chennai.</p>
+                      </div>
+
+                      <button
+                        onClick={() => setShowSources(!showSources)}
+                        style={{
+                          background: '#FFFFFF',
+                          border: '1px solid #DDE2EE',
+                          borderRadius: '8px',
+                          padding: '8px 16px',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          color: '#0066FF',
+                          cursor: 'pointer',
+                          marginTop: '16px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <span>View Sources</span>
+                        <ChevronDown size={16} color="#0066FF" />
+                      </button>
+                    </div>
+
+                    {/* Community Answers Section (343735.png) */}
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#09122E', margin: 0 }}>
+                          Community Answers (8)
+                        </h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#777E90' }}>
+                            <span>Sort by:</span>
+                            <select style={{ border: '1px solid #DDE2EE', borderRadius: '8px', padding: '6px 12px', fontSize: '13px', color: '#09122E', background: '#FFF', outline: 'none' }}>
+                              <option>Most Helpful</option>
+                              <option>Latest</option>
+                            </select>
+                          </div>
+                          <button
+                            onClick={() => setIsAddingAnswer(!isAddingAnswer)}
+                            style={{
+                              background: '#EA650A',
+                              color: '#FFFFFF',
+                              border: 'none',
+                              borderRadius: '8px',
+                              padding: '10px 20px',
+                              fontSize: '14px',
+                              fontWeight: '700',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }}
+                          >
+                            <Plus size={16} color="#FFFFFF" />
+                            <span>Add Your Answer</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Community Answer Card */}
+                      <div style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E8EDF3', padding: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+                          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                            <img
+                              src="/default-avatar.png"
+                              alt="Priya Sharma"
+                              style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover' }}
+                            />
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '15px', fontWeight: '700', color: '#09122E' }}>Priya Sharma</span>
+                                <span style={{
+                                  background: '#FFF0E6',
+                                  color: '#EA650A',
+                                  fontSize: '11px',
+                                  fontWeight: '700',
+                                  padding: '2px 8px',
+                                  borderRadius: '12px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}>
+                                  <Trophy size={12} color="#EA650A" /> Top Contributor
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '12px', color: '#777E90', marginTop: '2px' }}>
+                                Restaurant Consultant • 5 years experience • 156 answers
+                              </div>
+                            </div>
+                          </div>
+                          <span style={{ fontSize: '12px', color: '#777E90' }}>3 hours ago</span>
                         </div>
 
-                        {/* Infinite Scroll Sentinel & Loading Indicator */}
-                        <div ref={observerTargetRef} style={{ marginTop: '24px', padding: '16px 0', textAlign: 'center' }}>
-                          {loadingMore && (
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', color: '#EA650A', fontWeight: '600', fontSize: '14px', background: '#FFF6F0', padding: '10px 20px', borderRadius: '30px', border: '1px solid #FFE0D0' }}>
-                              <span className="spinner" style={{ width: '18px', height: '18px', border: '2px solid #EA650A', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block' }}></span>
-                              <span>Loading more posts...</span>
-                            </div>
-                          )}
+                        <div style={{ fontSize: '14px', color: '#353945', lineHeight: '1.6', marginBottom: '16px' }}>
+                          <p style={{ margin: '0 0 8px 0' }}>I run a restaurant consulting firm in Chennai. Here are my key recommendations:</p>
+                          <ul style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <li>Get FSSAI and local corporation licenses early - this can take 4–8 weeks.</li>
+                            <li>Location is critical. For family dining, areas like Anna Nagar and Velachery work well. For younger crowd, OMR and ECR are good.</li>
+                            <li>Keep a buffer of 20–30% over your estimated budget.</li>
+                            <li>Focus on a clear concept and consistent quality rather than a very large menu.</li>
+                            <li>Build relationships with local suppliers for fresh ingredients at better rates.</li>
+                          </ul>
                         </div>
-                      </>
-                    )}
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #E8EDF3', paddingTop: '14px', fontSize: '13px', color: '#545A69' }}>
+                          <div style={{ display: 'flex', gap: '20px' }}>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#545A69', fontWeight: '600' }}>
+                              <ThumbsUp size={16} color="#545A69" /> 18
+                            </button>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#545A69', fontWeight: '600' }}>
+                              <MessageSquare size={16} color="#545A69" /> Reply
+                            </button>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#545A69', fontWeight: '600' }}>
+                              <Share2 size={16} color="#545A69" /> Share
+                            </button>
+                          </div>
+                          <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0066FF', fontWeight: '600', fontSize: '13px' }}>
+                            View 2 replies ∨
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Right Column: Widgets */}
+              {/* Right Column: 100% Dynamic Widgets */}
               {!isCreateExpanded && (
-                <div className="share-right-column" style={{ flex: '1.1', display: 'flex', flexDirection: 'column', gap: '30px', position: 'sticky', top: '100px', marginTop: '10px' }}>
-                  {/* My Interests Card */}
-                  <div className="share-sidebar-card" style={{ background: '#FFF8F4', borderRadius: '16px', border: '1px solid #FFE4D6', padding: '24px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '16px' }}>
-                      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FFEFE6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <Target size={20} color="#EA650A" />
+                <div className="share-right-column" style={{ flex: '1.1', display: 'flex', flexDirection: 'column', gap: '24px', position: 'sticky', top: '100px' }}>
+                  {!selectedQuestionDetail ? (
+                    <>
+                      {/* Main Feed Sidebar (343734.png) */}
+
+                      {/* Card 1: Your Interests */}
+                      <div className="share-sidebar-card" style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #DDE2EE', padding: '24px', textAlign: 'left' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#09122E' }}>Your Interests</h3>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingInterests([...userInterests]);
+                              setIsManageInterestsOpen(true);
+                            }}
+                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px' }}
+                            title="Settings"
+                          >
+                            <Settings size={18} color="#777E90" />
+                          </button>
                         </div>
-                        <div>
-                          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#09122E', textAlign: 'left' }}>My Interests</h3>
-                          <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#777E90', textAlign: 'left' }}>Update your interests to see and share more relevant content.</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingInterests([...userInterests]);
-                          setIsManageInterestsOpen(true);
-                        }}
-                        style={{
-                          padding: '6px 14px',
-                          borderRadius: '20px',
-                          border: '1px solid #EA650A',
-                          background: '#ffffff',
-                          color: '#EA650A',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap',
-                          transition: 'all 0.2s',
-                          flexShrink: 0
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = '#EA650A'; e.currentTarget.style.color = '#fff'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.color = '#EA650A'; }}
-                      >
-                        Manage Interests
-                      </button>
-                    </div>
 
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#353945', marginBottom: '10px', textAlign: 'left' }}>
-                      Your Interest Areas
-                    </div>
+                        <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: '#777E90' }}>
+                          Select topics to see questions that match your interests.
+                        </p>
 
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {userInterests.length === 0 ? (
-                        <span style={{ fontSize: '12px', color: '#777E90', fontStyle: 'italic', textAlign: 'left' }}>
-                          No interests selected yet. Click 'Manage Interests' to add topics.
-                        </span>
-                      ) : (
-                        <>
-                          {(interestsExpanded ? userInterests : userInterests.slice(0, 5)).map((interest, idx) => (
-                            <span
-                              key={idx}
-                              style={{
-                                padding: '6px 14px',
-                                borderRadius: '20px',
-                                background: '#FFEFE6',
-                                color: '#545A69',
-                                fontSize: '12px',
-                                fontWeight: '500',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                              }}
-                            >
-                              {interest}
-                            </span>
-                          ))}
-                          {userInterests.length > 5 && !interestsExpanded && (
-                            <span
-                              onClick={() => setInterestsExpanded(true)}
-                              style={{
-                                padding: '6px 14px',
-                                borderRadius: '20px',
-                                background: '#FFE8DB',
-                                color: '#EA650A',
-                                fontSize: '12px',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                              }}
-                            >
-                              +{userInterests.length - 5} more
-                            </span>
-                          )}
-                          {userInterests.length > 5 && interestsExpanded && (
-                            <span
-                              onClick={() => setInterestsExpanded(false)}
-                              style={{
-                                padding: '6px 14px',
-                                borderRadius: '20px',
-                                background: '#FFE8DB',
-                                color: '#EA650A',
-                                fontSize: '12px',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                              }}
-                            >
-                              Show less
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Top Sharers Card */}
-                  <div className="share-sidebar-card" style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #DDE2EE', padding: '24px' }}>
-                    <div
-                      onClick={() => setIsTopSharersExpanded(!isTopSharersExpanded)}
-                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', marginBottom: isTopSharersExpanded ? '4px' : '0' }}
-                    >
-                      <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#09122E', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>🏆</span> Top Sharers
-                      </h3>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <a href="#" onClick={(e) => e.stopPropagation()} style={{ fontSize: '12px', fontWeight: '600', color: '#EA650A', textDecoration: 'none' }}>View All</a>
-                        {isTopSharersExpanded ? <ChevronUp size={18} color="#777E90" /> : <ChevronDown size={18} color="#777E90" />}
-                      </div>
-                    </div>
-                    {isTopSharersExpanded && (
-                      <>
-                        <p style={{ margin: '10px 0 20px 0', fontSize: '11px', color: '#777E90', textAlign: 'left' }}>People making content travel on Connect.in</p>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                          {topSharers.map((sharer, idx) => {
-                            const userDetail = sharer.user?.userDetailId || {};
-                            const isBusiness = userDetail.isBusinessProfile;
-                            const fullName = isBusiness
-                              ? (userDetail.businessName || 'Business')
-                              : (userDetail.fullName || 'User');
-                            const avatar = isBusiness
-                              ? resolveImageUrl(userDetail.businessLogo)
-                              : resolveImageUrl(userDetail.profileImage);
-                            const defaultAvatar = isBusiness
-                              ? "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=200&auto=format&fit=crop"
-                              : getAvatar(userDetail.gender, userDetail.dateOfBirth || userDetail.age);
-                            const sharesCount = sharer.sharesCount || 0;
-                            const rankColors = ['#EA650A', '#FD9043', '#FFB884', '#777E90', '#777E90'];
-                            const rankBgColors = ['#FFF1E6', '#FFF6F0', '#FFFBF7', '#F4F5F6', '#F4F5F6'];
-
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+                          {(allAvailableInterests.length > 0 ? allAvailableInterests : userInterests).map((topicName) => {
+                            const isSelected = userInterests.some(i => i.toLowerCase() === topicName.toLowerCase());
+                            const icon = getTopicIcon(topicName);
                             return (
-                              <div
-                                key={sharer.user?._id || idx}
-                                onClick={() => handleUserClick(sharer.user?._id)}
+                              <button
+                                key={topicName}
+                                type="button"
+                                onClick={() => toggleInterestPill(topicName)}
                                 style={{
-                                  display: 'flex',
+                                  display: 'inline-flex',
                                   alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  gap: '12px',
-                                  minWidth: 0,
+                                  gap: '6px',
+                                  padding: '6px 14px',
+                                  borderRadius: '20px',
+                                  border: isSelected ? '1px solid #0066FF' : '1px solid #E8EDF3',
+                                  background: isSelected ? '#F0F7FF' : '#FFFFFF',
+                                  color: isSelected ? '#0066FF' : '#353945',
+                                  fontSize: '12px',
+                                  fontWeight: isSelected ? '600' : '500',
                                   cursor: 'pointer',
-                                  padding: '6px 8px',
-                                  borderRadius: '8px',
-                                  transition: 'background-color 0.2s',
+                                  transition: 'all 0.15s ease'
                                 }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f8f9fa')}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                               >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
-                                  <span style={{
-                                    width: '24px',
-                                    height: '24px',
+                                <span>{icon} {topicName}</span>
+                                {isSelected ? <Check size={14} color="#0066FF" /> : <Plus size={14} color="#777E90" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingInterests([...userInterests]);
+                            setIsManageInterestsOpen(true);
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#0066FF',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: 0
+                          }}
+                        >
+                          <span>Manage all interests</span>
+                          <span>→</span>
+                        </button>
+                      </div>
+
+                      {/* Card 2: Trending Questions */}
+                      <div className="share-sidebar-card" style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #DDE2EE', padding: '24px', textAlign: 'left' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#09122E', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <TrendingUp size={18} color="#0066FF" /> Trending Questions
+                          </h3>
+                        </div>
+
+                        {dynamicTrendingQuestions.length === 0 ? (
+                          <p style={{ fontSize: '12px', color: '#777E90', margin: 0 }}>No questions asked yet.</p>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            {dynamicTrendingQuestions.map((item, idx) => {
+                              const title = item.content || item.title || 'Untitled Question';
+                              const answersCount = item.commentsCount || (item.comments ? item.comments.length : 0);
+                              const viewsCount = item.views || item.viewsCount || (idx + 1) * 120;
+                              return (
+                                <div
+                                  key={item._id || idx}
+                                  onClick={() => handleQuestionClick(item)}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '12px',
+                                    cursor: 'pointer',
+                                    padding: '6px 4px',
+                                    borderRadius: '8px',
+                                    transition: 'background-color 0.2s'
+                                  }}
+                                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8F9FB')}
+                                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                >
+                                  <div style={{
+                                    width: '26px',
+                                    height: '26px',
                                     borderRadius: '50%',
+                                    background: '#F0F7FF',
+                                    color: '#0066FF',
+                                    fontSize: '12px',
+                                    fontWeight: '700',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    fontSize: '12px',
-                                    fontWeight: '700',
-                                    color: rankColors[idx] || '#777E90',
-                                    background: rankBgColors[idx] || '#F4F5F6',
-                                    flexShrink: 0
-                                  }}>{idx + 1}</span>
-                                  <img
-                                    src={avatar || defaultAvatar}
-                                    alt={fullName}
-                                    style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-                                    onError={(e) => { e.target.src = defaultAvatar; }}
-                                  />
-                                  <span style={{
-                                    fontSize: '13px',
-                                    fontWeight: '600',
-                                    color: '#353945',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    flex: 1,
-                                    minWidth: 0,
-                                    textAlign: 'left'
-                                  }} title={fullName}>{fullName}</span>
-                                </div>
-                                <span style={{ fontSize: '12px', fontWeight: '500', color: '#777E90', flexShrink: 0 }}>{sharesCount} Shared</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Most Shared Reels Card */}
-                  <div className="share-sidebar-card" style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #DDE2EE', padding: '24px' }}>
-                    <div
-                      onClick={() => setIsMostSharedExpanded(!isMostSharedExpanded)}
-                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', marginBottom: isMostSharedExpanded ? '4px' : '0' }}
-                    >
-                      <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#09122E', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>🔥</span> Most Shared
-                      </h3>
-                      {isMostSharedExpanded ? <ChevronUp size={18} color="#777E90" /> : <ChevronDown size={18} color="#777E90" />}
-                    </div>
-                    {isMostSharedExpanded && (
-                      <>
-                        <p style={{ margin: '10px 0 20px 0', fontSize: '11px', color: '#777E90', textAlign: 'left' }}>Top 5 Reels based on Likes and Reshares</p>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                          {mostShared.map((reel, idx) => {
-                            const title = reel.content || 'Untitled Reel';
-                            const cleanTitle = title.trim().replace(/[\r\n]+/g, ' ');
-                            const postAttachments = reel.attachments || [];
-                            const sharedAttachments = reel.sharedPostId?.attachments || [];
-                            const allAttachments = [...postAttachments, ...sharedAttachments];
-
-                            const imageAttachment = allAttachments.find(att => att.type === 'image');
-                            const videoAttachment = allAttachments.find(att => att.type === 'video');
-                            const linkPreviewImage = reel.linkPreview?.image || reel.sharedPostId?.linkPreview?.image;
-
-                            const fallbackImage = 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=120&auto=format&fit=crop&q=60';
-                            const likes = reel.likesCount || 0;
-                            const reshares = reel.reshares || reel.reshareCount || 0;
-
-                            const formatCount = (num) => {
-                              if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-                              return num;
-                            };
-
-                            const renderThumbnail = () => {
-                              if (imageAttachment) {
-                                return (
-                                  <img
-                                    src={resolveImageUrl(imageAttachment.url)}
-                                    alt={cleanTitle}
-                                    style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
-                                    onError={(e) => { e.target.src = fallbackImage; }}
-                                  />
-                                );
-                              }
-                              if (videoAttachment) {
-                                return (
-                                  <video
-                                    src={resolveImageUrl(videoAttachment.url)}
-                                    style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', background: '#000', flexShrink: 0 }}
-                                    muted
-                                    playsInline
-                                    preload="metadata"
-                                  />
-                                );
-                              }
-                              if (linkPreviewImage) {
-                                return (
-                                  <img
-                                    src={resolveImageUrl(linkPreviewImage)}
-                                    alt={cleanTitle}
-                                    style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
-                                    onError={(e) => { e.target.src = fallbackImage; }}
-                                  />
-                                );
-                              }
-                              return (
-                                <img
-                                  src={fallbackImage}
-                                  alt={cleanTitle}
-                                  style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
-                                />
-                              );
-                            };
-
-                            return (
-                              <div
-                                key={reel._id || idx}
-                                onClick={() => handleReelClick(reel)}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'flex-start',
-                                  gap: '12px',
-                                  minWidth: 0,
-                                  cursor: 'pointer',
-                                  padding: '6px 8px',
-                                  borderRadius: '8px',
-                                  transition: 'background-color 0.2s',
-                                }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f8f9fa')}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                              >
-                                {renderThumbnail()}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1', minWidth: 0, overflow: 'hidden' }}>
-                                  <span
-                                    title={cleanTitle}
-                                    style={{
-                                      fontSize: '12px',
+                                    flexShrink: 0,
+                                    marginTop: '2px'
+                                  }}>
+                                    {idx + 1}
+                                  </div>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{
+                                      fontSize: '13px',
                                       fontWeight: '600',
-                                      color: '#353945',
+                                      color: '#09122E',
+                                      lineHeight: '1.35',
+                                      marginBottom: '4px',
                                       display: '-webkit-box',
                                       WebkitLineClamp: 2,
                                       WebkitBoxOrient: 'vertical',
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis',
-                                      wordBreak: 'break-word',
-                                      lineHeight: '1.35',
-                                      textAlign: 'left'
+                                      overflow: 'hidden'
+                                    }} title={title}>
+                                      {title}
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: '#777E90' }}>
+                                      {answersCount} answers • {viewsCount} views
+                                    </div>
+                                  </div>
+                                  <ChevronRight size={16} color="#777E90" style={{ flexShrink: 0, marginTop: '4px' }} />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Card 3: Top Contributors */}
+                      <div className="share-sidebar-card" style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #DDE2EE', padding: '24px', textAlign: 'left' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#09122E', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Trophy size={18} color="#EA650A" /> Top Contributors
+                          </h3>
+                        </div>
+
+                        {topSharers.length === 0 ? (
+                          <p style={{ fontSize: '12px', color: '#777E90', margin: 0 }}>No contributors yet.</p>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            {topSharers.map((sharer) => {
+                              const userObj = sharer.user || {};
+                              const userDetail = userObj.userDetailId || {};
+                              const isBusiness = userDetail.isBusinessProfile;
+                              const fullName = isBusiness
+                                ? (userDetail.businessName || 'Business User')
+                                : (userDetail.fullName || 'User');
+                              const avatar = isBusiness
+                                ? resolveImageUrl(userDetail.businessLogo)
+                                : resolveImageUrl(userDetail.profileImage);
+                              const defaultAvatar = getAvatar(userDetail.gender, userDetail.dateOfBirth);
+                              const targetUserId = userObj._id || sharer._id;
+                              const isFollowing = followedUsers[targetUserId];
+
+                              return (
+                                <div key={targetUserId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                                  <div
+                                    onClick={() => handleUserClick(targetUserId)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1, cursor: 'pointer' }}
+                                  >
+                                    <img
+                                      src={avatar || defaultAvatar}
+                                      alt={fullName}
+                                      style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                                      onError={(e) => { e.target.src = defaultAvatar; }}
+                                    />
+                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                      <div style={{ fontSize: '13px', fontWeight: '700', color: '#09122E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {fullName}
+                                      </div>
+                                      <div style={{ fontSize: '11px', color: '#777E90', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {sharer.sharesCount} questions asked
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleConnectUser(targetUserId)}
+                                    style={{
+                                      border: '1px solid #0066FF',
+                                      background: isFollowing ? '#0066FF' : '#ffffff',
+                                      color: isFollowing ? '#ffffff' : '#0066FF',
+                                      borderRadius: '8px',
+                                      padding: '6px 14px',
+                                      fontSize: '12px',
+                                      fontWeight: '600',
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s',
+                                      flexShrink: 0
                                     }}
                                   >
-                                    {cleanTitle}
-                                  </span>
-                                  <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: '#777E90' }}>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                      <span>👍</span> {formatCount(likes)}
-                                    </span>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                      <Share2 size={12} color="#777E90" /> {formatCount(reshares)}
+                                    {isFollowing ? 'Following' : 'Follow'}
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Single Question View Sidebar (343735.png) */}
+
+                      {/* Card 1: About the Person */}
+                      <div className="share-sidebar-card" style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #DDE2EE', padding: '24px', textAlign: 'left' }}>
+                        <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '700', color: '#09122E' }}>About the Person</h3>
+
+                        {(() => {
+                          const author = selectedQuestionDetail.userId || {};
+                          const authorDetail = author.userDetailId || {};
+                          const authorName = authorDetail.isBusinessProfile
+                            ? (authorDetail.businessName || 'Business User')
+                            : (authorDetail.fullName || 'User');
+                          const authorAvatar = authorDetail.isBusinessProfile
+                            ? resolveImageUrl(authorDetail.businessLogo)
+                            : resolveImageUrl(authorDetail.profileImage);
+                          const defaultAvatar = getAvatar(authorDetail.gender, authorDetail.dateOfBirth);
+                          const authorHeadline = authorDetail.position || authorDetail.businessCategory || 'Connect Member';
+                          const authorCity = authorDetail.city || selectedQuestionDetail.targetSegments?.cityLocation || '';
+                          const authorId = author._id;
+                          const isConnected = followedUsers[authorId];
+
+                          const likesCount = selectedQuestionDetail.reactions?.length || selectedQuestionDetail.likesCount || 12;
+                          const answersCount = selectedQuestionDetail.commentsCount || (selectedQuestionDetail.comments ? selectedQuestionDetail.comments.length : 8);
+                          const viewsCount = selectedQuestionDetail.views || selectedQuestionDetail.viewsCount || 320;
+                          const timeAgo = formatTimeAgo(selectedQuestionDetail.createdAt);
+
+                          return (
+                            <>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '20px' }}>
+                                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', minWidth: 0, flex: 1 }}>
+                                  <img
+                                    src={authorAvatar || defaultAvatar}
+                                    alt={authorName}
+                                    style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                                    onError={(e) => { e.target.src = defaultAvatar; }}
+                                  />
+                                  <div style={{ minWidth: 0, flex: 1 }}>
+                                    <div style={{ fontSize: '15px', fontWeight: '700', color: '#09122E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      {authorName}
+                                    </div>
+                                    <div style={{ fontSize: '12px', color: '#545A69', margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      {authorHeadline}
+                                    </div>
+                                    {authorCity && (
+                                      <div style={{ fontSize: '12px', color: '#777E90', marginBottom: '6px' }}>
+                                        {authorCity}
+                                      </div>
+                                    )}
+                                    <span
+                                      role="button"
+                                      tabIndex={0}
+                                      onClick={(e) => { e.preventDefault(); handleUserClick(authorId); }}
+                                      onKeyDown={(e) => { if (e.key === 'Enter') handleUserClick(authorId); }}
+                                      style={{ fontSize: '12px', fontWeight: '600', color: '#0066FF', cursor: 'pointer' }}
+                                    >
+                                      View Profile
                                     </span>
                                   </div>
                                 </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleConnectUser(authorId)}
+                                  style={{
+                                    border: '1px solid #0066FF',
+                                    background: isConnected ? '#0066FF' : '#ffffff',
+                                    color: isConnected ? '#ffffff' : '#0066FF',
+                                    borderRadius: '8px',
+                                    padding: '6px 14px',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    flexShrink: 0
+                                  }}
+                                >
+                                  {isConnected ? 'Connected' : 'Connect'}
+                                </button>
                               </div>
-                            );
-                          })}
+
+                              <div style={{ borderTop: '1px solid #E8EDF3', paddingTop: '16px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', textAlign: 'center' }}>
+                                <div>
+                                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#09122E' }}>{likesCount}</div>
+                                  <div style={{ fontSize: '11px', color: '#777E90' }}>Likes</div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#09122E' }}>{answersCount}</div>
+                                  <div style={{ fontSize: '11px', color: '#777E90' }}>Answers</div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#09122E' }}>{viewsCount}</div>
+                                  <div style={{ fontSize: '11px', color: '#777E90' }}>Views</div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#09122E' }}>{timeAgo}</div>
+                                  <div style={{ fontSize: '11px', color: '#777E90' }}>Asked</div>
+                                </div>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Card 2: Related Questions */}
+                      <div className="share-sidebar-card" style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #DDE2EE', padding: '24px', textAlign: 'left' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#09122E' }}>Related Questions</h3>
                         </div>
-                      </>
-                    )}
-                  </div>
+
+                        {dynamicRelatedQuestions.length === 0 ? (
+                          <p style={{ fontSize: '12px', color: '#777E90', margin: 0 }}>No other questions found.</p>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            {dynamicRelatedQuestions.map((item, idx) => {
+                              const title = item.content || item.title || 'Untitled Question';
+                              const answersCount = item.commentsCount || (item.comments ? item.comments.length : 0);
+                              const viewsCount = item.views || item.viewsCount || 100;
+                              return (
+                                <div
+                                  key={item._id || idx}
+                                  onClick={() => handleQuestionClick(item)}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    justify: 'space-between',
+                                    gap: '12px',
+                                    cursor: 'pointer',
+                                    padding: '4px 0'
+                                  }}
+                                >
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{
+                                      fontSize: '13px',
+                                      fontWeight: '600',
+                                      color: '#0066FF',
+                                      lineHeight: '1.35',
+                                      marginBottom: '4px',
+                                      display: '-webkit-box',
+                                      WebkitLineClamp: 2,
+                                      WebkitBoxOrient: 'vertical',
+                                      overflow: 'hidden'
+                                    }}>
+                                      {title}
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: '#777E90' }}>
+                                      {answersCount} answers • {viewsCount} views
+                                    </div>
+                                  </div>
+                                  <ChevronRight size={16} color="#777E90" style={{ flexShrink: 0, marginTop: '4px' }} />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Card 3: Top Contributors */}
+                      <div className="share-sidebar-card" style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #DDE2EE', padding: '24px', textAlign: 'left' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#09122E' }}>Top Contributors</h3>
+                        </div>
+
+                        {topSharers.length === 0 ? (
+                          <p style={{ fontSize: '12px', color: '#777E90', margin: 0 }}>No contributors yet.</p>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            {topSharers.map((sharer) => {
+                              const userObj = sharer.user || {};
+                              const userDetail = userObj.userDetailId || {};
+                              const isBusiness = userDetail.isBusinessProfile;
+                              const fullName = isBusiness
+                                ? (userDetail.businessName || 'Business User')
+                                : (userDetail.fullName || 'User');
+                              const avatar = isBusiness
+                                ? resolveImageUrl(userDetail.businessLogo)
+                                : resolveImageUrl(userDetail.profileImage);
+                              const defaultAvatar = getAvatar(userDetail.gender, userDetail.dateOfBirth);
+                              const targetUserId = userObj._id || sharer._id;
+                              const isConnected = followedUsers[targetUserId];
+
+                              return (
+                                <div key={targetUserId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                                  <div
+                                    onClick={() => handleUserClick(targetUserId)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1, cursor: 'pointer' }}
+                                  >
+                                    <img
+                                      src={avatar || defaultAvatar}
+                                      alt={fullName}
+                                      style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                                      onError={(e) => { e.target.src = defaultAvatar; }}
+                                    />
+                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                      <div style={{ fontSize: '13px', fontWeight: '700', color: '#09122E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {fullName}
+                                      </div>
+                                      <div style={{ fontSize: '11px', color: '#777E90', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {sharer.sharesCount} questions asked
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleConnectUser(targetUserId)}
+                                    style={{
+                                      border: '1px solid #0066FF',
+                                      background: isConnected ? '#0066FF' : '#ffffff',
+                                      color: isConnected ? '#ffffff' : '#0066FF',
+                                      borderRadius: '8px',
+                                      padding: '6px 14px',
+                                      fontSize: '12px',
+                                      fontWeight: '600',
+                                      cursor: 'pointer',
+                                      flexShrink: 0
+                                    }}
+                                  >
+                                    {isConnected ? 'Connected' : 'Connect'}
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
           </div>
         </div>
       </div>
-      {showOfferPopup && popupOffer && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          backgroundColor: "rgba(0,0,0,0.6)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          zIndex: 9999,
-          backdropFilter: "blur(5px)"
-        }}>
-          <div style={{
-            backgroundColor: "#fff",
-            borderRadius: "16px",
-            width: "90%",
-            maxWidth: "450px",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
-            padding: "24px",
-            position: "relative",
-            animation: "slideUp 0.3s ease-out",
-            overflow: "hidden"
-          }}>
-            <button
-              onClick={() => setShowOfferPopup(false)}
-              style={{
-                position: "absolute",
-                top: "12px",
-                right: "12px",
-                background: "rgba(0,0,0,0.05)",
-                border: "none",
-                borderRadius: "50%",
-                width: "30px",
-                height: "30px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "18px",
-                color: "#666",
-                transition: "background 0.2s"
-              }}
-            >
-              <X size={18} />
-            </button>
-
-            {popupOffer.offer_image ? (
-              <div style={{
-                width: "100%",
-                borderRadius: "12px",
-                overflow: "hidden",
-                marginBottom: "16px",
-                backgroundColor: "#f5f5f5",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}>
-                <img
-                  src={resolveImageUrl(popupOffer.offer_image)}
-                  alt={popupOffer.name}
-                  style={{
-                    width: "100%",
-                    height: "auto",
-                    maxHeight: "350px",
-                    objectFit: "contain"
-                  }}
-                />
-              </div>
-            ) : popupOffer.logo_image ? (
-              <div style={{
-                width: "100%",
-                height: "150px",
-                borderRadius: "12px",
-                overflow: "hidden",
-                marginBottom: "16px",
-                backgroundColor: "#fff8f5",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "1px solid #ffe0d0"
-              }}>
-                <img
-                  src={resolveImageUrl(popupOffer.logo_image)}
-                  alt={popupOffer.name}
-                  style={{
-                    maxWidth: "120px",
-                    maxHeight: "120px",
-                    objectFit: "contain"
-                  }}
-                />
-              </div>
-            ) : null}
-
-            <h3 style={{
-              fontSize: "20px",
-              fontWeight: "700",
-              color: "#333",
-              margin: "0 0 8px 0",
-              textAlign: "center"
-            }}>{popupOffer.name}</h3>
-
-            {popupOffer.description && (
-              <p style={{
-                fontSize: "14px",
-                color: "#666",
-                margin: "0 0 16px 0",
-                textAlign: "center",
-                lineHeight: "1.4"
-              }}>{popupOffer.description}</p>
-            )}
-
-            {popupOffer.features && popupOffer.features.length > 0 && (
-              <div style={{
-                backgroundColor: "#f9f9f9",
-                borderRadius: "12px",
-                padding: "16px",
-                marginBottom: "20px",
-                maxHeight: "150px",
-                overflowY: "auto"
-              }}>
-                <h4 style={{
-                  fontSize: "13px",
-                  fontWeight: "600",
-                  color: "#ea650a",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.5px",
-                  margin: "0 0 8px 0"
-                }}>Key Features</h4>
-                <ul style={{
-                  margin: 0,
-                  paddingLeft: "20px",
-                  fontSize: "13px",
-                  color: "#444",
-                  lineHeight: "1.6"
-                }}>
-                  {popupOffer.features.map((feature, i) => (
-                    <li key={i} style={{ marginBottom: "4px" }}>{feature}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div style={{
-              display: "flex",
-              gap: "12px",
-              marginTop: "20px"
-            }}>
-              <button
-                onClick={() => setShowOfferPopup(false)}
-                style={{
-                  flex: 1,
-                  padding: "12px",
-                  borderRadius: "8px",
-                  border: "1px solid #ccc",
-                  backgroundColor: "#fff",
-                  color: "#666",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  transition: "background 0.2s"
-                }}
-              >
-                Dismiss
-              </button>
-
-              <a
-                href={popupOffer.url || "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => {
-                  handlePopupCheckNow(popupOffer._id);
-                  setShowOfferPopup(false);
-                }}
-                style={{
-                  flex: 2,
-                  padding: "12px",
-                  borderRadius: "8px",
-                  border: "none",
-                  backgroundColor: "#ea650a",
-                  color: "#fff",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  textAlign: "center",
-                  textDecoration: "none",
-                  boxShadow: "0 4px 12px rgba(234, 101, 10, 0.25)",
-                  transition: "all 0.2s"
-                }}
-              >
-                Check Now
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Manage Interests Modal */}
-      {isManageInterestsOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(9, 18, 46, 0.6)',
-          backdropFilter: 'blur(4px)',
-          zIndex: 10000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px'
-        }}>
-          <div style={{
-            background: '#ffffff',
-            borderRadius: '20px',
-            maxWidth: '540px',
-            width: '100%',
-            maxHeight: '85vh',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '24px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-            position: 'relative'
-          }}>
-            {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#FFEFE6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Target size={18} color="#EA650A" />
-                </div>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#09122E' }}>Manage Your Interests</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsManageInterestsOpen(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <X size={20} color="#777E90" />
-              </button>
-            </div>
-
-            <p style={{ fontSize: '13px', color: '#777E90', marginBottom: '20px', textAlign: 'left', lineHeight: '1.4' }}>
-              Select topics you are interested in. Your feed will automatically optimize and display content matching your choices.
-            </p>
-
-            {/* Interest Options Container */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '24px', overflowY: 'auto', maxHeight: '320px', padding: '4px' }}>
-              {allAvailableInterests.length === 0 ? (
-                <span style={{ fontSize: '13px', color: '#777E90', fontStyle: 'italic', padding: '10px 0' }}>
-                  No available interests found in system.
-                </span>
-              ) : (
-                allAvailableInterests.map((item, idx) => {
-                  const isSelected = editingInterests.includes(item);
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        if (isSelected) {
-                          setEditingInterests(editingInterests.filter(i => i !== item));
-                        } else {
-                          setEditingInterests([...editingInterests, item]);
-                        }
-                      }}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '24px',
-                        border: isSelected ? '1px solid #EA650A' : '1px solid #E5E7EB',
-                        background: isSelected ? '#EA650A' : '#F9FAFB',
-                        color: isSelected ? '#ffffff' : '#374151',
-                        fontSize: '13px',
-                        fontWeight: isSelected ? '600' : '500',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      {item}
-                      {isSelected && <span style={{ fontSize: '14px', lineHeight: 1 }}>✓</span>}
-                    </button>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Footer Actions */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F3F4F6', paddingTop: '16px' }}>
-              <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: '500' }}>
-                {editingInterests.length} selected
-              </span>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button
-                  type="button"
-                  onClick={() => setIsManageInterestsOpen(false)}
-                  style={{
-                    padding: '10px 20px',
-                    borderRadius: '8px',
-                    border: '1px solid #D1D5DB',
-                    background: '#fff',
-                    color: '#374151',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={savingInterests}
-                  onClick={handleSaveInterests}
-                  style={{
-                    padding: '10px 24px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: '#EA650A',
-                    color: '#fff',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: savingInterests ? 'not-allowed' : 'pointer',
-                    opacity: savingInterests ? 0.7 : 1
-                  }}
-                >
-                  {savingInterests ? 'Saving...' : 'Save Interests'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       <Footer />
     </>
   );
