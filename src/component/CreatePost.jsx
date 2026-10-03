@@ -36,6 +36,7 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
 
   const [previewUrls, setPreviewUrls] = useState([]);
   const fileInputRef = useRef(null);
+  const audienceDetailsRef = useRef(null);
 
   useEffect(() => {
     const urls = attachments.map(file => URL.createObjectURL(file));
@@ -423,6 +424,11 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
                 onClick={() => {
                   setSelectedAudienceCard('custom');
                   setIsAudienceDetailsOpen(true);
+                  setTimeout(() => {
+                    if (audienceDetailsRef.current) {
+                      audienceDetailsRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                  }, 100);
                 }}
                 style={{
                   border: selectedAudienceCard === 'custom' ? '1.5px solid #EA650A' : '1px solid #E8EDF3',
@@ -460,205 +466,210 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
             </div>
           </div>
 
-          {/* Accordion: Audience Details (Optional) */}
-          <div style={{
-            borderRadius: '12px',
-            border: '1px solid #FFE4D6',
-            background: '#FFF8F4',
-            overflow: 'hidden',
-            marginBottom: '24px'
-          }}>
+          {/* Accordion: Audience Details (Displayed ONLY when Choose an Audience is selected) */}
+          {selectedAudienceCard === 'custom' && (
             <div
-              onClick={() => setIsAudienceDetailsOpen(!isAudienceDetailsOpen)}
+              ref={audienceDetailsRef}
               style={{
-                padding: '14px 18px',
-                display: 'flex',
-                justify: 'space-between',
-                alignItems: 'center',
-                cursor: 'pointer',
-                userSelect: 'none'
+                borderRadius: '12px',
+                border: '1px solid #FFE4D6',
+                background: '#FFF8F4',
+                overflow: 'hidden',
+                marginBottom: '24px'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '15px', fontWeight: '700', color: '#09122E' }}>Audience Details</span>
-                <span style={{ fontSize: '15px', color: '#545A69', fontWeight: '400' }}>(Optional)</span>
+              <div
+                onClick={() => setIsAudienceDetailsOpen(!isAudienceDetailsOpen)}
+                style={{
+                  padding: '14px 18px',
+                  display: 'flex',
+                  justify: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  userSelect: 'none'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '15px', fontWeight: '700', color: '#09122E' }}>Audience Details</span>
+                  <span style={{ fontSize: '15px', color: '#545A69', fontWeight: '400' }}>(Optional)</span>
+                </div>
+                {isAudienceDetailsOpen ? <ChevronUp size={20} color="#EA650A" /> : <ChevronDown size={20} color="#EA650A" />}
               </div>
-              {isAudienceDetailsOpen ? <ChevronUp size={20} color="#EA650A" /> : <ChevronDown size={20} color="#EA650A" />}
-            </div>
 
-            {isAudienceDetailsOpen && (
-              <div style={{ padding: '0 18px 18px 18px', background: '#FFFFFF', borderTop: '1px solid #FFE4D6' }}>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                  gap: '16px',
-                  marginTop: '16px',
-                  textAlign: 'left'
-                }}>
-                  {/* Interests */}
-                  <div>
-                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#09122E', marginBottom: '6px', display: 'block' }}>
-                      Interests
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                        <Tag size={16} color="#777E90" />
-                      </div>
-                      <select
-                        value={targetInterests.length > 0 ? targetInterests[0] : ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val) setTargetInterests([val]);
-                          else setTargetInterests([]);
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '10px 36px 10px 36px',
-                          borderRadius: '8px',
-                          border: '1px solid #DDE2EE',
-                          background: '#FFFFFF',
-                          fontSize: '13px',
-                          color: targetInterests.length > 0 ? '#09122E' : '#777E90',
-                          outline: 'none',
-                          cursor: 'pointer',
-                          appearance: 'none'
-                        }}
-                      >
-                        <option value="">Select interests</option>
-                        {interestsList.map(item => (
-                          <option key={item._id || item.name} value={item.name}>{item.name}</option>
-                        ))}
-                      </select>
-                      <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                        <ChevronDown size={16} color="#777E90" />
+              {isAudienceDetailsOpen && (
+                <div style={{ padding: '0 18px 18px 18px', background: '#FFFFFF', borderTop: '1px solid #FFE4D6' }}>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '16px',
+                    marginTop: '16px',
+                    textAlign: 'left'
+                  }}>
+                    {/* Interests */}
+                    <div>
+                      <label style={{ fontSize: '13px', fontWeight: '700', color: '#09122E', marginBottom: '6px', display: 'block' }}>
+                        Interests
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                          <Tag size={16} color="#777E90" />
+                        </div>
+                        <select
+                          value={targetInterests.length > 0 ? targetInterests[0] : ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val) setTargetInterests([val]);
+                            else setTargetInterests([]);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '10px 36px 10px 36px',
+                            borderRadius: '8px',
+                            border: '1px solid #DDE2EE',
+                            background: '#FFFFFF',
+                            fontSize: '13px',
+                            color: targetInterests.length > 0 ? '#09122E' : '#777E90',
+                            outline: 'none',
+                            cursor: 'pointer',
+                            appearance: 'none'
+                          }}
+                        >
+                          <option value="">Select interests</option>
+                          {interestsList.map(item => (
+                            <option key={item._id || item.name} value={item.name}>{item.name}</option>
+                          ))}
+                        </select>
+                        <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                          <ChevronDown size={16} color="#777E90" />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Industries */}
-                  <div>
-                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#09122E', marginBottom: '6px', display: 'block' }}>
-                      Industries
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                        <Building2 size={16} color="#777E90" />
-                      </div>
-                      <select
-                        value={targetIndustries.length > 0 ? targetIndustries[0] : ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val) setTargetIndustries([val]);
-                          else setTargetIndustries([]);
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '10px 36px 10px 36px',
-                          borderRadius: '8px',
-                          border: '1px solid #DDE2EE',
-                          background: '#FFFFFF',
-                          fontSize: '13px',
-                          color: targetIndustries.length > 0 ? '#09122E' : '#777E90',
-                          outline: 'none',
-                          cursor: 'pointer',
-                          appearance: 'none'
-                        }}
-                      >
-                        <option value="">Select industries</option>
-                        {industriesList.map(ind => (
-                          <option key={ind._id || ind.name} value={ind.name}>{ind.name}</option>
-                        ))}
-                      </select>
-                      <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                        <ChevronDown size={16} color="#777E90" />
+                    {/* Industries */}
+                    <div>
+                      <label style={{ fontSize: '13px', fontWeight: '700', color: '#09122E', marginBottom: '6px', display: 'block' }}>
+                        Industries
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                          <Building2 size={16} color="#777E90" />
+                        </div>
+                        <select
+                          value={targetIndustries.length > 0 ? targetIndustries[0] : ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val) setTargetIndustries([val]);
+                            else setTargetIndustries([]);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '10px 36px 10px 36px',
+                            borderRadius: '8px',
+                            border: '1px solid #DDE2EE',
+                            background: '#FFFFFF',
+                            fontSize: '13px',
+                            color: targetIndustries.length > 0 ? '#09122E' : '#777E90',
+                            outline: 'none',
+                            cursor: 'pointer',
+                            appearance: 'none'
+                          }}
+                        >
+                          <option value="">Select industries</option>
+                          {industriesList.map(ind => (
+                            <option key={ind._id || ind.name} value={ind.name}>{ind.name}</option>
+                          ))}
+                        </select>
+                        <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                          <ChevronDown size={16} color="#777E90" />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Age Group */}
-                  <div>
-                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#09122E', marginBottom: '6px', display: 'block' }}>
-                      Age Group
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                        <Users size={16} color="#777E90" />
-                      </div>
-                      <select
-                        value={targetAgeGroups.length > 0 ? targetAgeGroups[0] : ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val) setTargetAgeGroups([val]);
-                          else setTargetAgeGroups([]);
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '10px 36px 10px 36px',
-                          borderRadius: '8px',
-                          border: '1px solid #DDE2EE',
-                          background: '#FFFFFF',
-                          fontSize: '13px',
-                          color: targetAgeGroups.length > 0 ? '#09122E' : '#777E90',
-                          outline: 'none',
-                          cursor: 'pointer',
-                          appearance: 'none'
-                        }}
-                      >
-                        <option value="">Select age group</option>
-                        {['20-25', '26-35', '36-50', '51-65', '65+'].map(bracket => (
-                          <option key={bracket} value={bracket}>{bracket}</option>
-                        ))}
-                      </select>
-                      <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                        <ChevronDown size={16} color="#777E90" />
+                    {/* Age Group */}
+                    <div>
+                      <label style={{ fontSize: '13px', fontWeight: '700', color: '#09122E', marginBottom: '6px', display: 'block' }}>
+                        Age Group
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                          <Users size={16} color="#777E90" />
+                        </div>
+                        <select
+                          value={targetAgeGroups.length > 0 ? targetAgeGroups[0] : ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val) setTargetAgeGroups([val]);
+                            else setTargetAgeGroups([]);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '10px 36px 10px 36px',
+                            borderRadius: '8px',
+                            border: '1px solid #DDE2EE',
+                            background: '#FFFFFF',
+                            fontSize: '13px',
+                            color: targetAgeGroups.length > 0 ? '#09122E' : '#777E90',
+                            outline: 'none',
+                            cursor: 'pointer',
+                            appearance: 'none'
+                          }}
+                        >
+                          <option value="">Select age group</option>
+                          {['20-25', '26-35', '36-50', '51-65', '65+'].map(bracket => (
+                            <option key={bracket} value={bracket}>{bracket}</option>
+                          ))}
+                        </select>
+                        <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                          <ChevronDown size={16} color="#777E90" />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Location */}
-                  <div>
-                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#09122E', marginBottom: '6px', display: 'block' }}>
-                      Location
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                        <MapPin size={16} color="#777E90" />
-                      </div>
-                      <select
-                        value={targetCityLocation}
-                        onChange={(e) => {
-                          setTargetCityLocation(e.target.value);
-                          if (e.target.value) setTargetCity(true);
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '10px 36px 10px 36px',
-                          borderRadius: '8px',
-                          border: '1px solid #DDE2EE',
-                          background: '#FFFFFF',
-                          fontSize: '13px',
-                          color: targetCityLocation ? '#09122E' : '#777E90',
-                          outline: 'none',
-                          cursor: 'pointer',
-                          appearance: 'none'
-                        }}
-                      >
-                        <option value="">Select city</option>
-                        {citiesList.map(city => (
-                          <option key={city._id || city.name || city} value={typeof city === 'string' ? city : city.name}>
-                            {typeof city === 'string' ? city : city.name}
-                          </option>
-                        ))}
-                      </select>
-                      <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                        <ChevronDown size={16} color="#777E90" />
+                    {/* Location */}
+                    <div>
+                      <label style={{ fontSize: '13px', fontWeight: '700', color: '#09122E', marginBottom: '6px', display: 'block' }}>
+                        Location
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                          <MapPin size={16} color="#777E90" />
+                        </div>
+                        <select
+                          value={targetCityLocation}
+                          onChange={(e) => {
+                            setTargetCityLocation(e.target.value);
+                            if (e.target.value) setTargetCity(true);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '10px 36px 10px 36px',
+                            borderRadius: '8px',
+                            border: '1px solid #DDE2EE',
+                            background: '#FFFFFF',
+                            fontSize: '13px',
+                            color: targetCityLocation ? '#09122E' : '#777E90',
+                            outline: 'none',
+                            cursor: 'pointer',
+                            appearance: 'none'
+                          }}
+                        >
+                          <option value="">Select city</option>
+                          {citiesList.map(city => (
+                            <option key={city._id || city.name || city} value={typeof city === 'string' ? city : city.name}>
+                              {typeof city === 'string' ? city : city.name}
+                            </option>
+                          ))}
+                        </select>
+                        <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                          <ChevronDown size={16} color="#777E90" />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Attachments preview */}
           {attachments.length > 0 && previewUrls.length > 0 && (
