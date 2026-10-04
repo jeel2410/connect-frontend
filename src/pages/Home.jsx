@@ -43,6 +43,7 @@ export default function Home() {
   const [businessCategories, setBusinessCategories] = useState([]);
   const [selectedBusinessCategory, setSelectedBusinessCategory] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [aiMatchesOnly, setAiMatchesOnly] = useState(false);
   const [filters, setFilters] = useState({
     ageMin: null,
     ageMax: null,
@@ -167,6 +168,9 @@ export default function Home() {
       queryParams.append("limit", PAGE_LIMIT.toString());
       if (currentSeed) {
         queryParams.append("seed", currentSeed);
+      }
+      if (aiMatchesOnly) {
+        queryParams.append("aiMatches", "true");
       }
 
       if (activeTab === "Businesses") {
@@ -488,7 +492,7 @@ export default function Home() {
 
     fetchUserProfileAndFeed();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, isSearchActive, searchQuery, activeTab, selectedBusinessCategory, verifiedOnly]);
+  }, [filters, isSearchActive, searchQuery, activeTab, selectedBusinessCategory, verifiedOnly, aiMatchesOnly]);
 
   // Debounced search
   useEffect(() => {
@@ -657,6 +661,23 @@ export default function Home() {
             </div>
           </div>
           <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "nowrap", justifyContent: "flex-end", minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+              <input
+                type="checkbox"
+                id="aiMatchesOnly"
+                checked={aiMatchesOnly}
+                onChange={(e) => {
+                  setAiMatchesOnly(e.target.checked);
+                  setFeedData([]);
+                  setPage(1);
+                  setHasMore(true);
+                }}
+                style={{ width: "18px", height: "18px", accentColor: "#EA650A", cursor: "pointer" }}
+              />
+              <label htmlFor="aiMatchesOnly" style={{ fontSize: "14px", fontWeight: "600", color: "#4b5563", cursor: "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "4px" }}>
+                <span>✨ AI Matches</span>
+              </label>
+            </div>
             {activeTab === "Businesses" && (
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
                 <input
