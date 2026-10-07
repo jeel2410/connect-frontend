@@ -7,7 +7,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
     { id: "users", label: "Users", icon: Users },
     { id: "businesses", label: "Businesses", icon: Building2 },
     { id: "business-categories", label: "Business Categories", icon: Tags },
-    { id: "post-approvals", label: "Post Approvals", icon: ShieldAlert },
+    { id: "post-approvals", label: "Ask Approvals", icon: ShieldAlert },
     { id: "shared-posts", label: "Shared Posts", icon: Newspaper },
     { id: "traffic-sources", label: "Traffic Sources", icon: BarChart3 },
     { id: "skills", label: "Skills", icon: Briefcase },

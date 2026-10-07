@@ -183,7 +183,7 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
 
       const data = await response.json();
       if (data.success) {
-        toast.success('Question asked successfully');
+        toast.success(data.message || 'Question asked successfully');
         handleCancel();
         if (onPostCreated) onPostCreated(data.data);
       } else {

@@ -28,6 +28,15 @@ const Share = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [searchQuery, setSearchQuery] = useState('');
   const [aiHelpful, setAiHelpful] = useState(null);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Dynamic Interest Block States
   const [userInterests, setUserInterests] = useState([]);
@@ -370,7 +379,9 @@ const Share = () => {
                 {isCreateExpanded && (
                   <CreatePost
                     onPostCreated={(newPost) => {
-                      setPosts([newPost, ...posts]);
+                      if (newPost && newPost.isApproved !== false) {
+                        setPosts((prevPosts) => [newPost, ...prevPosts]);
+                      }
                       setIsCreateExpanded(false);
                     }}
                     isExpanded={isCreateExpanded}
@@ -429,56 +440,109 @@ const Share = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      gap: '16px',
-                      flexWrap: 'wrap'
+                      gap: '12px',
+                      flexWrap: 'wrap',
+                      width: '100%'
                     }}>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        {[
-                          { id: 'all', label: 'All Questions' },
-                          { id: 'my', label: 'My Questions' },
-                          { id: 'connections', label: 'From Connections' },
-                          { id: 'unanswered', label: 'Unanswered' }
-                        ].map((tab) => (
-                          <button
-                            key={tab.id}
-                            type="button"
-                            onClick={() => setActiveTab(tab.id)}
+                      {isMobile ? (
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', width: '100%' }}>
+                          <select
+                            value={activeTab}
+                            onChange={(e) => setActiveTab(e.target.value)}
                             style={{
-                              padding: '8px 20px',
-                              borderRadius: '20px',
-                              border: 'none',
-                              background: activeTab === tab.id ? '#FF4D00' : '#FFFFFF',
-                              color: activeTab === tab.id ? '#FFFFFF' : '#545A69',
+                              flex: 1,
+                              minWidth: 0,
+                              padding: '10px 12px',
+                              borderRadius: '10px',
+                              border: '1px solid #E8EDF3',
+                              background: '#FFFFFF',
                               fontSize: '13px',
+                              color: '#09122E',
                               fontWeight: '600',
+                              outline: 'none',
                               cursor: 'pointer',
-                              boxShadow: activeTab === tab.id ? '0 2px 8px rgba(255, 77, 0, 0.25)' : 'none',
-                              transition: 'all 0.15s ease'
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                             }}
                           >
-                            {tab.label}
-                          </button>
-                        ))}
-                      </div>
+                            <option value="all">All Questions</option>
+                            <option value="my">My Questions</option>
+                            <option value="connections">From Connections</option>
+                            <option value="unanswered">Unanswered</option>
+                          </select>
 
-                      <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        style={{
-                          padding: '8px 16px',
-                          borderRadius: '10px',
-                          border: '1px solid #E8EDF3',
-                          background: '#FFFFFF',
-                          fontSize: '13px',
-                          color: '#545A69',
-                          fontWeight: '600',
-                          outline: 'none',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <option value="newest">Latest</option>
-                        <option value="popularity">Most Popular</option>
-                      </select>
+                          <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                              padding: '10px 12px',
+                              borderRadius: '10px',
+                              border: '1px solid #E8EDF3',
+                              background: '#FFFFFF',
+                              fontSize: '13px',
+                              color: '#09122E',
+                              fontWeight: '600',
+                              outline: 'none',
+                              cursor: 'pointer',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                            }}
+                          >
+                            <option value="newest">Latest</option>
+                            <option value="popularity">Most Popular</option>
+                          </select>
+                        </div>
+                      ) : (
+                        <>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            {[
+                              { id: 'all', label: 'All Questions' },
+                              { id: 'my', label: 'My Questions' },
+                              { id: 'connections', label: 'From Connections' },
+                              { id: 'unanswered', label: 'Unanswered' }
+                            ].map((tab) => (
+                              <button
+                                key={tab.id}
+                                type="button"
+                                onClick={() => setActiveTab(tab.id)}
+                                style={{
+                                  padding: '8px 20px',
+                                  borderRadius: '20px',
+                                  border: 'none',
+                                  background: activeTab === tab.id ? '#FF4D00' : '#FFFFFF',
+                                  color: activeTab === tab.id ? '#FFFFFF' : '#545A69',
+                                  fontSize: '13px',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                  boxShadow: activeTab === tab.id ? '0 2px 8px rgba(255, 77, 0, 0.25)' : 'none',
+                                  transition: 'all 0.15s ease'
+                                }}
+                              >
+                                {tab.label}
+                              </button>
+                            ))}
+                          </div>
+
+                          <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            style={{
+                              padding: '8px 16px',
+                              borderRadius: '10px',
+                              border: '1px solid #E8EDF3',
+                              background: '#FFFFFF',
+                              fontSize: '13px',
+                              color: '#545A69',
+                              fontWeight: '600',
+                              outline: 'none',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <option value="newest">Latest</option>
+                            <option value="popularity">Most Popular</option>
+                          </select>
+                        </>
+                      )}
                     </div>
 
                     {/* Search Bar matching image 343734.png */}

@@ -7,6 +7,20 @@ import { toast } from 'react-toastify';
 const isObjectIdStr = (str) => typeof str === 'string' && /^[0-9a-fA-F]{24}$/.test(str.trim());
 const cleanStr = (val, fallback = '') => (!val || typeof val !== 'string' || isObjectIdStr(val)) ? fallback : val.trim();
 
+const renderFormattedText = (text) => {
+  if (!text) return text;
+  const parts = text.split(/(\*\*[^\*\n]+?\*\*|\*[^\*\n]+?\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+      return <em key={index}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+};
+
 const QuestionDetailView = ({
   selectedQuestionDetail,
   onLikePost,
@@ -326,17 +340,17 @@ const QuestionDetailView = ({
 
               return (
                 <>
-                  {intro && <p style={{ marginTop: 0 }}>{intro}</p>}
+                  {intro && <p style={{ marginTop: 0 }}>{renderFormattedText(intro)}</p>}
                   {listItems.length > 0 ? (
                     <ol style={{ paddingLeft: '20px', margin: '12px 0 0 0' }}>
                       {listItems.map((item, idx) => (
                         <li key={idx} style={{ marginBottom: '10px' }}>
-                          {item.replace(/^\d+\.\s*/, '')}
+                          {renderFormattedText(item.replace(/^\d+\.\s*/, ''))}
                         </li>
                       ))}
                     </ol>
                   ) : (
-                    <p style={{ marginTop: 0, whiteSpace: 'pre-line' }}>{aiText}</p>
+                    <p style={{ marginTop: 0, whiteSpace: 'pre-line' }}>{renderFormattedText(aiText)}</p>
                   )}
                 </>
               );

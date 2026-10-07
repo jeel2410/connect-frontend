@@ -38,7 +38,7 @@ const Admin = () => {
               {activeTab === "users" && "User Management"}
               {activeTab === "businesses" && "Business Management"}
               {activeTab === "business-categories" && "Business Category Management"}
-              {activeTab === "post-approvals" && "Post Approvals"}
+              {activeTab === "post-approvals" && "Ask Approvals"}
               {activeTab === "shared-posts" && "Shared Post Management"}
               {activeTab === "skills" && "Skill Management"}
               {activeTab === "habits" && "Hobby Management"}
@@ -60,7 +60,7 @@ const Admin = () => {
               {activeTab === "users" && "View and manage all users"}
               {activeTab === "businesses" && "View and manage registered businesses"}
               {activeTab === "business-categories" && "Add, deactivate, or delete business categories"}
-              {activeTab === "post-approvals" && "Review and approve/reject newly shared posts or links"}
+              {activeTab === "post-approvals" && "Review and approve/reject newly submitted questions"}
               {activeTab === "shared-posts" && "View, disable, or permanently delete live shared posts"}
               {activeTab === "skills" && "Add, edit, and delete skills"}
               {activeTab === "habits" && "Add, edit, and delete hobbies"}
