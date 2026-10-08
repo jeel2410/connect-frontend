@@ -1784,12 +1784,12 @@ export const deleteAllInquiries = async () => {
 };
 
 // Broadcast Offer Email API
-export const broadcastOfferEmail = async ({ title, description }) => {
+export const broadcastOfferEmail = async ({ title, description, days = 'all' }) => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/admin/notifications/broadcast-offer`, {
       method: "POST",
       headers: getAuthHeaders(),
-      body: JSON.stringify({ title, description }),
+      body: JSON.stringify({ title, description, days }),
     });
     if (!response.ok) {
       const errorData = await response.json();
@@ -1997,6 +1997,52 @@ export const sendTargetedEmailBroadcast = async (data) => {
     return await response.json();
   } catch (error) {
     console.error("Error sending targeted email broadcast:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get count of users with unverified email addresses filtered by registration duration
+ * @param {string} days - Duration ('7', '15', '30', '45', 'all')
+ */
+export const getVerificationEmailUserCount = async (days = 'all') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/notifications/broadcast-verification-email-count?days=${days}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch verification email user count");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching verification email user count:", error);
+    throw error;
+  }
+};
+
+/**
+ * Send verification email broadcast
+ * @param {Object} data - { days }
+ */
+export const sendVerificationEmailBroadcast = async (data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/notifications/broadcast-verification-email`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to send verification email broadcast");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending verification email broadcast:", error);
     throw error;
   }
 };
@@ -2548,6 +2594,27 @@ export const sendTestTargetedEmail = async (data) => {
     return await response.json();
   } catch (error) {
     console.error("Error sending test targeted email:", error);
+    throw error;
+  }
+};
+
+export const sendTestVerificationEmail = async (data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/notifications/test-verification-email`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to send test verification email");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending test verification email:", error);
     throw error;
   }
 };

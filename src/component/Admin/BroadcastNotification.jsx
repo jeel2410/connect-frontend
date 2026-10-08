@@ -10,6 +10,9 @@ import {
   getTargetedEmailUserCount,
   sendTargetedEmailBroadcast,
   sendTestTargetedEmail,
+  getVerificationEmailUserCount,
+  sendVerificationEmailBroadcast,
+  sendTestVerificationEmail,
   sendTestOfferEmail,
   sendTestGeneralSms,
   sendTestIncompleteSms
@@ -258,7 +261,9 @@ function PushSection() {
 // ─── Offer Email Section ─────────────────────────────────────────────────────
 
 function OfferEmailSection() {
-  const [formData, setFormData] = useState({ title: "", description: "" });
+  const [formData, setFormData] = useState({ days: "all", title: "", description: "" });
+  const [userCount, setUserCount] = useState(0);
+  const [loadingCount, setLoadingCount] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
@@ -301,19 +306,42 @@ function OfferEmailSection() {
     }
   };
 
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        setLoadingCount(true);
+        const response = await getTargetedEmailUserCount(formData.days);
+        if (response.success) {
+          setUserCount(response.data.count);
+        }
+      } catch (err) {
+        console.error("Error fetching offer email user count:", err);
+      } finally {
+        setLoadingCount(false);
+      }
+    };
+    fetchCount();
+  }, [formData.days]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title.trim()) return setError("Please enter an offer title");
     if (!formData.description.trim()) return setError("Please enter the offer description");
+    if (userCount === 0) return setError("No users match the selected criteria");
+
     try {
       setSubmitting(true);
       setError(null);
       setSuccessMsg(null);
-      const response = await broadcastOfferEmail({ title: formData.title.trim(), description: formData.description.trim() });
+      const response = await broadcastOfferEmail({
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        days: formData.days
+      });
       if (response.success) {
         const { sent = 0, skipped = 0 } = response.data || {};
         setSuccessMsg(`Offer email sent to ${sent} user${sent !== 1 ? "s" : ""}${skipped > 0 ? ` (${skipped} skipped — no email on file)` : ""}.`);
-        setFormData({ title: "", description: "" });
+        setFormData({ ...formData, title: "", description: "" });
         setTimeout(() => setSuccessMsg(null), 8000);
       } else {
         setError(response.message || "Failed to send offer email");
@@ -333,7 +361,7 @@ function OfferEmailSection() {
         </div>
         <div>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#09122E", fontFamily: "Basier Square, sans-serif" }}>Broadcast Offer Email</h3>
-          <p style={{ margin: 0, fontSize: 13, color: "#777E90" }}>Send a promotional offer email to all users who have registered an email address</p>
+          <p style={{ margin: 0, fontSize: 13, color: "#777E90" }}>Send a promotional offer email to users based on registration date</p>
         </div>
       </div>
 
@@ -342,6 +370,36 @@ function OfferEmailSection() {
       <StatusBanner error={error} success={successMsg} />
 
       <form onSubmit={handleSubmit}>
+        <div style={{ display: "flex", gap: 20, marginBottom: 20 }}>
+          <div className="form-groups" style={{ flex: 1, marginBottom: 0 }}>
+            <label>Registration Duration</label>
+            <select
+              className="form-input"
+              value={formData.days}
+              onChange={(e) => setFormData({ ...formData, days: e.target.value })}
+              disabled={submitting}
+            >
+              <option value="7">Registered in last 7 days</option>
+              <option value="15">Registered in last 15 days</option>
+              <option value="30">Registered in last 30 days</option>
+              <option value="45">Registered in last 45 days</option>
+              <option value="all">All Users</option>
+            </select>
+          </div>
+          
+          <div style={{ flex: 1, background: "#F8FAFC", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, border: "1px solid #E2E8F0" }}>
+            <div style={{ background: "#fff", width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
+              <Users size={16} style={{ color: "#64748B" }} />
+            </div>
+            <div>
+              <p style={{ margin: 0, fontSize: 11, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 600 }}>Target Users</p>
+              <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#0F172A" }}>
+                {loadingCount ? "..." : userCount}
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="form-groups">
           <label>Offer Title / Subject <span style={{ color: "#EC7523" }}>*</span></label>
           <input
@@ -367,8 +425,8 @@ function OfferEmailSection() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <button type="submit" className="btn-primary" disabled={submitting} style={{ background: "#3B82F6" }}
-            onMouseEnter={e => { if (!submitting) e.currentTarget.style.background = "#2563EB"; }}
+          <button type="submit" className="btn-primary" disabled={submitting || userCount === 0} style={{ background: "#3B82F6" }}
+            onMouseEnter={e => { if (!submitting && userCount > 0) e.currentTarget.style.background = "#2563EB"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "#3B82F6"; }}>
             <Mail size={15} />
             {submitting ? "Sending Emails..." : "Send Offer Email"}
@@ -1108,6 +1166,190 @@ function TargetedEmailSection() {
   );
 }
 
+// ─── Verification Email Section ──────────────────────────────────────────────
+
+function VerificationEmailSection() {
+  const [days, setDays] = useState("all");
+  const [userCount, setUserCount] = useState(0);
+  const [loadingCount, setLoadingCount] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null);
+
+  // Test Mail states
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
+  const [sendingTest, setSendingTest] = useState(false);
+  const [testFeedback, setTestFeedback] = useState({ type: "", message: "" });
+
+  const handleOpenTestModal = () => {
+    setTestEmail(getDefaultTestEmail());
+    setTestFeedback({ type: "", message: "" });
+    setShowTestModal(true);
+  };
+
+  const handleSendTestMail = async (e) => {
+    e.preventDefault();
+    if (!testEmail.trim()) return;
+    try {
+      setSendingTest(true);
+      setTestFeedback({ type: "", message: "" });
+      const response = await sendTestVerificationEmail({
+        email: testEmail.trim()
+      });
+      if (response.success) {
+        setTestFeedback({ type: "success", message: "Test verification email sent successfully to " + testEmail });
+        setTimeout(() => setShowTestModal(false), 2000);
+      } else {
+        setTestFeedback({ type: "error", message: response.message || "Failed to send test verification email" });
+      }
+    } catch (err) {
+      setTestFeedback({ type: "error", message: err.message || "Failed to send test verification email" });
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        setLoadingCount(true);
+        const response = await getVerificationEmailUserCount(days);
+        if (response.success) {
+          setUserCount(response.data.count);
+        }
+      } catch (err) {
+        console.error("Error fetching verification email user count:", err);
+      } finally {
+        setLoadingCount(false);
+      }
+    };
+    fetchCount();
+  }, [days]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (userCount === 0) return setError("No unverified users match the selected criteria");
+
+    try {
+      setSubmitting(true);
+      setError(null);
+      setSuccessMsg(null);
+      const response = await sendVerificationEmailBroadcast({ days });
+      if (response.success) {
+        setSuccessMsg(`Verification email broadcast initiated to ${response.data.sent} users!`);
+        setTimeout(() => setSuccessMsg(null), 8000);
+      } else {
+        setError(response.message || "Failed to send verification email broadcast");
+      }
+    } catch (err) {
+      setError(err.message || "Failed to send verification email broadcast. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={{ background: "#fff", border: "1px solid #E4E6EB", borderRadius: 14, padding: "28px 32px", marginBottom: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Mail size={18} style={{ color: "#EC7523" }} />
+        </div>
+        <div>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#09122E", fontFamily: "Basier Square, sans-serif" }}>Verification Email Broadcast</h3>
+          <p style={{ margin: 0, fontSize: 13, color: "#777E90" }}>Send email verification links to unverified users based on registration date</p>
+        </div>
+      </div>
+
+      <div style={{ height: 1, background: "#E4E6EB", margin: "20px 0" }} />
+
+      <StatusBanner error={error} success={successMsg} />
+
+      <form onSubmit={handleSubmit}>
+        <div style={{ display: "flex", gap: 20, marginBottom: 20 }}>
+          <div className="form-groups" style={{ flex: 1, marginBottom: 0 }}>
+            <label>Registration Duration</label>
+            <select
+              className="form-input"
+              value={days}
+              onChange={(e) => setDays(e.target.value)}
+              disabled={submitting}
+            >
+              <option value="7">Registered in last 7 days</option>
+              <option value="15">Registered in last 15 days</option>
+              <option value="30">Registered in last 30 days</option>
+              <option value="45">Registered in last 45 days</option>
+              <option value="all">All Users</option>
+            </select>
+          </div>
+          
+          <div style={{ flex: 1, background: "#F8FAFC", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, border: "1px solid #E2E8F0" }}>
+            <div style={{ background: "#fff", width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
+              <Users size={16} style={{ color: "#64748B" }} />
+            </div>
+            <div>
+              <p style={{ margin: 0, fontSize: 11, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 600 }}>Unverified Target Users</p>
+              <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#0F172A" }}>
+                {loadingCount ? "..." : userCount}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <button type="submit" className="btn-primary" disabled={submitting || userCount === 0} style={{ background: "#EC7523" }}
+            onMouseEnter={e => { if (!submitting && userCount > 0) e.currentTarget.style.background = "#d45a09"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#EC7523"; }}>
+            <Send size={15} />
+            {submitting ? "Sending Verification Emails..." : "Send Verification Email"}
+          </button>
+
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleOpenTestModal}
+            disabled={submitting}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 18px",
+              borderRadius: 8,
+              border: "1px solid #EC7523",
+              background: "#FFF7ED",
+              color: "#EC7523",
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#FFEDD5"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#FFF7ED"; }}
+          >
+            <Mail size={15} />
+            Test Mail
+          </button>
+        </div>
+      </form>
+
+      <TestModal
+        isOpen={showTestModal}
+        onClose={() => setShowTestModal(false)}
+        title="Send Test Verification Mail"
+        label="Test Email Address"
+        placeholder="e.g. admin@connect.in"
+        value={testEmail}
+        onChange={setTestEmail}
+        onSubmit={handleSendTestMail}
+        loading={sendingTest}
+        feedback={testFeedback}
+        icon={Mail}
+        buttonText="Send Test Verification Email"
+      />
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function BroadcastNotification() {
@@ -1120,6 +1362,7 @@ export default function BroadcastNotification() {
       </div>
 
       <div style={{ maxWidth: 720 }}>
+        <VerificationEmailSection />
         <TargetedEmailSection />
         <GeneralSmsSection />
         <IncompleteProfileSmsSection />
