@@ -440,7 +440,8 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                         <th>Date</th>
                         <th style={{ textAlign: "right" }}>New Signups</th>
                         <th style={{ textAlign: "right" }}>Completed</th>
-                        <th style={{ textAlign: "right" }}>%</th>
+                        <th style={{ textAlign: "right" }}>Completion %</th>
+                        <th style={{ textAlign: "right" }}>Verified Emails</th>
                       </tr>
                     ) : (
                       <tr>
@@ -475,6 +476,9 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                             </td>
                             <td className="trend-td-count" style={{ color: currentTheme.main, fontWeight: "700", textAlign: "right" }}>
                               {(row.percentage || 0)}%
+                            </td>
+                            <td className="trend-td-count" style={{ color: "#2563EB", fontWeight: "700", textAlign: "right" }}>
+                              {(row.completedVerified || 0).toLocaleString()} ({(row.verifiedEmailPercentage || 0)}%)
                             </td>
                           </>
                         ) : (

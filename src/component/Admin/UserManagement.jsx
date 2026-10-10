@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Search, Mail, Phone, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
-import { getUsers, toggleUserStatus, deleteUser } from "../../utils/adminApi";
+import { Search, Mail, Phone, ChevronLeft, ChevronRight, SlidersHorizontal, X, Upload, AlertCircle, CheckCircle, FileText } from "lucide-react";
+import { getUsers, toggleUserStatus, deleteUser, unverifyBouncedEmails } from "../../utils/adminApi";
 import API_BASE_URL from "../../utils/config";
 import { getCookie } from "../../utils/auth";
 import { toast } from "react-toastify";
@@ -29,6 +29,75 @@ const UserManagement = () => {
   const [industries, setIndustries] = useState([]);
   const [interests, setInterests] = useState([]);
   const religions = ["Hinduism", "Islam", "Christianity", "Sikhism", "Buddhism", "Jainism"];
+
+  // Bounced / Unsubscribed CSV upload state
+  const [showBounceModal, setShowBounceModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [parsedEmails, setParsedEmails] = useState([]);
+  const [submittingBounce, setSubmittingBounce] = useState(false);
+  const [bounceFeedback, setBounceFeedback] = useState(null);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setSelectedFile(file);
+    setBounceFeedback(null);
+    try {
+      const rawText = await file.text();
+      // Remove null bytes and non-printable binary bytes
+      const cleanText = rawText.replace(/\0/g, '');
+
+      // Match valid email addresses strictly using regex
+      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi;
+      const matches = cleanText.match(emailRegex) || [];
+
+      const extracted = matches
+        .map(email => email.trim().toLowerCase())
+        .filter(email => email && !email.startsWith('email@') && email !== 'email');
+
+      const uniqueEmails = Array.from(new Set(extracted));
+      setParsedEmails(uniqueEmails);
+
+      if (uniqueEmails.length === 0) {
+        setBounceFeedback({ 
+          type: "error", 
+          message: "No valid email addresses found in the selected file. If using ODS/XLSX, please save or export as CSV." 
+        });
+      }
+    } catch (err) {
+      console.error("Error reading file:", err);
+      setBounceFeedback({ type: "error", message: "Failed to read file. Please select a valid file." });
+    }
+  };
+
+  const handleUnverifySubmit = async (e) => {
+    e.preventDefault();
+    if (parsedEmails.length === 0) {
+      setBounceFeedback({ type: "error", message: "No valid email addresses found in the selected CSV file." });
+      return;
+    }
+
+    try {
+      setSubmittingBounce(true);
+      setBounceFeedback(null);
+      const res = await unverifyBouncedEmails(parsedEmails);
+      if (res.success) {
+        toast.success(res.message || `Marked ${res.data?.updatedCount || 0} user(s) as unverified`);
+        setBounceFeedback({
+          type: "success",
+          message: res.message || `Successfully marked ${res.data?.updatedCount || 0} user email(s) as unverified!`
+        });
+        setSelectedFile(null);
+        setParsedEmails([]);
+      } else {
+        setBounceFeedback({ type: "error", message: res.message || "Failed to unverify emails." });
+      }
+    } catch (err) {
+      setBounceFeedback({ type: "error", message: err.message || "Failed to process bounced emails." });
+    } finally {
+      setSubmittingBounce(false);
+    }
+  };
 
   // Fetch filter options (cities, industries, interests)
   useEffect(() => {
@@ -201,6 +270,32 @@ const UserManagement = () => {
           >
             <SlidersHorizontal size={16} />
             <span>Advanced Filters</span>
+          </button>
+
+          <button 
+            className="add-btn"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              backgroundColor: "#DC2626",
+              color: "#ffffff",
+              border: "none",
+              padding: "9px 16px",
+              borderRadius: "8px",
+              fontWeight: 600,
+              fontSize: "13px",
+              cursor: "pointer"
+            }}
+            onClick={() => {
+              setShowBounceModal(true);
+              setSelectedFile(null);
+              setParsedEmails([]);
+              setBounceFeedback(null);
+            }}
+          >
+            <Upload size={16} />
+            <span>Upload Bounced CSV</span>
           </button>
         </div>
       </div>
@@ -469,6 +564,154 @@ const UserManagement = () => {
           </button>
         </div>
       </div>
+
+      {/* Modal for Uploading Bounced / Unsubscribed CSV */}
+      {showBounceModal && (
+        <div style={{
+          position: "fixed",
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: "rgba(9, 18, 46, 0.6)",
+          backdropFilter: "blur(4px)",
+          zIndex: 10000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "20px"
+        }}>
+          <div style={{
+            background: "#ffffff",
+            borderRadius: "16px",
+            maxWidth: "520px",
+            width: "100%",
+            padding: "28px",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+            position: "relative"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ width: "38px", height: "38px", borderRadius: "10px", background: "#FEF2F2", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Upload size={20} style={{ color: "#DC2626" }} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "700", color: "#09122E" }}>Upload Bounced / Unsubscribed CSV</h3>
+                  <p style={{ margin: 0, fontSize: "12px", color: "#64748B" }}>Mark bounced email addresses as unverified to protect domain reputation</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBounceModal(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: "4px" }}
+              >
+                <X size={20} color="#64748B" />
+              </button>
+            </div>
+
+            {bounceFeedback && (
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "10px 14px",
+                background: bounceFeedback.type === "success" ? "#F0FDF4" : "#FEF2F2",
+                border: bounceFeedback.type === "success" ? "1px solid #BBF7D0" : "1px solid #FECACA",
+                borderRadius: 8,
+                color: bounceFeedback.type === "success" ? "#166534" : "#DC2626",
+                marginBottom: 16,
+                fontSize: 13
+              }}>
+                {bounceFeedback.type === "success" ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+                {bounceFeedback.message}
+              </div>
+            )}
+
+            <form onSubmit={handleUnverifySubmit}>
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ fontSize: "13px", fontWeight: "600", color: "#353945", marginBottom: "8px", display: "block" }}>
+                  Select CSV File (1 column with email IDs) <span style={{ color: "#EC7523" }}>*</span>
+                </label>
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={handleFileChange}
+                  disabled={submittingBounce}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    border: "1px dashed #CBD5E1",
+                    borderRadius: "8px",
+                    background: "#F8FAFC",
+                    fontSize: "13px",
+                    cursor: "pointer"
+                  }}
+                />
+              </div>
+
+              {selectedFile && (
+                <div style={{
+                  background: "#F1F5F9",
+                  borderRadius: "8px",
+                  padding: "12px 16px",
+                  marginBottom: "20px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between"
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <FileText size={18} color="#475569" />
+                    <div>
+                      <p style={{ margin: 0, fontSize: "13px", fontWeight: 600, color: "#1E293B" }}>{selectedFile.name}</p>
+                      <p style={{ margin: 0, fontSize: "11px", color: "#64748B" }}>
+                        {parsedEmails.length} unique email address{parsedEmails.length !== 1 ? "es" : ""} loaded
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowBounceModal(false)}
+                  disabled={submittingBounce}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                    border: "1px solid #DDE2EE",
+                    background: "#fff",
+                    color: "#4B5563",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: "pointer"
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingBounce || parsedEmails.length === 0}
+                  style={{
+                    padding: "8px 20px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: parsedEmails.length === 0 ? "#94A3B8" : "#DC2626",
+                    color: "#fff",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: (submittingBounce || parsedEmails.length === 0) ? "not-allowed" : "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    opacity: submittingBounce ? 0.7 : 1
+                  }}
+                >
+                  <Upload size={14} />
+                  {submittingBounce ? "Processing..." : `Unverify ${parsedEmails.length} Email(s)`}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

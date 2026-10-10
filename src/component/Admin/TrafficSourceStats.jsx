@@ -140,13 +140,14 @@ const TrafficSourceStats = () => {
               <th>Registered Users</th>
               <th>Completed Profiles</th>
               <th>Completion Rate</th>
+              <th>Verified Emails</th>
               <th>Percentage of Total</th>
             </tr>
           </thead>
           <tbody>
             {stats.length === 0 ? (
               <tr>
-                <td colSpan="5" className="empty-state">
+                <td colSpan="6" className="empty-state">
                   No traffic sources found.
                 </td>
               </tr>
@@ -192,6 +193,11 @@ const TrafficSourceStats = () => {
                     <td>
                       <span style={{ fontWeight: 600, color: "#065F46" }}>
                         {completionRate}%
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ fontWeight: 600, color: "#2563EB" }}>
+                        {(item.verifiedCount || 0).toLocaleString()} ({item.verifiedRate || 0}%)
                       </span>
                     </td>
                     <td>

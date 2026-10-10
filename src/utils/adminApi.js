@@ -94,6 +94,36 @@ export const toggleUserStatus = async (userId) => {
   }
 };
 
+export const unverifyBouncedEmails = async (emails) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/users/unverify-bounced-emails`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ emails }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized: Please login again");
+      }
+      if (response.status === 403) {
+        throw new Error("Access denied: Admin only");
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to process bounced emails");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error unverifying bounced emails:", error);
+    throw error;
+  }
+};
+
 export const approveBusiness = async (businessId) => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/admin/businesses/${businessId}/approve`, {
