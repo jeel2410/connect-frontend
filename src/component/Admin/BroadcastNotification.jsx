@@ -178,6 +178,150 @@ const TestModal = ({ isOpen, onClose, title, label, placeholder, value, onChange
   );
 };
 
+const PasscodeModal = ({ isOpen, onClose, onConfirm, actionTitle = "Broadcast Mailer" }) => {
+  const [passcode, setPasscode] = useState("");
+  const [error, setError] = useState("");
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (passcode.trim() === "5533") {
+      setError("");
+      setPasscode("");
+      onConfirm();
+      onClose();
+    } else {
+      setError("Incorrect security passcode! Enter '5533' to proceed.");
+    }
+  };
+
+  const handleClose = () => {
+    setPasscode("");
+    setError("");
+    onClose();
+  };
+
+  return (
+    <div style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(9, 18, 46, 0.6)",
+      backdropFilter: "blur(4px)",
+      zIndex: 10000,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "20px"
+    }}>
+      <div style={{
+        background: "#ffffff",
+        borderRadius: "16px",
+        maxWidth: "420px",
+        width: "100%",
+        padding: "24px",
+        boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+        position: "relative"
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "#FEF2F2", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <AlertCircle size={18} style={{ color: "#DC2626" }} />
+            </div>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "700", color: "#09122E", fontFamily: "Basier Square, sans-serif" }}>Confirm Security Passcode</h3>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", borderRadius: "50%" }}
+          >
+            <X size={18} color="#777E90" />
+          </button>
+        </div>
+
+        <p style={{ fontSize: "13px", color: "#4B5563", marginBottom: "16px", lineHeight: "1.5" }}>
+          To prevent accidental sending, please enter the security passcode to authorize <strong>{actionTitle}</strong>.
+        </p>
+
+        {error && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "10px 14px",
+            background: "#FEF2F2",
+            border: "1px solid #FECACA",
+            borderRadius: 8,
+            color: "#DC2626",
+            marginBottom: 16,
+            fontSize: 13
+          }}>
+            <AlertCircle size={16} />
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-groups" style={{ marginBottom: "20px" }}>
+            <label style={{ fontSize: "13px", fontWeight: "600", color: "#353945", marginBottom: "6px", display: "block" }}>
+              Security Passcode <span style={{ color: "#EC7523" }}>*</span>
+            </label>
+            <input
+              type="password"
+              className="form-input"
+              value={passcode}
+              onChange={(e) => { setPasscode(e.target.value); setError(""); }}
+              placeholder="Enter passcode (5533)"
+              required
+              autoFocus
+            />
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+            <button
+              type="button"
+              onClick={handleClose}
+              style={{
+                padding: "8px 16px",
+                borderRadius: "8px",
+                border: "1px solid #DDE2EE",
+                background: "#fff",
+                color: "#4B5563",
+                fontSize: "13px",
+                fontWeight: "600",
+                cursor: "pointer"
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              style={{
+                padding: "8px 20px",
+                borderRadius: "8px",
+                border: "none",
+                background: "#DC2626",
+                color: "#fff",
+                fontSize: "13px",
+                fontWeight: "600",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px"
+              }}
+            >
+              Confirm & Send
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // ─── Push Notification Section ───────────────────────────────────────────────
 
 function PushSection() {
@@ -185,11 +329,16 @@ function PushSection() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+  const [showPasscodeModal, setShowPasscodeModal] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.title.trim()) return setError("Please enter a notification title");
     if (!formData.description.trim()) return setError("Please enter a notification description");
+    setShowPasscodeModal(true);
+  };
+
+  const executeSend = async () => {
     try {
       setSubmitting(true);
       setError(null);
@@ -254,6 +403,13 @@ function PushSection() {
           {submitting ? "Sending..." : "Send Push Notification"}
         </button>
       </form>
+
+      <PasscodeModal
+        isOpen={showPasscodeModal}
+        onClose={() => setShowPasscodeModal(false)}
+        onConfirm={executeSend}
+        actionTitle="Push Notification Broadcast"
+      />
     </div>
   );
 }
@@ -323,12 +479,17 @@ function OfferEmailSection() {
     fetchCount();
   }, [formData.days]);
 
-  const handleSubmit = async (e) => {
+  const [showPasscodeModal, setShowPasscodeModal] = useState(false);
+
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.title.trim()) return setError("Please enter an offer title");
     if (!formData.description.trim()) return setError("Please enter the offer description");
     if (userCount === 0) return setError("No users match the selected criteria");
+    setShowPasscodeModal(true);
+  };
 
+  const executeSend = async () => {
     try {
       setSubmitting(true);
       setError(null);
@@ -474,6 +635,13 @@ function OfferEmailSection() {
         icon={Mail}
         buttonText="Send Test Email"
       />
+
+      <PasscodeModal
+        isOpen={showPasscodeModal}
+        onClose={() => setShowPasscodeModal(false)}
+        onConfirm={executeSend}
+        actionTitle="Broadcast Offer Email"
+      />
     </div>
   );
 }
@@ -571,10 +739,15 @@ function IncompleteProfileSmsSection() {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const [showPasscodeModal, setShowPasscodeModal] = useState(false);
+
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (userCount === 0) return setError("No users match the selected criteria");
+    setShowPasscodeModal(true);
+  };
 
+  const executeSend = async () => {
     try {
       setSubmitting(true);
       setError(null);
@@ -714,6 +887,13 @@ function IncompleteProfileSmsSection() {
         icon={MessageSquare}
         buttonText="Send Test SMS"
       />
+
+      <PasscodeModal
+        isOpen={showPasscodeModal}
+        onClose={() => setShowPasscodeModal(false)}
+        onConfirm={executeSend}
+        actionTitle="Incomplete Profile SMS Broadcast"
+      />
     </div>
   );
 }
@@ -784,13 +964,18 @@ function GeneralSmsSection() {
     fetchCount();
   }, [formData.days]);
 
-  const handleSubmit = async (e) => {
+  const [showPasscodeModal, setShowPasscodeModal] = useState(false);
+
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.message.trim() && !formData.templateId.trim()) {
       return setError("Please enter either an SMS message or a Template ID");
     }
     if (userCount === 0) return setError("No users match the selected criteria");
+    setShowPasscodeModal(true);
+  };
 
+  const executeSend = async () => {
     try {
       setSubmitting(true);
       setError(null);
@@ -939,6 +1124,13 @@ function GeneralSmsSection() {
         icon={MessageSquare}
         buttonText="Send Test SMS"
       />
+
+      <PasscodeModal
+        isOpen={showPasscodeModal}
+        onClose={() => setShowPasscodeModal(false)}
+        onConfirm={executeSend}
+        actionTitle="General SMS Broadcast"
+      />
     </div>
   );
 }
@@ -1008,12 +1200,17 @@ function TargetedEmailSection() {
     fetchCount();
   }, [formData.days]);
 
-  const handleSubmit = async (e) => {
+  const [showPasscodeModal, setShowPasscodeModal] = useState(false);
+
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.subject.trim()) return setError("Please enter a subject");
     if (!formData.htmlContent.trim()) return setError("Please enter HTML content");
     if (userCount === 0) return setError("No users match the selected criteria");
+    setShowPasscodeModal(true);
+  };
 
+  const executeSend = async () => {
     try {
       setSubmitting(true);
       setError(null);
@@ -1162,6 +1359,13 @@ function TargetedEmailSection() {
         icon={Mail}
         buttonText="Send Test Email"
       />
+
+      <PasscodeModal
+        isOpen={showPasscodeModal}
+        onClose={() => setShowPasscodeModal(false)}
+        onConfirm={executeSend}
+        actionTitle="Targeted Email Broadcast"
+      />
     </div>
   );
 }
@@ -1227,10 +1431,15 @@ function VerificationEmailSection() {
     fetchCount();
   }, [days]);
 
-  const handleSubmit = async (e) => {
+  const [showPasscodeModal, setShowPasscodeModal] = useState(false);
+
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (userCount === 0) return setError("No unverified users match the selected criteria");
+    setShowPasscodeModal(true);
+  };
 
+  const executeSend = async () => {
     try {
       setSubmitting(true);
       setError(null);
@@ -1345,6 +1554,13 @@ function VerificationEmailSection() {
         feedback={testFeedback}
         icon={Mail}
         buttonText="Send Test Verification Email"
+      />
+
+      <PasscodeModal
+        isOpen={showPasscodeModal}
+        onClose={() => setShowPasscodeModal(false)}
+        onConfirm={executeSend}
+        actionTitle="Verification Email Broadcast"
       />
     </div>
   );

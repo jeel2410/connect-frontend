@@ -3,7 +3,7 @@ import { getCookie } from "../utils/auth";
 import API_BASE_URL from "../utils/config";
 import { resolveImageUrl } from "../utils/avatarHelper";
 
-export default function OfferCard({ searchQuery = "" }) {
+export default function OfferCard({ searchQuery = "", selectedCategory = "all" }) {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -17,10 +17,13 @@ export default function OfferCard({ searchQuery = "" }) {
         setError("");
         const token = getCookie("authToken");
         
-        // Build query string with search parameter if provided
+        // Build query string with search and category parameters if provided
         const queryParams = new URLSearchParams();
         if (searchQuery && searchQuery.trim()) {
           queryParams.append("search", searchQuery.trim());
+        }
+        if (selectedCategory && selectedCategory !== "all") {
+          queryParams.append("category", selectedCategory);
         }
         
         const url = `${API_BASE_URL}/api/list/cards${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
@@ -54,7 +57,7 @@ export default function OfferCard({ searchQuery = "" }) {
     };
 
     fetchCards();
-  }, [searchQuery]);
+  }, [searchQuery, selectedCategory]);
 
   // Map card data to display format
   const mapCardToOffer = (card) => {

@@ -391,6 +391,14 @@ const CardManagement = () => {
       return;
     }
 
+    const passcode = window.prompt("Security Passcode Required: Enter passcode to authorize sending this broadcast mailer (5533):");
+    if (passcode !== "5533") {
+      if (passcode !== null) {
+        alert("Incorrect passcode! Broadcast cancelled.");
+      }
+      return;
+    }
+
     setSendingBroadcast(true);
     try {
       if (broadcastScope === "all") {
@@ -419,6 +427,14 @@ const CardManagement = () => {
     const confirmMessage = `Are you sure you want to send the eligibility SMS to the ${activeCount} user(s) who clicked "${selectedCardForClicks?.name}" in the selected timeframe?`;
 
     if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    const passcode = window.prompt("Security Passcode Required: Enter passcode to authorize sending this SMS broadcast (5533):");
+    if (passcode !== "5533") {
+      if (passcode !== null) {
+        alert("Incorrect passcode! Broadcast cancelled.");
+      }
       return;
     }
 

@@ -1,12 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import creditcardicon from "../../src/assets/image/credit.png";
 import OfferCard from "../component/OfferCard";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
 import Sidebar from "../component/Sidebar";
+import { getCookie } from "../utils/auth";
+import API_BASE_URL from "../utils/config";
 
 const Offer = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const token = getCookie("authToken");
+        const res = await fetch(`${API_BASE_URL}/api/list/offer-categories`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        if (data.success && data.data && data.data.categories) {
+          setCategories(data.data.categories);
+        }
+      } catch (err) {
+        console.error("Error fetching offer categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
@@ -31,13 +55,28 @@ const Offer = () => {
                 <input
                   type="text"
                   className="offers-page-select"
-                  placeholder="Search credit cards..."
+                  placeholder="Search offers..."
                   value={searchQuery}
                   onChange={handleSearchChange}
                 />
               </div>
+
+              <div className="offers-page-category-dropdown">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="offers-category-select"
+                >
+                  <option value="all">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <OfferCard searchQuery={searchQuery}></OfferCard>
+            <OfferCard searchQuery={searchQuery} selectedCategory={selectedCategory}></OfferCard>
           </div>
         </div>
       </div>

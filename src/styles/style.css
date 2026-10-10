@@ -5390,6 +5390,29 @@ body {
   cursor: pointer;
 }
 
+.offers-page-category-dropdown {
+  display: flex;
+  align-items: center;
+  border: 1px solid #E8EDF3;
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: white;
+  min-width: 200px;
+}
+
+.offers-category-select {
+  border: none;
+  outline: none;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  color: #09122E;
+  opacity: 0.8;
+  width: 100%;
+  background: transparent;
+  cursor: pointer;
+}
+
 .offers-page-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
