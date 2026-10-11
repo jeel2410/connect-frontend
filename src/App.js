@@ -23,6 +23,7 @@ import TermsOfUse from "./pages/TermsOfUse";
 import AboutUs from "./pages/AboutUs";
 import CookiePolicy from "./pages/CookiePolicy";
 import Inquiry from "./pages/Inquiry";
+import MemberDirectory from "./pages/MemberDirectory";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
@@ -110,14 +111,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <Search />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/userprofile"
-            element={
-              <ProtectedRoute>
-                <UserProfile />
               </ProtectedRoute>
             }
           />
@@ -225,6 +218,22 @@ function App() {
           <Route
             path="/about-us"
             element={<AboutUs />}
+          />
+          <Route
+            path="/directory"
+            element={<MemberDirectory />}
+          />
+          <Route
+            path="/members"
+            element={<MemberDirectory />}
+          />
+          <Route
+            path="/profile/:id"
+            element={<UserProfile />}
+          />
+          <Route
+            path="/userprofile"
+            element={<UserProfile />}
           />
           <Route
             path="/cookie-policy"

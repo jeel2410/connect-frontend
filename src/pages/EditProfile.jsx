@@ -35,6 +35,7 @@ export default function EditProfile() {
     status: "",
     preferredLanguage: [],
     fastConnect: false,
+    isPrivateProfile: false,
   });
 
   const [interests, setInterests] = useState([]);
@@ -213,6 +214,7 @@ export default function EditProfile() {
             status: normalizedStatus,
             preferredLanguage: [],
             fastConnect: profile.fastConnect || false,
+            isPrivateProfile: profile.isPrivateProfile || false,
             isBusinessProfile: profile.isBusinessProfile || false,
             businessName: profile.businessName || "",
             contactPerson: profile.contactPerson || "",
@@ -946,6 +948,7 @@ export default function EditProfile() {
         if (data.pincode) formData.append("pincode", data.pincode);
         if (data.email) formData.append("email", data.email);
         formData.append("fastConnect", data.fastConnect ? "true" : "false");
+        formData.append("isPrivateProfile", data.isPrivateProfile ? "true" : "false");
       } else {
         formData.append("isBusinessProfile", "false");
         if (data.fullName) formData.append("fullName", data.fullName);
@@ -965,6 +968,7 @@ export default function EditProfile() {
         if (company) formData.append("company", company);
         if (position) formData.append("position", position);
         formData.append("fastConnect", data.fastConnect ? "true" : "false");
+        formData.append("isPrivateProfile", data.isPrivateProfile ? "true" : "false");
       }
 
       // Add profile image if it's a new file
@@ -1116,6 +1120,27 @@ export default function EditProfile() {
                   style={{ width: "20px", height: "20px", accentColor: "#EA650A", cursor: "pointer" }}
                 />
                 Business Profile
+              </label>
+            </div>
+
+            {/* Profile Privacy Toggle */}
+            <div className="profile-privacy-toggle-container" style={{ margin: "20px", padding: "15px 20px", background: "#F5F7FB", borderRadius: "12px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid #E3E8F2" }}>
+              <div>
+                <h4 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#081332" }}>Keep Profile Private</h4>
+                <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "#777E90" }}>
+                  By default all profiles are public. When checked, your profile details cannot be accessed by the public or listed in member directories.
+                </p>
+              </div>
+              <label className="switch-label" style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", fontWeight: "600", color: "#EA650A", whiteSpace: "nowrap" }}>
+                <input
+                  type="checkbox"
+                  checked={data.isPrivateProfile || false}
+                  onChange={(e) => {
+                    updateData("isPrivateProfile", e.target.checked);
+                  }}
+                  style={{ width: "20px", height: "20px", accentColor: "#EA650A", cursor: "pointer" }}
+                />
+                Keep Profile Private
               </label>
             </div>
 

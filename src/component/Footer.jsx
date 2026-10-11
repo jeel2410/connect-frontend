@@ -81,8 +81,6 @@ const Footer = () => {
             <span className="separator">•</span>
             <a href="/terms-of-use" className="legal-link">Terms</a>
             <span className="separator">•</span>
-            <a href="/about-us" className="legal-link">About</a>
-            <span className="separator">•</span>
             <a href="/cookie-policy" className="legal-link">Cookies</a>
             <span className="separator">•</span>
             <a href="/inquiry" className="legal-link">Enquiry</a>

@@ -56,22 +56,20 @@ export default function UserProfileModal({ userId }) {
 
       try {
         const token = getCookie("authToken");
-        if (!token) {
-          setError("Please login to view profile");
-          setLoading(false);
-          return;
+        const headers = {
+          "Content-Type": "application/json",
+        };
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
         }
 
         const response = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`, {
           method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+          headers,
         });
 
         if (!response.ok) {
-          if (response.status === 401) {
+          if (response.status === 401 && token) {
             setError("Unauthorized: Please login again");
             setLoading(false);
             return;
@@ -90,6 +88,10 @@ export default function UserProfileModal({ userId }) {
           if (profile.cityName) {
             setCityName(profile.cityName);
           }
+          const displayName = profile.isBusinessProfile ? (profile.businessName || profile.fullName) : profile.fullName;
+          if (displayName) {
+            document.title = `${displayName} | Connect.in`;
+          }
         } else {
           setError("Profile data not found");
         }
@@ -106,7 +108,7 @@ export default function UserProfileModal({ userId }) {
 
   useEffect(() => {
     const fetchIndustryAndCompanies = async () => {
-      if (!profileData) return;
+      if (!profileData || profileData.isPrivate) return;
 
       const bgElement = document.querySelector('.user-profile-bg');
       const overlayElement = document.querySelector('.user-profile-overlay');
@@ -240,7 +242,8 @@ export default function UserProfileModal({ userId }) {
       setSendingConnect(true);
       const token = getCookie("authToken");
       if (!token) {
-        setError("Please login to connect");
+        toast.info("Please sign up or log in to connect with members");
+        navigate("/Register");
         return;
       }
 
@@ -368,7 +371,8 @@ export default function UserProfileModal({ userId }) {
       setSendingLike(true);
       const token = getCookie("authToken");
       if (!token) {
-        setError("Please login to like user");
+        toast.info("Please sign up or log in to like profiles");
+        navigate("/Register");
         return;
       }
 
@@ -419,7 +423,8 @@ export default function UserProfileModal({ userId }) {
     try {
       const token = getCookie("authToken");
       if (!token) {
-        setError("Please login to send messages");
+        toast.info("Please sign up or log in to message members");
+        navigate("/Register");
         return;
       }
 
@@ -484,6 +489,106 @@ export default function UserProfileModal({ userId }) {
     return (
       <div style={{ textAlign: "center", padding: "60px 20px", color: "#666" }}>
         No profile data available
+      </div>
+    );
+  }
+
+  if (profileData.isPrivate) {
+    const isBusiness = profileData.isBusinessProfile === true;
+    const displayName = isBusiness ? (profileData.businessName || profileData.fullName || "Member") : (profileData.fullName || "Member");
+    const defaultAvatar = getAvatar(profileData.gender, 25);
+    const displayLogo = isBusiness ? (resolveImageUrl(profileData.businessLogo) || defaultAvatar) : (resolveImageUrl(profileData.profileImage) || defaultAvatar);
+
+    return (
+      <div style={{ maxWidth: "560px", margin: "40px auto", padding: "40px 24px", background: "#fff", borderRadius: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.08)", textAlign: "center", position: "relative" }}>
+        <button
+          onClick={handleClose}
+          style={{ position: "absolute", top: "20px", right: "20px", background: "transparent", border: "none", cursor: "pointer", padding: "4px" }}
+          title="Close"
+        >
+          <img src={closeIcon} alt="Close" style={{ width: "16px", height: "16px" }} />
+        </button>
+
+        <div style={{ position: "relative", width: "100px", height: "100px", margin: "0 auto 20px" }}>
+          <img
+            src={displayLogo}
+            alt={displayName}
+            style={{ width: "100px", height: "100px", borderRadius: "50%", objectFit: "cover", border: "3px solid #F3F4F6", filter: "blur(0.5px)" }}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = defaultAvatar;
+            }}
+          />
+          <div style={{ position: "absolute", bottom: "0", right: "0", width: "32px", height: "32px", background: "#EA650A", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", boxShadow: "0 2px 8px rgba(234, 101, 10, 0.4)" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+        </div>
+
+        <h2 style={{ fontSize: "22px", fontWeight: "700", color: "#111827", margin: "0 0 6px" }}>{displayName}</h2>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#FEF3C7", color: "#92400E", padding: "4px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: "600", marginBottom: "16px" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          This Profile is Private
+        </div>
+
+        <p style={{ color: "#6B7280", fontSize: "14px", lineHeight: "1.6", maxWidth: "420px", margin: "0 auto 24px" }}>
+          This user has chosen to keep their profile private. Profile details, activities, and contact information are not accessible to the public.
+        </p>
+
+        <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
+          <button
+            onClick={() => navigate("/Login")}
+            style={{
+              padding: "10px 24px",
+              background: "#EA650A",
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(234, 101, 10, 0.25)"
+            }}
+          >
+            Log In to View
+          </button>
+          <button
+            onClick={() => navigate("/Register")}
+            style={{
+              padding: "10px 24px",
+              background: "#fff",
+              color: "#EA650A",
+              border: "1.5px solid #EA650A",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer"
+            }}
+          >
+            Create an Account
+          </button>
+        </div>
+
+        <div style={{ marginTop: "20px" }}>
+          <button
+            onClick={() => navigate("/directory")}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#6B7280",
+              fontSize: "13px",
+              cursor: "pointer",
+              textDecoration: "underline"
+            }}
+          >
+            Explore Member Directory
+          </button>
+        </div>
       </div>
     );
   }

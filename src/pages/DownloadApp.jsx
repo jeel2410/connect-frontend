@@ -1,7 +1,8 @@
 import React from "react";
 import Header from "../component/Header";
+import Footer from "../component/Footer";
 import "../styles/style.css";
-import Footer from "../component/Footer"
+import { Link } from "react-router-dom";
 
 const DownloadApp = () => {
   return (
@@ -9,61 +10,98 @@ const DownloadApp = () => {
       <Header />
       <div className="download-app-page">
         <div className="download-app-container">
-          <h1 className="download-app-title">Download Our App</h1>
-          <p className="download-app-subtitle">
-            Stay connected on the go! Download the Connect.in mobile app for iOS and Android.
-          </p>
-          
-          <div className="download-app-content">
-            <div className="download-app-features">
-              <h2 className="download-app-section-title">App Features</h2>
-              <ul className="download-app-features-list">
-                <li>✅ Connect with professionals anytime, anywhere</li>
-                <li>✅ Receive instant notifications for messages and requests</li>
-                <li>✅ Browse and apply for exclusive offers on the go</li>
-                <li>✅ Chat with your connections in real-time</li>
-                <li>✅ Update your profile and view others' profiles</li>
-                <li>✅ Access all features from your mobile device</li>
-              </ul>
-            </div>
-            
-            <div className="download-app-buttons">
-              <div className="download-app-button-group">
-                <h3 className="download-app-button-title">Download for iOS</h3>
-                <button className="download-app-button ios-button">
-                  <span className="download-app-button-icon">📱</span>
-                  <div className="download-app-button-text">
-                    <span className="download-app-button-small">Download on the</span>
-                    <span className="download-app-button-large">App Store</span>
-                  </div>
-                </button>
-              </div>
-              
-              <div className="download-app-button-group">
-                <h3 className="download-app-button-title">Download for Android</h3>
-                <button className="download-app-button android-button">
-                  <span className="download-app-button-icon">🤖</span>
-                  <div className="download-app-button-text">
-                    <span className="download-app-button-small">Get it on</span>
-                    <span className="download-app-button-large">Google Play</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-            
-            <div className="download-app-qr">
-              <h3 className="download-app-qr-title">Scan QR Code</h3>
-              <div className="download-app-qr-placeholder">
-                <p>QR Code Placeholder</p>
-                <p style={{ fontSize: '12px', color: '#777E90', marginTop: '8px' }}>
-                  Scan with your phone to download
-                </p>
-              </div>
-            </div>
+          <div className="features-breadcrumb">
+            <Link to="/">Home</Link>
+            <span className="sep">›</span>
+            <span>Download App</span>
           </div>
+
+          <section className="features-hero">
+            <div>
+              <span className="eyebrow">CONNECT.IN MOBILE APP</span>
+              <h1>Connect with people and opportunities, wherever you are.</h1>
+              <p className="hero-copy">
+                We’re working on the Connect.in mobile app for Android and Apple iOS. Soon, you’ll be able to discover relevant people, ask your connections questions, share ideas and explore professional and business opportunities from your phone.
+              </p>
+              <div className="download-badge-group">
+                <span className="download-badge">
+                  <span aria-hidden="true">▣</span> Android <span className="badge-tag">COMING SOON</span>
+                </span>
+                <span className="download-badge">
+                  <span aria-hidden="true">▣</span> Apple iOS <span className="badge-tag">COMING SOON</span>
+                </span>
+              </div>
+              <p className="download-subnote">
+                The app is not available to download yet. Please check back for launch updates.
+              </p>
+            </div>
+            <div className="hero-visual">
+              <img
+                src="/assets/images/download-app.svg"
+                alt="Illustration of the upcoming Connect.in mobile app"
+              />
+            </div>
+          </section>
+
+          <section className="features-section">
+            <h2>Connect.in, designed for your everyday network</h2>
+            <p className="section-lead">
+              The planned mobile experience will bring key Connect.in activities closer to you.
+            </p>
+            <div className="benefit-grid">
+              <article className="benefit-card">
+                <div className="benefit-symbol" aria-hidden="true">◎</div>
+                <h3>Discover people</h3>
+                <p>
+                  Explore profiles and find people with relevant skills, interests and professional backgrounds.
+                </p>
+              </article>
+              <article className="benefit-card">
+                <div className="benefit-symbol" aria-hidden="true">?</div>
+                <h3>Ask your connections</h3>
+                <p>
+                  Ask questions, exchange knowledge and learn from your network.
+                </p>
+              </article>
+              <article className="benefit-card">
+                <div className="benefit-symbol" aria-hidden="true">↗</div>
+                <h3>Share ideas and updates</h3>
+                <p>
+                  Keep up with conversations, useful information and updates from your network.
+                </p>
+              </article>
+              <article className="benefit-card">
+                <div className="benefit-symbol" aria-hidden="true">◇</div>
+                <h3>Explore opportunities</h3>
+                <p>
+                  Discover business showcases, jobs, places and offers available through Connect.in.
+                </p>
+              </article>
+            </div>
+          </section>
+
+          <section className="features-section">
+            <div className="feature-example">
+              <div>
+                <h2>Coming soon on Android and iOS</h2>
+                <p>
+                  We’re preparing the mobile experience. Until the app launches, you can continue exploring Connect.in through the website.
+                </p>
+                <Link to="/" className="primary-btn">
+                  Explore Connect.in <span aria-hidden="true">→</span>
+                </Link>
+              </div>
+              <div className="example-visual">
+                <img
+                  src="/assets/images/download-app.svg"
+                  alt="Connect.in app preview illustration"
+                />
+              </div>
+            </div>
+          </section>
         </div>
       </div>
-      <Footer/>
+      <Footer />
     </div>
   );
 };
