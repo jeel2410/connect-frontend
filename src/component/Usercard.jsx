@@ -74,7 +74,7 @@ export default function Usercard({
           id: userId || index + 1,
           userId: userId,
           name: age ? `${name} (${age})` : name,
-          industry: item.industry || "",
+          industry: (item.industry && !/^[0-9a-fA-F]{24}$/.test(String(item.industry).trim())) ? item.industry : "",
           image: resolveImageUrl(item.profileImage || item.image) || defaultAvatar,
           fallbackImage: defaultAvatar,
           verified: item.verified || false,

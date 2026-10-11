@@ -43,6 +43,7 @@ export default function UserProfileModal({ userId }) {
   const [isLiked, setIsLiked] = useState(false);
   const [industryName, setIndustryName] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [positionName, setPositionName] = useState("");
   const [cityName, setCityName] = useState("");
   const [isImagePopupOpen, setIsImagePopupOpen] = useState(false);
 
@@ -87,6 +88,15 @@ export default function UserProfileModal({ userId }) {
           setHasPendingRequest(profile.hasSentRequest || profile.sendRequest || false);
           if (profile.cityName) {
             setCityName(profile.cityName);
+          }
+          if (profile.industry && !/^[0-9a-fA-F]{24}$/.test(String(profile.industry).trim())) {
+            setIndustryName(profile.industry);
+          }
+          if (profile.position && !/^[0-9a-fA-F]{24}$/.test(String(profile.position).trim())) {
+            setPositionName(profile.position);
+          }
+          if (profile.company && !/^[0-9a-fA-F]{24}$/.test(String(profile.company).trim())) {
+            setCompanyName(profile.company);
           }
           const displayName = profile.isBusinessProfile ? (profile.businessName || profile.fullName) : profile.fullName;
           if (displayName) {
@@ -146,7 +156,10 @@ export default function UserProfileModal({ userId }) {
 
       try {
         const token = getCookie("authToken");
-        if (!token) return;
+        const listHeaders = {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        };
 
         if (profileData.city && !cityName) {
           if (typeof profileData.city === 'object' && profileData.city.name) {
@@ -154,10 +167,7 @@ export default function UserProfileModal({ userId }) {
           } else if (profileData.city && typeof profileData.city === 'string') {
             const citiesResponse = await fetch(`${API_BASE_URL}/api/list/city`, {
               method: "GET",
-              headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
+              headers: listHeaders,
             });
             if (citiesResponse.ok) {
               const citiesResult = await citiesResponse.json();
@@ -174,21 +184,20 @@ export default function UserProfileModal({ userId }) {
         }
 
         if (profileData.industry) {
-          const industriesResponse = await fetch(`${API_BASE_URL}/api/list/industries`, {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          });
-          if (industriesResponse.ok) {
-            const industriesResult = await industriesResponse.json();
-            if (industriesResult.success && industriesResult.data && industriesResult.data.industries) {
-              const industry = industriesResult.data.industries.find(ind => ind._id === profileData.industry);
-              if (industry) {
-                setIndustryName(industry.name);
-              } else {
-                setIndustryName(profileData.industry);
+          if (!/^[0-9a-fA-F]{24}$/.test(String(profileData.industry).trim())) {
+            setIndustryName(profileData.industry);
+          } else {
+            const industriesResponse = await fetch(`${API_BASE_URL}/api/list/industries`, {
+              method: "GET",
+              headers: listHeaders,
+            });
+            if (industriesResponse.ok) {
+              const industriesResult = await industriesResponse.json();
+              if (industriesResult.success && industriesResult.data && industriesResult.data.industries) {
+                const industry = industriesResult.data.industries.find(ind => ind._id === profileData.industry);
+                if (industry) {
+                  setIndustryName(industry.name);
+                }
               }
             }
           }
@@ -197,10 +206,7 @@ export default function UserProfileModal({ userId }) {
         if (profileData.company && profileData.industry) {
           const companiesResponse = await fetch(`${API_BASE_URL}/api/list/companies?industryId=${profileData.industry}`, {
             method: "GET",
-            headers: {
-              "Authorization": `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
+            headers: listHeaders,
           });
           if (companiesResponse.ok) {
             const companiesResult = await companiesResponse.json();
@@ -208,23 +214,49 @@ export default function UserProfileModal({ userId }) {
               const company = companiesResult.data.companies.find(c => c._id === profileData.company);
               if (company) {
                 setCompanyName(company.name);
-              } else {
+              } else if (!/^[0-9a-fA-F]{24}$/.test(String(profileData.company))) {
                 setCompanyName(profileData.company);
               }
             }
-          } else {
+          } else if (!/^[0-9a-fA-F]{24}$/.test(String(profileData.company))) {
             setCompanyName(profileData.company);
           }
-        } else if (profileData.company) {
+        } else if (profileData.company && !/^[0-9a-fA-F]{24}$/.test(String(profileData.company))) {
           setCompanyName(profileData.company);
         }
+
+        if (profileData.position) {
+          if (!/^[0-9a-fA-F]{24}$/.test(String(profileData.position).trim())) {
+            setPositionName(profileData.position);
+          } else {
+            const positionsResponse = await fetch(`${API_BASE_URL}/api/list/positions`, {
+              method: "GET",
+              headers: {
+                ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+                "Content-Type": "application/json",
+              },
+            });
+            if (positionsResponse.ok) {
+              const positionsResult = await positionsResponse.json();
+              if (positionsResult.success && positionsResult.data && positionsResult.data.positions) {
+                const pos = positionsResult.data.positions.find(p => p._id === profileData.position);
+                if (pos) {
+                  setPositionName(pos.name);
+                }
+              }
+            }
+          }
+        }
       } catch (err) {
-        console.error("Error fetching industry/companies:", err);
-        if (profileData.industry) {
+        console.error("Error fetching industry/companies/positions:", err);
+        if (profileData.industry && !/^[0-9a-fA-F]{24}$/.test(String(profileData.industry))) {
           setIndustryName(prev => prev || profileData.industry);
         }
-        if (profileData.company) {
+        if (profileData.company && !/^[0-9a-fA-F]{24}$/.test(String(profileData.company))) {
           setCompanyName(prev => prev || profileData.company);
+        }
+        if (profileData.position && !/^[0-9a-fA-F]{24}$/.test(String(profileData.position))) {
+          setPositionName(prev => prev || profileData.position);
         }
       }
     };
@@ -842,21 +874,21 @@ export default function UserProfileModal({ userId }) {
                         : "Not provided"}
                   </p>
                 </div>
-                {profileData.position && (
+                {(positionName || (profileData.position && !/^[0-9a-fA-F]{24}$/.test(String(profileData.position).trim()))) && (
                   <div className="user-profile-detail-item">
                     <label>Position</label>
-                    <p>{profileData.position}</p>
+                    <p>{positionName || profileData.position}</p>
                   </div>
                 )}
-                {industryName && (
+                {(industryName || (profileData.industry && !/^[0-9a-fA-F]{24}$/.test(String(profileData.industry).trim()))) && (
                   <div className="user-profile-detail-item">
                     <label>Industry</label>
-                    <p>{industryName}</p>
+                    <p>{industryName || profileData.industry}</p>
                   </div>
                 )}
                 <div className="user-profile-detail-item">
                   <label>Company</label>
-                  <p>{companyName || "NA"}</p>
+                  <p>{companyName && !/^[0-9a-fA-F]{24}$/.test(String(companyName).trim()) ? companyName : "NA"}</p>
                 </div>
               </div>
             </>

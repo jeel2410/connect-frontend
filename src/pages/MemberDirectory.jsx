@@ -233,11 +233,22 @@ const MemberDirectory = () => {
                   ? resolveImageUrl(member.profileImage) || "/assets/images/business.svg"
                   : resolveImageUrl(member.profileImage) || getAvatar(member.gender, member.dateOfBirth);
 
+                const isHexId = (val) => typeof val === "string" && /^[0-9a-fA-F]{24}$/.test(val.trim());
+
+                let individualSubtitle = "Professional";
+                if (member.industry && !isHexId(member.industry)) {
+                  individualSubtitle = member.industry;
+                } else if (member.position && !isHexId(member.position)) {
+                  individualSubtitle = member.company && !isHexId(member.company)
+                    ? `${member.position} at ${member.company}`
+                    : member.position;
+                } else if (member.company && !isHexId(member.company)) {
+                  individualSubtitle = member.company;
+                }
+
                 const subtitle = isBiz
-                  ? member.businessTagline || member.categoryName || member.businessDescription
-                  : member.position
-                  ? `${member.position}${member.company ? ` at ${member.company}` : ""}`
-                  : member.company || "Professional";
+                  ? member.businessTagline || member.categoryName || member.businessDescription || "Business"
+                  : individualSubtitle;
 
                 return (
                   <article key={member._id} className="member-directory-card">

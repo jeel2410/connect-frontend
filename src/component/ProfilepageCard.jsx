@@ -33,10 +33,94 @@ export default function ProfilepageCard({ profileData: initialProfileData }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
+  const [resolvedPosition, setResolvedPosition] = useState("");
+  const [resolvedIndustry, setResolvedIndustry] = useState("");
+  const [resolvedCompany, setResolvedCompany] = useState("");
 
   React.useEffect(() => {
     setProfileData(initialProfileData);
   }, [initialProfileData]);
+
+  React.useEffect(() => {
+    if (!profileData) return;
+
+    const isHexId = (val) => Boolean(val && typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val.trim()));
+
+    // Resolve Position
+    if (profileData.position) {
+      if (!isHexId(profileData.position)) {
+        setResolvedPosition(profileData.position);
+      } else {
+        const token = getCookie("authToken");
+        fetch(`${API_BASE_URL}/api/list/positions`, {
+          headers: {
+            ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+            "Content-Type": "application/json",
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success && data.data && data.data.positions) {
+              const pos = data.data.positions.find((p) => p._id === profileData.position);
+              if (pos) setResolvedPosition(pos.name);
+            }
+          })
+          .catch((err) => console.error("Error fetching positions:", err));
+      }
+    } else {
+      setResolvedPosition("");
+    }
+
+    // Resolve Industry
+    if (profileData.industry) {
+      if (!isHexId(profileData.industry)) {
+        setResolvedIndustry(profileData.industry);
+      } else {
+        const token = getCookie("authToken");
+        fetch(`${API_BASE_URL}/api/list/industries`, {
+          headers: {
+            ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+            "Content-Type": "application/json",
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success && data.data && data.data.industries) {
+              const ind = data.data.industries.find((i) => i._id === profileData.industry);
+              if (ind) setResolvedIndustry(ind.name);
+            }
+          })
+          .catch((err) => console.error("Error fetching industries:", err));
+      }
+    } else {
+      setResolvedIndustry("");
+    }
+
+    // Resolve Company
+    if (profileData.company) {
+      if (!isHexId(profileData.company)) {
+        setResolvedCompany(profileData.company);
+      } else {
+        const token = getCookie("authToken");
+        fetch(`${API_BASE_URL}/api/list/companies`, {
+          headers: {
+            ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+            "Content-Type": "application/json",
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success && data.data && data.data.companies) {
+              const comp = data.data.companies.find((c) => c._id === profileData.company);
+              if (comp) setResolvedCompany(comp.name);
+            }
+          })
+          .catch((err) => console.error("Error fetching companies:", err));
+      }
+    } else {
+      setResolvedCompany("");
+    }
+  }, [profileData]);
 
   const handleCoverImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -409,29 +493,29 @@ export default function ProfilepageCard({ profileData: initialProfileData }) {
                   </div>
                 )}
 
-                {profileData.position && (
+                {(resolvedPosition || (profileData.position && !/^[0-9a-fA-F]{24}$/.test(String(profileData.position).trim()))) && (
                   <div className="dating-profile-info-group">
                     <label>Position</label>
                     <div className="dating-profile-tags">
-                      <span className="dating-profile-tag">{profileData.position}</span>
+                      <span className="dating-profile-tag">{resolvedPosition || profileData.position}</span>
                     </div>
                   </div>
                 )}
 
-                {profileData.industry && (
+                {(resolvedIndustry || (profileData.industry && !/^[0-9a-fA-F]{24}$/.test(String(profileData.industry).trim()))) && (
                   <div className="dating-profile-info-group">
                     <label>Industry</label>
                     <div className="dating-profile-tags">
-                      <span className="dating-profile-tag">{profileData.industry}</span>
+                      <span className="dating-profile-tag">{resolvedIndustry || profileData.industry}</span>
                     </div>
                   </div>
                 )}
 
-                {profileData.company && (
+                {(resolvedCompany || (profileData.company && !/^[0-9a-fA-F]{24}$/.test(String(profileData.company).trim()))) && (
                   <div className="dating-profile-info-group">
                     <label>Company</label>
                     <div className="dating-profile-tags">
-                      <span className="dating-profile-tag">{profileData.company}</span>
+                      <span className="dating-profile-tag">{resolvedCompany || profileData.company}</span>
                     </div>
                   </div>
                 )}
