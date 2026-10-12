@@ -395,7 +395,7 @@ const CardManagement = () => {
       return;
     }
 
-    const passcode = window.prompt("Security Passcode Required: Enter passcode to authorize sending this broadcast mailer (5533):");
+    const passcode = window.prompt("Security Passcode Required: Enter passcode to authorize sending this broadcast mailer:");
     if (passcode !== "5533") {
       if (passcode !== null) {
         alert("Incorrect passcode! Broadcast cancelled.");
@@ -434,7 +434,7 @@ const CardManagement = () => {
       return;
     }
 
-    const passcode = window.prompt("Security Passcode Required: Enter passcode to authorize sending this SMS broadcast (5533):");
+    const passcode = window.prompt("Security Passcode Required: Enter passcode to authorize sending this SMS broadcast:");
     if (passcode !== "5533") {
       if (passcode !== null) {
         alert("Incorrect passcode! Broadcast cancelled.");

@@ -192,7 +192,7 @@ const PasscodeModal = ({ isOpen, onClose, onConfirm, actionTitle = "Broadcast Ma
       onConfirm();
       onClose();
     } else {
-      setError(`Incorrect security passcode! Enter '${requiredPasscode}' to proceed.`);
+      setError("Incorrect security passcode! Please try again.");
     }
   };
 
@@ -243,7 +243,7 @@ const PasscodeModal = ({ isOpen, onClose, onConfirm, actionTitle = "Broadcast Ma
         </div>
 
         <p style={{ fontSize: "13px", color: "#4B5563", marginBottom: "16px", lineHeight: "1.5" }}>
-          To authorize <strong>{actionTitle}</strong>, please enter the security passcode ({requiredPasscode}).
+          To authorize <strong>{actionTitle}</strong>, please enter the security passcode.
         </p>
 
         {error && (
@@ -274,7 +274,7 @@ const PasscodeModal = ({ isOpen, onClose, onConfirm, actionTitle = "Broadcast Ma
               className="form-input"
               value={passcode}
               onChange={(e) => { setPasscode(e.target.value); setError(""); }}
-              placeholder={`Enter passcode (${requiredPasscode})`}
+              placeholder="Enter security passcode"
               required
               autoFocus
             />
