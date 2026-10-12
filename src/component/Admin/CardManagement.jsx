@@ -274,17 +274,21 @@ const CardManagement = () => {
 
     // Create CSV content
     const headers = ["Name", "Mobile", "Email ID", "Click Count", "Last Clicked At"];
-    const rows = selectedCardClicks.map(click => [
-      click.fullName || "N/A",
-      click.mobile || "N/A",
-      click.email || "N/A",
-      click.clickCount || 0,
-      click.lastClickedAt ? new Date(click.lastClickedAt).toLocaleString() : "N/A"
-    ]);
+    const rows = selectedCardClicks.map(click => {
+      const rawMobile = click.mobile ? String(click.mobile).trim() : "N/A";
+      const formattedMobile = (rawMobile && rawMobile !== "N/A") ? `="""${rawMobile.replace(/"/g, '""')}"""` : '""';
+      return [
+        `"${String(click.fullName || "N/A").replace(/"/g, '""')}"`,
+        formattedMobile,
+        `"${String(click.email || "N/A").replace(/"/g, '""')}"`,
+        `"${click.clickCount || 0}"`,
+        `"${click.lastClickedAt ? new Date(click.lastClickedAt).toLocaleString() : "N/A"}"`
+      ];
+    });
 
-    const csvContent = [
+    const csvContent = "\uFEFF" + [
       headers.join(","),
-      ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))
+      ...rows.map(row => row.join(","))
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });

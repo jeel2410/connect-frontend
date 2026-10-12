@@ -178,7 +178,7 @@ const TestModal = ({ isOpen, onClose, title, label, placeholder, value, onChange
   );
 };
 
-const PasscodeModal = ({ isOpen, onClose, onConfirm, actionTitle = "Broadcast Mailer" }) => {
+const PasscodeModal = ({ isOpen, onClose, onConfirm, actionTitle = "Broadcast Mailer", requiredPasscode = "5533" }) => {
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState("");
 
@@ -186,13 +186,13 @@ const PasscodeModal = ({ isOpen, onClose, onConfirm, actionTitle = "Broadcast Ma
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (passcode.trim() === "5533") {
+    if (passcode.trim() === String(requiredPasscode).trim()) {
       setError("");
       setPasscode("");
       onConfirm();
       onClose();
     } else {
-      setError("Incorrect security passcode! Enter '5533' to proceed.");
+      setError(`Incorrect security passcode! Enter '${requiredPasscode}' to proceed.`);
     }
   };
 
@@ -243,7 +243,7 @@ const PasscodeModal = ({ isOpen, onClose, onConfirm, actionTitle = "Broadcast Ma
         </div>
 
         <p style={{ fontSize: "13px", color: "#4B5563", marginBottom: "16px", lineHeight: "1.5" }}>
-          To prevent accidental sending, please enter the security passcode to authorize <strong>{actionTitle}</strong>.
+          To authorize <strong>{actionTitle}</strong>, please enter the security passcode ({requiredPasscode}).
         </p>
 
         {error && (
@@ -274,7 +274,7 @@ const PasscodeModal = ({ isOpen, onClose, onConfirm, actionTitle = "Broadcast Ma
               className="form-input"
               value={passcode}
               onChange={(e) => { setPasscode(e.target.value); setError(""); }}
-              placeholder="Enter passcode (5533)"
+              placeholder={`Enter passcode (${requiredPasscode})`}
               required
               autoFocus
             />
@@ -514,6 +514,47 @@ function OfferEmailSection() {
     }
   };
 
+  const [downloadingCsv, setDownloadingCsv] = useState(false);
+  const [showCsvPasscodeModal, setShowCsvPasscodeModal] = useState(false);
+
+  const handleOpenCsvDownload = () => {
+    if (userCount === 0) return setError("No users match the selected criteria");
+    setShowCsvPasscodeModal(true);
+  };
+
+  const executeDownloadCsv = async () => {
+    try {
+      setDownloadingCsv(true);
+      setError(null);
+      const token = getCookie("authToken");
+      const headers = {
+        "Authorization": `Bearer ${token}`
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/admin/notifications/completed-profiles/csv?days=${formData.days}`, {
+        headers
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to download CSV");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `completed_profiles_${formData.days}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message || "Failed to download CSV");
+    } finally {
+      setDownloadingCsv(false);
+    }
+  };
+
   return (
     <div style={{ background: "#fff", border: "1px solid #E4E6EB", borderRadius: 14, padding: "28px 32px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
@@ -618,6 +659,33 @@ function OfferEmailSection() {
             <Send size={15} />
             Test Mail
           </button>
+
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleOpenCsvDownload}
+            disabled={submitting || downloadingCsv || userCount === 0}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 18px",
+              borderRadius: 8,
+              border: "1px solid #E2E8F0",
+              background: "#fff",
+              color: "#334155",
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: (submitting || downloadingCsv || userCount === 0) ? "not-allowed" : "pointer",
+              opacity: (userCount === 0 || downloadingCsv) ? 0.6 : 1,
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={e => { if (userCount > 0 && !downloadingCsv) { e.currentTarget.style.background = "#F8FAFC"; e.currentTarget.style.borderColor = "#CBD5E1"; } }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#E2E8F0"; }}
+          >
+            <Download size={15} />
+            {downloadingCsv ? "Downloading..." : "Download CSV"}
+          </button>
         </div>
       </form>
 
@@ -641,6 +709,15 @@ function OfferEmailSection() {
         onClose={() => setShowPasscodeModal(false)}
         onConfirm={executeSend}
         actionTitle="Broadcast Offer Email"
+        requiredPasscode="5533"
+      />
+
+      <PasscodeModal
+        isOpen={showCsvPasscodeModal}
+        onClose={() => setShowCsvPasscodeModal(false)}
+        onConfirm={executeDownloadCsv}
+        actionTitle="Download Completed Profiles CSV"
+        requiredPasscode="8282"
       />
     </div>
   );
@@ -709,8 +786,17 @@ function IncompleteProfileSmsSection() {
     fetchCount();
   }, [formData.days]);
 
-  const handleDownloadCsv = async () => {
+  const [downloadingCsv, setDownloadingCsv] = useState(false);
+  const [showCsvPasscodeModal, setShowCsvPasscodeModal] = useState(false);
+
+  const handleOpenCsvDownload = () => {
+    if (userCount === 0) return setError("No users match the selected criteria");
+    setShowCsvPasscodeModal(true);
+  };
+
+  const executeDownloadCsv = async () => {
     try {
+      setDownloadingCsv(true);
       setError(null);
       const token = getCookie("authToken");
       const headers = {
@@ -736,6 +822,8 @@ function IncompleteProfileSmsSection() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       setError(err.message || "Failed to download CSV");
+    } finally {
+      setDownloadingCsv(false);
     }
   };
 
@@ -849,7 +937,11 @@ function IncompleteProfileSmsSection() {
             Test SMS
           </button>
 
-          <button type="button" className="btn-secondary" onClick={handleDownloadCsv} disabled={userCount === 0}
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleOpenCsvDownload}
+            disabled={submitting || downloadingCsv || userCount === 0}
             style={{ 
               display: "flex", 
               alignItems: "center", 
@@ -861,14 +953,14 @@ function IncompleteProfileSmsSection() {
               color: "#334155", 
               fontWeight: 600, 
               fontSize: 14,
-              cursor: userCount === 0 ? "not-allowed" : "pointer",
-              opacity: userCount === 0 ? 0.6 : 1,
+              cursor: (submitting || downloadingCsv || userCount === 0) ? "not-allowed" : "pointer",
+              opacity: (userCount === 0 || downloadingCsv) ? 0.6 : 1,
               transition: "all 0.2s"
             }}
-            onMouseEnter={e => { if (userCount > 0) { e.currentTarget.style.background = "#F8FAFC"; e.currentTarget.style.borderColor = "#CBD5E1"; } }}
+            onMouseEnter={e => { if (userCount > 0 && !downloadingCsv) { e.currentTarget.style.background = "#F8FAFC"; e.currentTarget.style.borderColor = "#CBD5E1"; } }}
             onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#E2E8F0"; }}>
             <Download size={15} />
-            Download CSV
+            {downloadingCsv ? "Downloading..." : "Download CSV"}
           </button>
         </div>
       </form>
@@ -893,6 +985,15 @@ function IncompleteProfileSmsSection() {
         onClose={() => setShowPasscodeModal(false)}
         onConfirm={executeSend}
         actionTitle="Incomplete Profile SMS Broadcast"
+        requiredPasscode="5533"
+      />
+
+      <PasscodeModal
+        isOpen={showCsvPasscodeModal}
+        onClose={() => setShowCsvPasscodeModal(false)}
+        onConfirm={executeDownloadCsv}
+        actionTitle="Download Incomplete Profiles CSV"
+        requiredPasscode="8282"
       />
     </div>
   );
