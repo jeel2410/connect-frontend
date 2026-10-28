@@ -7,8 +7,10 @@ import locationIcon from "../../assets/image/location.png";
 import statusIcon from "../../assets/image/status.png";
 import API_BASE_URL from "../../utils/config";
 import { getCookie } from "../../utils/auth";
+import EmailVerificationInput from "./EmailVerificationInput";
 
 const BusinessStep2 = ({ data, updateData, errors, touched, phoneNumber }) => {
+
   const [cities, setCities] = useState([]);
   const [loadingCities, setLoadingCities] = useState(false);
   const [citiesError, setCitiesError] = useState("");
@@ -139,30 +141,21 @@ const BusinessStep2 = ({ data, updateData, errors, touched, phoneNumber }) => {
       </div>
 
       {/* Email Address */}
-      <div className="form-group">
-        <div className="input-wrapper">
-          <div className="input-icon">
-            <img src={fullnameIcon} alt="Email" style={{ opacity: 0.7 }}></img>
-          </div>
-          <div className="input-content">
-            <label className="input-label">Business Email Address</label>
-            <input
-              type="email"
-              name="email"
-              value={data.email || ""}
-              onChange={(e) => updateData("email", e.target.value)}
-              onBlur={() => updateData("_touched_email", true)}
-              className={`form-input ${touched?.email && errors?.email ? "input-error" : ""}`}
-              placeholder="business@example.com"
-            />
-            {touched?.email && errors?.email && (
-              <div className="field-error-message">{errors.email}</div>
-            )}
-          </div>
-        </div>
-      </div>
+      <EmailVerificationInput
+        email={data.email || ""}
+        updateData={updateData}
+        errors={errors}
+        touched={touched}
+        isEmailVerified={data.isEmailVerified || false}
+        setIsEmailVerified={(val) => updateData("isEmailVerified", val)}
+        label="Business Email Address"
+        placeholder="business@example.com"
+        icon={fullnameIcon}
+        name="email"
+      />
 
       {/* Website */}
+
       <div className="form-group">
         <div className="input-wrapper">
           <div className="input-icon">

@@ -1,8 +1,10 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
+
 import "../../styles/style.css";
 import emailIcon from "../../assets/image/email.png";
 import genderIcon from "../../assets/image/gender.png";
 import birthIcon from "../../assets/image/calender.png";
+import EmailVerificationInput from "./EmailVerificationInput";
 
 // Helper function to format date as "24 December, 2000"
 const formatDateDisplay = (dateString) => {
@@ -22,28 +24,19 @@ const Step2 = ({ data, updateData, errors, touched }) => {
       <h2 className="step-title">Your Profile Info</h2>
       <p className="step-description">Provide basic details to complete your profile.</p>
 
+      <EmailVerificationInput
+        email={data.email || ""}
+        updateData={updateData}
+        errors={errors}
+        touched={touched}
+        isEmailVerified={data.isEmailVerified || false}
+        setIsEmailVerified={(val) => updateData("isEmailVerified", val)}
+        label="Email Id"
+        placeholder="Enter your email address"
+        icon={emailIcon}
+        name="email"
+      />
 
-      <div className="form-group">
-        <div className="input-wrapper">
-          <div className="input-icon">
-            <img src={emailIcon} alt="Email"></img>
-          </div>
-          <div className="input-content">
-            <label className="input-label">Email Id</label>
-            <input
-              type="email"
-              value={data.email || ""}
-              onChange={(e) => updateData("email", e.target.value)}
-              onBlur={() => updateData("_touched_email", true)}
-              // placeholder="hellenpitter@gmail.com"
-              className={`form-input ${touched?.email && errors?.email ? "input-error" : ""}`}
-            />
-            {touched?.email && errors?.email && (
-              <div className="field-error-message">{errors.email}</div>
-            )}
-          </div>
-        </div>
-      </div>
 
       <div className="form-group">
         <div className="input-wrapper">

@@ -1,7 +1,7 @@
 import React from 'react';
 import "../../styles/style.css"
 
-const FormNavigation = ({ currentStep, totalSteps, onNext, onPrevious, onSubmit, loading }) => {
+const FormNavigation = ({ currentStep, totalSteps, onNext, onPrevious, onSubmit, loading, isNextDisabled }) => {
   return (
    <div className={`form-navigation ${currentStep === totalSteps ? "single-btn" : ""}`}>
       {currentStep > 1 && (
@@ -10,7 +10,12 @@ const FormNavigation = ({ currentStep, totalSteps, onNext, onPrevious, onSubmit,
         </button>
       )}
       {currentStep < totalSteps ? (
-        <button onClick={onNext} className="btn btn-primary" disabled={loading}>
+        <button
+          onClick={onNext}
+          className="btn btn-primary"
+          disabled={loading || isNextDisabled}
+          title={isNextDisabled ? "Please verify your email address to proceed" : ""}
+        >
           {loading ? (
             <>
               <span className="spinner"></span>
@@ -20,6 +25,7 @@ const FormNavigation = ({ currentStep, totalSteps, onNext, onPrevious, onSubmit,
             "Next"
           )}
         </button>
+
       ) : (
         <button onClick={onSubmit} className="btn btn-submit" disabled={loading}>
           {loading ? (

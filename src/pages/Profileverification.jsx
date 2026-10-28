@@ -234,8 +234,10 @@ const Profileverification = () => {
       company: "",
       position: "",
       photo: null,
+      isEmailVerified: false,
 
       // Business fields
+
       businessName: "",
       businessCategory: "",
       contactPerson: "",
@@ -460,6 +462,7 @@ const Profileverification = () => {
                 company: "",
                 position: "",
                 photo: null,
+                isEmailVerified: profile.isEmailVerified || false,
               });
             } else {
               formik.setValues({
@@ -482,6 +485,8 @@ const Profileverification = () => {
                 company: profile.company || "",
                 position: profile.position || "",
                 photo: profile.profileImage || null,
+                isEmailVerified: profile.isEmailVerified || false,
+
 
                 businessName: "",
                 businessCategory: "",
@@ -857,7 +862,14 @@ const Profileverification = () => {
   };
 
   const nextStep = async () => {
+    if (currentStep === 2 && !formik.values.isEmailVerified) {
+      setApiError("Please verify your email address with the 6-digit confirmation code to proceed.");
+      scrollToFirstError();
+      return;
+    }
+
     const currentStepFields = getStepFields(currentStep);
+
 
     currentStepFields.forEach(field => {
       formik.setFieldTouched(field, true);
@@ -1084,6 +1096,7 @@ const Profileverification = () => {
               businessTagline: profile.businessTagline || currentValues.businessTagline || "",
               businessDescription: profile.businessDescription || currentValues.businessDescription || "",
               mobileNumber: phoneNumber || currentValues.mobileNumber || "",
+              isEmailVerified: profile.isEmailVerified || currentValues.isEmailVerified || false,
             } : {
               isBusinessProfile: false,
               fullName: profile.fullName || currentValues.fullName || "",
@@ -1104,7 +1117,9 @@ const Profileverification = () => {
               position: positionId || "",
               photo: profile.profileImage || currentValues.photo || null,
               mobileNumber: phoneNumber || currentValues.mobileNumber || "",
+              isEmailVerified: profile.isEmailVerified || currentValues.isEmailVerified || false,
             };
+
 
             formik.setValues(prev => ({ ...prev, ...updates }));
           }
@@ -1167,7 +1182,15 @@ const Profileverification = () => {
   };
 
   const handleSubmit = async () => {
+    if (!formik.values.isEmailVerified) {
+      setCurrentStep(2);
+      setApiError("Please verify your email address with the 6-digit confirmation code to complete registration.");
+      scrollToFirstError();
+      return;
+    }
+
     const errors = await formik.validateForm();
+
     if (Object.keys(errors).length > 0) {
       for (let step = 1; step <= totalSteps; step++) {
         const stepFields = getStepFields(step);
@@ -1273,7 +1296,9 @@ const Profileverification = () => {
               onPrevious={prevStep}
               onSubmit={handleSubmit}
               loading={loading || formik.isSubmitting}
+              isNextDisabled={currentStep === 2 && !formik.values.isEmailVerified}
             />
+
           </div>
         </div>
       </div>
