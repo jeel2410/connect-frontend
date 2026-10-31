@@ -382,7 +382,7 @@ const Header = () => {
                   )}
                 </a>
                 <a href="/ask" className={`nav-link ${location.pathname === "/ask" || location.pathname === "/share" ? "active" : ""}`}>
-                  Ask
+                  Ask / Share
                 </a>
                 <a href="/offers" className={`nav-link ${location.pathname === "/offers" ? "active" : ""}`}>
                   Offers
@@ -508,7 +508,7 @@ const Header = () => {
                     )}
                   </a>
                   <a href="/ask" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                    Ask
+                    Ask / Share
                   </a>
                   <a href="/offers" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     Offers

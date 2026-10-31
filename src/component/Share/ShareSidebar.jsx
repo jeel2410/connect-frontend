@@ -172,7 +172,7 @@ const ShareSidebar = ({
               }}
             >
               <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#09122E', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <TrendingUp size={18} color="#0066FF" /> Trending Questions
+                <TrendingUp size={18} color="#0066FF" /> Trending
               </h3>
               {isTrendingOpen ? <ChevronUp size={20} color="#777E90" /> : <ChevronDown size={20} color="#777E90" />}
             </div>
