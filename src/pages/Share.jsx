@@ -404,10 +404,10 @@ const Share = () => {
                       }}>
                         <div>
                           <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '800', color: '#09122E' }}>
-                            Questions
+                            Topics
                           </h1>
                           <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#545A69' }}>
-                            Get real answers from AI and the Connect.in community.
+                            Ask questions, share knowledge, exchange ideas, and connect with people who can help.
                           </p>
                         </div>
                         <button
@@ -430,7 +430,7 @@ const Share = () => {
                           }}
                         >
                           <Plus size={18} color="#FFFFFF" />
-                          <span>Ask a Question</span>
+                          <span>Ask / Share</span>
                         </button>
                       </div>
                     )}
@@ -464,7 +464,7 @@ const Share = () => {
                               boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                             }}
                           >
-                            <option value="all">All Questions</option>
+                            <option value="all">All</option>
                             <option value="my">My Questions</option>
                             <option value="connections">From Connections</option>
                             <option value="unanswered">Unanswered</option>
@@ -496,7 +496,7 @@ const Share = () => {
                         <>
                           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                             {[
-                              { id: 'all', label: 'All Questions' },
+                              { id: 'all', label: 'All' },
                               { id: 'my', label: 'My Questions' },
                               { id: 'connections', label: 'From Connections' },
                               { id: 'unanswered', label: 'Unanswered' }

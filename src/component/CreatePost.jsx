@@ -217,7 +217,7 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
           {/* Header */}
           <div className="create-post-form-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
             <div style={{ textAlign: 'left' }}>
-              <h3 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#09122E' }}>Ask a question</h3>
+              <h3 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#09122E' }}>Ask / Share</h3>
               <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#777E90' }}>
                 Ask anything or describe what you need help with.
               </p>
@@ -226,7 +226,7 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
             {/* Hidden Reel Video tab for now - code structure preserved */}
             <div style={{ display: 'none' }}>
               <button type="button" onClick={() => setShareType('link')}>Reel Video</button>
-              <button type="button" onClick={() => setShareType('post')}>Ask Question</button>
+              <button type="button" onClick={() => setShareType('post')}>Ask / Share</button>
             </div>
           </div>
 
@@ -234,7 +234,7 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
           <div style={{ position: 'relative', marginBottom: '16px' }}>
             <textarea
               className="post-textarea-premium"
-              placeholder="What would you like to ask?"
+              placeholder="What would you like to Ask / Share?"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={4}
@@ -285,7 +285,7 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
           <div style={{ marginBottom: '20px', textAlign: 'left' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
               <h4 style={{ fontSize: '18px', fontWeight: '800', color: '#09122E', margin: 0 }}>
-                Who would you like to ask?
+                Who would you like to Ask / Share?
               </h4>
               <Info size={16} color="#777E90" style={{ cursor: 'pointer' }} />
             </div>
@@ -734,7 +734,7 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
                 }}
               >
                 <Send size={18} color="#ffffff" style={{ transform: 'rotate(-45deg)' }} />
-                <span>{isPosting ? 'Asking...' : 'Ask'}</span>
+                <span>{isPosting ? 'Submitting...' : 'Submit'}</span>
               </button>
             </div>
           </div>
