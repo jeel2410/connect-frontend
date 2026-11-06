@@ -14,6 +14,7 @@ import Share from "./pages/Share";
 import DeleteAccount from "./pages/DeleteAccount";
 import Register from "./pages/Register";
 import OtpVerification from "./pages/OtpVerification";
+import EmailVerification from "./pages/EmailVerification";
 import Admin from "./pages/Admin";
 import Features from "./pages/Features";
 import Resources from "./pages/Resources";
@@ -70,7 +71,7 @@ function App() {
   // Polls /api/auth/status every 30 s — auto-logouts disabled/deleted accounts
   useSessionGuard();
   return (
-    <GoogleOAuthProvider clientId="891198943361-e6pu3ag403m4s97gvbiuasgljgfbvcda.apps.googleusercontent.com">
+    <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID || "891198943361-e6pu3ag403m4s97gvbiuasgljgfbvcda.apps.googleusercontent.com"}>
       <Router>
         <TrafficSourceTracker />
         <Routes>
@@ -100,6 +101,7 @@ function App() {
             }
           />
           <Route path="/otp-verification" element={<OtpVerification />} />
+          <Route path="/email-verification" element={<EmailVerification />} />
           <Route
             path="/profile-complete"
             element={<Profileverification />}

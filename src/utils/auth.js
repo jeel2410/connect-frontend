@@ -96,6 +96,9 @@ const AUTH_BYPASS_PATHS = [
   "/api/auth/verify-otp",
   "/api/auth/login-with-email",
   "/api/auth/google-login",
+  "/api/auth/google-verify-email",
+  "/api/auth/send-email-otp",
+  "/api/auth/verify-email-otp",
 ];
 
 const _originalFetch = window.fetch.bind(window);

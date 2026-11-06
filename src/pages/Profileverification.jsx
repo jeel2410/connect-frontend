@@ -6,7 +6,6 @@ import "../../src/styles/style.css"
 import ProgressSteps from "../../src/component/StepForm/ProgressSteps";
 import FormNavigation from "../../src/component/StepForm/FormNavigation";
 import Step1 from "../../src/component/StepForm/Step1"
-import Step2 from "../../src/component/StepForm/Step2";
 import Step3 from "../../src/component/StepForm/Step3";
 import Step4 from "../../src/component/StepForm/Step4";
 import Step5 from "../../src/component/StepForm/Step5";
@@ -54,6 +53,11 @@ const Profileverification = () => {
 
   // Get phone number from location state or localStorage
   const phoneNumber = location.state?.phoneNumber || localStorage.getItem("phoneNumber") || "";
+  const initialPassedName = location.state?.fullName || localStorage.getItem("googleFullName") || localStorage.getItem("tempFullName") || "";
+  const initialPassedEmail = location.state?.email || localStorage.getItem("googleEmail") || localStorage.getItem("verifiedEmail") || "";
+  const initialPassedEmailVerified = location.state?.isEmailVerified !== undefined
+    ? location.state.isEmailVerified
+    : !!initialPassedEmail;
 
   // Redirect if profile is already complete
   useEffect(() => {
@@ -114,7 +118,7 @@ const Profileverification = () => {
       then: () => Yup.string().required("Status is required"),
       otherwise: () => Yup.string().notRequired(),
     }),
-    email: Yup.string().email("Invalid email address").required("Email is required"),
+    email: Yup.string().email("Invalid email address"),
     website: Yup.string()
       .nullable()
       .notRequired()
@@ -217,12 +221,12 @@ const Profileverification = () => {
     initialValues: {
       isBusinessProfile: false,
       mobileNumber: phoneNumber || "",
-      fullName: "",
+      fullName: initialPassedName || "",
       city: "",
       pincode: "",
       religion: "",
       maritalStatus: "",
-      email: "",
+      email: initialPassedEmail || "",
       gender: "",
       birthDate: "",
       language: [],
@@ -234,13 +238,13 @@ const Profileverification = () => {
       company: "",
       position: "",
       photo: null,
-      isEmailVerified: false,
+      isEmailVerified: initialPassedEmailVerified || false,
 
       // Business fields
 
       businessName: "",
       businessCategory: "",
-      contactPerson: "",
+      contactPerson: initialPassedName || "",
       website: "",
       whatsappNumber: (phoneNumber || localStorage.getItem("phoneNumber") || "").replace(/\D/g, "").slice(-10),
       facebook: "",
@@ -373,7 +377,7 @@ const Profileverification = () => {
     },
   });
 
-  const totalSteps = formik.values.isBusinessProfile ? 3 : 9;
+  const totalSteps = formik.values.isBusinessProfile ? 3 : 8;
 
   // Load saved progress on mount
   useEffect(() => {
@@ -408,7 +412,7 @@ const Profileverification = () => {
             }
 
             // Immediately set step so the page does not get stuck on Step 1 while lookups resolve
-            const currentTotalSteps = profile.isBusinessProfile ? 3 : 9;
+            const currentTotalSteps = profile.isBusinessProfile ? 3 : 8;
             let nextStep;
             if (lastCompletedStep === currentTotalSteps && !isProfileComplete) {
               nextStep = currentTotalSteps;
@@ -425,6 +429,12 @@ const Profileverification = () => {
               maritalStatus = "Single";
             }
 
+            const passedName = location.state?.fullName || localStorage.getItem("googleFullName") || localStorage.getItem("tempFullName") || "";
+            const passedEmail = location.state?.email || localStorage.getItem("googleEmail") || localStorage.getItem("verifiedEmail") || "";
+            const passedEmailVerified = location.state?.isEmailVerified !== undefined
+              ? location.state.isEmailVerified
+              : (profile.isEmailVerified || !!passedEmail);
+
             // Populate initial values synchronously
             if (profile.isBusinessProfile) {
               formik.setValues({
@@ -434,7 +444,7 @@ const Profileverification = () => {
                 city: profile.city || "",
                 pincode: profile.pincode || "",
                 businessCategory: profile.businessCategoryId || (profile.businessCategory && /^[0-9a-fA-F]{24}$/.test(profile.businessCategory) ? profile.businessCategory : "") || "",
-                contactPerson: profile.contactPerson || "",
+                contactPerson: profile.contactPerson || passedName || "",
                 website: profile.website || "",
                 whatsappNumber: profile.whatsappNumber || "",
                 facebook: profile.facebook || "",
@@ -450,7 +460,7 @@ const Profileverification = () => {
                 fullName: "",
                 religion: "",
                 maritalStatus: "",
-                email: profile.email || "",
+                email: profile.email || passedEmail || "",
                 gender: "",
                 birthDate: "",
                 language: [],
@@ -462,18 +472,18 @@ const Profileverification = () => {
                 company: "",
                 position: "",
                 photo: null,
-                isEmailVerified: profile.isEmailVerified || false,
+                isEmailVerified: profile.isEmailVerified || passedEmailVerified || false,
               });
             } else {
               formik.setValues({
                 isBusinessProfile: false,
                 mobileNumber: profile.phoneNumber || phoneNumber || "",
-                fullName: profile.fullName || "",
+                fullName: profile.fullName || passedName || "",
                 city: profile.city || "",
                 pincode: profile.pincode || "",
                 religion: profile.religion || "",
                 maritalStatus: maritalStatus,
-                email: profile.email || "",
+                email: profile.email || passedEmail || "",
                 gender: profile.gender || "",
                 birthDate: profile.dateOfBirth ? new Date(profile.dateOfBirth).toISOString().split('T')[0] : "",
                 language: profile.preferredLanguage || [],
@@ -485,7 +495,7 @@ const Profileverification = () => {
                 company: profile.company || "",
                 position: profile.position || "",
                 photo: profile.profileImage || null,
-                isEmailVerified: profile.isEmailVerified || false,
+                isEmailVerified: profile.isEmailVerified || passedEmailVerified || false,
 
 
                 businessName: "",
@@ -738,41 +748,40 @@ const Profileverification = () => {
           if (values.pincode) stepData.pincode = values.pincode;
           if (values.religion) stepData.religion = values.religion;
           if (values.maritalStatus) stepData.status = values.maritalStatus;
-          break;
-        case 2:
-          if (values.email) stepData.email = values.email;
           if (values.gender) stepData.gender = values.gender;
           if (values.birthDate) stepData.dateOfBirth = values.birthDate;
           break;
-        case 3:
+        case 2:
           if (values.language && Array.isArray(values.language) && values.language.length > 0) {
             stepData.preferredLanguage = values.language;
           }
           break;
-        case 4:
+        case 3:
           if (values.habits && values.habits.length > 0) {
             stepData.habits = values.habits;
           }
           break;
-        case 5:
+        case 4:
           if (values.interest && values.interest.length > 0) {
             stepData.interests = values.interest;
           }
           break;
-        case 6:
+        case 5:
           if (values.skill && values.skill.length > 0) {
             stepData.skills = values.skill;
           }
           break;
-        case 7:
+        case 6:
           if (values.sports && values.sports.length > 0) {
             stepData.sports = values.sports;
           }
           break;
-        case 8:
+        case 7:
           if (values.industry) stepData.industry = values.industry;
           if (values.company) stepData.company = values.company;
           if (values.position) stepData.position = values.position;
+          break;
+        case 8:
           break;
         default:
           break;
@@ -831,7 +840,7 @@ const Profileverification = () => {
           }
         }
       } else {
-        if (stepNumber === 9 && formik.values.photo) {
+        if (stepNumber === 8 && formik.values.photo) {
           if (formik.values.photo instanceof File) {
             formData.append("profileImage", formik.values.photo);
           } else if (typeof formik.values.photo === 'string' && formik.values.photo.startsWith('data:')) {
@@ -862,12 +871,6 @@ const Profileverification = () => {
   };
 
   const nextStep = async () => {
-    if (currentStep === 2 && !formik.values.isEmailVerified) {
-      setApiError("Please verify your email address with the 6-digit confirmation code to proceed.");
-      scrollToFirstError();
-      return;
-    }
-
     const currentStepFields = getStepFields(currentStep);
 
 
@@ -1158,22 +1161,20 @@ const Profileverification = () => {
     } else {
       switch (step) {
         case 1:
-          return ['fullName', 'city', 'pincode', 'religion', 'maritalStatus'];
+          return ['fullName', 'city', 'pincode', 'religion', 'maritalStatus', 'gender', 'birthDate'];
         case 2:
-          return ['email', 'gender', 'birthDate'];
-        case 3:
           return ['language'];
-        case 4:
+        case 3:
           return ['habits'];
-        case 5:
+        case 4:
           return ['interest'];
-        case 6:
+        case 5:
           return ['skill'];
-        case 7:
+        case 6:
           return ['sports'];
-        case 8:
+        case 7:
           return ['industry', 'company', 'position'];
-        case 9:
+        case 8:
           return ['photo'];
         default:
           return [];
@@ -1182,13 +1183,6 @@ const Profileverification = () => {
   };
 
   const handleSubmit = async () => {
-    if (!formik.values.isEmailVerified) {
-      setCurrentStep(2);
-      setApiError("Please verify your email address with the 6-digit confirmation code to complete registration.");
-      scrollToFirstError();
-      return;
-    }
-
     const errors = await formik.validateForm();
 
     if (Object.keys(errors).length > 0) {
@@ -1212,6 +1206,50 @@ const Profileverification = () => {
     }
   };
 
+  const handleSkipToDashboard = async () => {
+    setLoading(true);
+    setApiError("");
+    try {
+      const token = getCookie("authToken");
+      if (!token) {
+        navigate("/", { replace: true });
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/user/profile/skip-to-dashboard`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fullName: formik.values.fullName,
+          city: formik.values.city,
+          pincode: formik.values.pincode,
+          religion: formik.values.religion,
+          status: formik.values.maritalStatus,
+          gender: formik.values.gender,
+          birthDate: formik.values.birthDate,
+          email: formik.values.email,
+          language: formik.values.language,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to skip to dashboard.");
+      }
+
+      setCookie("isProfileComplete", "true", 7);
+      window.location.href = "/";
+    } catch (err) {
+      setApiError(err.message || "Something went wrong while skipping to dashboard.");
+      scrollToFirstError();
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderStep = () => {
     const isBusiness = formik.values.isBusinessProfile;
     if (isBusiness) {
@@ -1230,20 +1268,18 @@ const Profileverification = () => {
         case 1:
           return <Step1 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} phoneNumber={phoneNumber} />;
         case 2:
-          return <Step2 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
-        case 3:
           return <Step3 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
-        case 4:
+        case 3:
           return <Step4 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
-        case 5:
+        case 4:
           return <Step5 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
-        case 6:
+        case 5:
           return <Step6 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
-        case 7:
+        case 6:
           return <StepSports data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
-        case 8:
+        case 7:
           return <Step8 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
-        case 9:
+        case 8:
           return <Step7 data={formik.values} updateData={updateData} errors={formik.errors} touched={formik.touched} />;
         default:
           return null;
@@ -1259,14 +1295,43 @@ const Profileverification = () => {
         <div className="container">
           <div className="form-card">
             <div className="form-header">
-              <img
-                src={logo}
-                className="logo-image"
-                alt="Connect Logo"
-                onClick={() => logout()}
-                style={{ cursor: "pointer" }}
-                title="Exit Registration"
-              />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                <img
+                  src={logo}
+                  className="logo-image"
+                  alt="Connect Logo"
+                  onClick={() => logout()}
+                  style={{ cursor: "pointer", margin: 0 }}
+                  title="Exit Registration"
+                />
+                {!formik.values.isBusinessProfile && currentStep >= 2 && (
+                  <button
+                    type="button"
+                    onClick={handleSkipToDashboard}
+                    disabled={loading}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#1A56DB",
+                      fontSize: "15px",
+                      fontWeight: "700",
+                      cursor: loading ? "not-allowed" : "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      textDecoration: "underline",
+                      fontFamily: "'Inter', sans-serif",
+                      padding: 0
+                    }}
+                  >
+                    Skip to Dashboard
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A56DB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                      <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                  </button>
+                )}
+              </div>
               <ProgressSteps
                 currentStep={currentStep}
                 totalSteps={totalSteps}
@@ -1296,7 +1361,8 @@ const Profileverification = () => {
               onPrevious={prevStep}
               onSubmit={handleSubmit}
               loading={loading || formik.isSubmitting}
-              isNextDisabled={currentStep === 2 && !formik.values.isEmailVerified}
+              showSkip={!formik.values.isBusinessProfile && currentStep >= 2}
+              onSkip={handleSkipToDashboard}
             />
 
           </div>

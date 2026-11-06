@@ -113,10 +113,10 @@ const OtpVerification = () => {
           localStorage.removeItem("trafficSource");
           // Handle redirect based on user status
           if (!isProfileComplete) {
-            // New user with incomplete profile - redirect to register/profile completion
+            // New user with incomplete profile - redirect to standalone email verification
             setSuccess("OTP verified successfully! Redirecting...");
             setTimeout(() => {
-              navigate("/profile-complete", { state: { phoneNumber: storedPhoneNumber } });
+              navigate("/email-verification", { state: { phoneNumber: storedPhoneNumber } });
             }, 1000);
           } else {
             // Existing user or profile complete - redirect to home

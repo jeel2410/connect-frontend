@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../../styles/style.css";
 import mobileIcon from "../../assets/image/mobile.png";
 import fullnameIcon from "../../assets/image/firstname.png"
@@ -6,13 +6,27 @@ import cityIcon from "../../assets/image/city.png"
 import locationIcon from "../../assets/image/location.png"
 import religionIcon from "../../assets/image/religion.png"
 import statusIcon from "../../assets/image/status.png"
+import genderIcon from "../../assets/image/gender.png";
+import birthIcon from "../../assets/image/calender.png";
 import API_BASE_URL from "../../utils/config";
 import { getCookie } from "../../utils/auth";
+
+// Helper function to format date as "24 December, 2000"
+const formatDateDisplay = (dateString) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const day = date.getDate();
+  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  const year = date.getFullYear();
+  return `${day} ${month}, ${year}`;
+};
 
 const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
   const [cities, setCities] = useState([]);
   const [loadingCities, setLoadingCities] = useState(false);
   const [citiesError, setCitiesError] = useState("");
+  const dateInputRef = useRef(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Fetch cities from API
   useEffect(() => {
@@ -215,6 +229,92 @@ const Step1 = ({ data, updateData, errors, touched, phoneNumber }) => {
             </select>
             {touched?.maritalStatus && errors?.maritalStatus && (
               <div className="field-error-message">{errors.maritalStatus}</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="form-group">
+        <div className="input-wrapper">
+          <div className="input-icon">
+            <img src={genderIcon} alt="Gender" />
+          </div>
+          <div className="input-content">
+            <label className="input-label">Gender</label>
+            <select
+              value={data.gender || ""}
+              onChange={(e) => updateData("gender", e.target.value)}
+              onBlur={() => updateData("_touched_gender", true)}
+              className={touched?.gender && errors?.gender ? "input-error" : ""}
+            >
+              <option value="">Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+            {touched?.gender && errors?.gender && (
+              <div className="field-error-message">{errors.gender}</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="form-group">
+        <div className="input-wrapper">
+          <div
+            className="input-icon"
+            onClick={() => dateInputRef.current?.showPicker?.()}
+            style={{ cursor: "pointer" }}
+          >
+            <img src={birthIcon} alt="Date of Birth" />
+          </div>
+          <div className="input-content">
+            <label className="input-label">Date of Birth</label>
+            <div style={{ position: "relative" }}>
+              <input
+                ref={dateInputRef}
+                type="date"
+                value={data.birthDate || ""}
+                onChange={(e) => {
+                  updateData("birthDate", e.target.value);
+                  setShowDatePicker(false);
+                }}
+                onBlur={() => {
+                  updateData("_touched_birthDate", true);
+                  setShowDatePicker(false);
+                }}
+                max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+                style={{
+                  position: "absolute",
+                  opacity: 0,
+                  pointerEvents: "none"
+                }}
+              />
+              <input
+                type="text"
+                readOnly
+                value={data.birthDate ? formatDateDisplay(data.birthDate) : ""}
+                onClick={() => dateInputRef.current?.click()}
+                onFocus={(e) => {
+                  e.target.blur();
+                  setShowDatePicker(true);
+                  if (dateInputRef.current?.showPicker) {
+                    dateInputRef.current.showPicker();
+                  } else {
+                    dateInputRef.current?.click();
+                  }
+                }}
+                placeholder="Select date of birth"
+                className={`form-input ${touched?.birthDate && errors?.birthDate ? "input-error" : ""}`}
+                style={{
+                  cursor: "pointer",
+                  backgroundColor: "#fff",
+                  caretColor: "transparent"
+                }}
+              />
+            </div>
+            {touched?.birthDate && errors?.birthDate && (
+              <div className="field-error-message">{errors.birthDate}</div>
             )}
           </div>
         </div>
