@@ -279,9 +279,18 @@ const PostApproval = () => {
                   </div>
                 </div>
 
-                {/* Content */}
-                <div style={{ fontSize: "14px", color: "#353945", whiteSpace: "pre-line", wordBreak: "break-word", overflowWrap: "break-word", borderLeft: "4px solid #EA650A", paddingLeft: "16px", margin: "0" }}>
-                  {post.content}
+                {/* Question & Content */}
+                <div style={{ borderLeft: "4px solid #EA650A", paddingLeft: "16px", margin: "0" }}>
+                  {(post.question || post.title) && (
+                    <h5 style={{ fontSize: "16px", fontWeight: "700", color: "#09122E", margin: "0 0 6px 0", lineHeight: "1.4" }}>
+                      {post.question || post.title}
+                    </h5>
+                  )}
+                  {post.content && post.content !== (post.question || post.title) && (
+                    <div style={{ fontSize: "14px", color: (post.question || post.title) ? "#545A69" : "#353945", whiteSpace: "pre-line", wordBreak: "break-word", overflowWrap: "break-word" }}>
+                      {post.content}
+                    </div>
+                  )}
                 </div>
 
                 {/* Link Preview (if present) */}

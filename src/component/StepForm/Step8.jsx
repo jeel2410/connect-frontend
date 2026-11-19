@@ -177,8 +177,13 @@ const Step8 = ({ data, updateData, errors, touched }) => {
 
         {/* Right panel: Companies */}
         <div className={`step8-panel${selectedIndustry ? ' step8-panel--active' : ''}`}>
-          <div className="step8-panel-header">
+          <div className="step8-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span className="step8-panel-label">Company</span>
+            {selectedCompany && (
+              <span style={{ fontSize: '11px', fontWeight: '700', color: '#EA650A' }}>
+                ✓ Selected
+              </span>
+            )}
           </div>
 
           {!selectedIndustry ? (
@@ -201,6 +206,9 @@ const Step8 = ({ data, updateData, errors, touched }) => {
                   onClick={() => selectCompany(company._id)}
                 >
                   <span>{company.name}</span>
+                  {selectedCompany === company._id && (
+                    <span className="step8-check">✓</span>
+                  )}
                 </button>
               ))}
             </div>

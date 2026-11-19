@@ -119,10 +119,14 @@ const OtpVerification = () => {
               navigate("/email-verification", { state: { phoneNumber: storedPhoneNumber } });
             }, 1000);
           } else {
-            // Existing user or profile complete - redirect to home
+            // Existing user or profile complete - redirect to home or return path
             setSuccess("Login successful! Redirecting...");
+            const returnUrl = location.state?.from || (typeof window !== 'undefined' ? sessionStorage.getItem('loginRedirect') : null) || "/";
+            if (typeof window !== 'undefined') {
+              sessionStorage.removeItem('loginRedirect');
+            }
             setTimeout(() => {
-              navigate("/");
+              navigate(returnUrl);
             }, 1000);
           }
         } else {

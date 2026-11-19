@@ -352,115 +352,204 @@ const EmailVerification = () => {
             )}
 
             {!otpSent ? (
-              /* Step A: Email Input + Send Verification Code */
-              <form onSubmit={handleSendCode}>
-                <div className="form-group" style={{ marginBottom: "20px" }}>
-                  <div
+              <>
+                {/* 1. Google Sign-in Shown First */}
+                <button
+                  type="button"
+                  onClick={() => handleGoogleLogin()}
+                  disabled={googleLoading || isSending || isVerifying}
+                  style={{
+                    width: "100%",
+                    height: "52px",
+                    backgroundColor: "#ffffff",
+                    border: "1px solid #CBD5E1",
+                    borderRadius: "12px",
+                    fontSize: "15px",
+                    fontWeight: "600",
+                    color: "#1E293B",
+                    fontFamily: "'Inter', sans-serif",
+                    cursor: googleLoading ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "12px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  {googleLoading ? (
+                    <>
+                      <span
+                        className="spinner"
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          borderTopColor: "#EA650A",
+                          borderColor: "rgba(234, 101, 10, 0.2)",
+                        }}
+                      ></span>
+                      Connecting with Google...
+                    </>
+                  ) : (
+                    <>
+                      {/* Google 'G' Logo */}
+                      <svg width="22" height="22" viewBox="0 0 24 24">
+                        <path
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                          fill="#4285F4"
+                        />
+                        <path
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                          fill="#34A853"
+                        />
+                        <path
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                          fill="#FBBC05"
+                        />
+                        <path
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                          fill="#EA4335"
+                        />
+                      </svg>
+                      <span>Continue with Google</span>
+                    </>
+                  )}
+                </button>
+
+                {/* OR Divider */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    margin: "24px 0",
+                    gap: "16px",
+                  }}
+                >
+                  <div style={{ flex: 1, height: "1px", backgroundColor: "#E2E8F0" }} />
+                  <span
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      backgroundColor: "#ffffff",
-                      border: "1.5px solid #EA650A",
-                      borderRadius: "12px",
-                      padding: "4px 16px",
-                      height: "56px",
-                      boxShadow: "0 2px 8px rgba(234, 101, 10, 0.08)",
-                      transition: "all 0.2s ease",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      color: "#94A3B8",
+                      letterSpacing: "0.5px",
+                      fontFamily: "'Inter', sans-serif",
                     }}
                   >
-                    {/* Mail Icon */}
+                    OR
+                  </span>
+                  <div style={{ flex: 1, height: "1px", backgroundColor: "#E2E8F0" }} />
+                </div>
+
+                {/* 2. Other Email Input Shown Second */}
+                <form onSubmit={handleSendCode}>
+                  <div className="form-group" style={{ marginBottom: "20px" }}>
                     <div
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
-                        paddingRight: "12px",
+                        backgroundColor: "#ffffff",
+                        border: "1.5px solid #EA650A",
+                        borderRadius: "12px",
+                        padding: "4px 16px",
+                        height: "56px",
+                        boxShadow: "0 2px 8px rgba(234, 101, 10, 0.08)",
+                        transition: "all 0.2s ease",
                       }}
                     >
-                      <svg
-                        width="22"
-                        height="22"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#09122E"
-                        strokeWidth="1.9"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                      {/* Mail Icon */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          paddingRight: "12px",
+                        }}
                       >
-                        <rect x="2" y="4" width="20" height="16" rx="2" />
-                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                      </svg>
+                        <svg
+                          width="22"
+                          height="22"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#09122E"
+                          strokeWidth="1.9"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <rect x="2" y="4" width="20" height="16" rx="2" />
+                          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                        </svg>
+                      </div>
+
+                      {/* Subtle vertical separator */}
+                      <div
+                        style={{
+                          width: "1px",
+                          height: "24px",
+                          backgroundColor: "#E2E8F0",
+                          marginRight: "12px",
+                        }}
+                      />
+
+                      {/* Email Input */}
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          setApiError("");
+                          setSuccess("");
+                        }}
+                        placeholder="name@example.com"
+                        disabled={isSending || googleLoading}
+                        autoFocus
+                        style={{
+                          flex: 1,
+                          border: "none",
+                          outline: "none",
+                          fontSize: "16px",
+                          color: "#09122E",
+                          fontFamily: "'Inter', sans-serif",
+                          backgroundColor: "transparent",
+                        }}
+                      />
                     </div>
-
-                    {/* Subtle vertical separator */}
-                    <div
-                      style={{
-                        width: "1px",
-                        height: "24px",
-                        backgroundColor: "#E2E8F0",
-                        marginRight: "12px",
-                      }}
-                    />
-
-                    {/* Email Input */}
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        setApiError("");
-                        setSuccess("");
-                      }}
-                      placeholder="name@example.com"
-                      disabled={isSending || googleLoading}
-                      autoFocus
-                      style={{
-                        flex: 1,
-                        border: "none",
-                        outline: "none",
-                        fontSize: "16px",
-                        color: "#09122E",
-                        fontFamily: "'Inter', sans-serif",
-                        backgroundColor: "transparent",
-                      }}
-                    />
                   </div>
-                </div>
 
-                {/* Orange Button: Send Verification Code */}
-                <button
-                  type="submit"
-                  disabled={!isValidEmail(email) || isSending || googleLoading}
-                  style={{
-                    width: "100%",
-                    height: "52px",
-                    backgroundColor: isValidEmail(email) && !isSending ? "#EA650A" : "#F97316",
-                    color: "#ffffff",
-                    border: "none",
-                    borderRadius: "12px",
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    fontFamily: "'Inter', sans-serif",
-                    cursor: isValidEmail(email) && !isSending ? "pointer" : "not-allowed",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "10px",
-                    boxShadow: "0 6px 14px rgba(234, 101, 10, 0.25)",
-                    transition: "all 0.2s ease",
-                    opacity: isValidEmail(email) && !isSending ? 1 : 0.7,
-                  }}
-                >
-                  {isSending ? (
-                    <>
-                      <span className="spinner" style={{ width: "18px", height: "18px" }}></span>
-                      Sending Code...
-                    </>
-                  ) : (
-                    "Send Verification Code"
-                  )}
-                </button>
-              </form>
+                  {/* Orange Button: Send Verification Code */}
+                  <button
+                    type="submit"
+                    disabled={!isValidEmail(email) || isSending || googleLoading}
+                    style={{
+                      width: "100%",
+                      height: "52px",
+                      backgroundColor: isValidEmail(email) && !isSending ? "#EA650A" : "#F97316",
+                      color: "#ffffff",
+                      border: "none",
+                      borderRadius: "12px",
+                      fontSize: "16px",
+                      fontWeight: "600",
+                      fontFamily: "'Inter', sans-serif",
+                      cursor: isValidEmail(email) && !isSending ? "pointer" : "not-allowed",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "10px",
+                      boxShadow: "0 6px 14px rgba(234, 101, 10, 0.25)",
+                      transition: "all 0.2s ease",
+                      opacity: isValidEmail(email) && !isSending ? 1 : 0.7,
+                    }}
+                  >
+                    {isSending ? (
+                      <>
+                        <span className="spinner" style={{ width: "18px", height: "18px" }}></span>
+                        Sending Code...
+                      </>
+                    ) : (
+                      "Send Verification Code"
+                    )}
+                  </button>
+                </form>
+              </>
             ) : (
               /* Step B: 6-Digit OTP Verification Box */
               <div style={{ marginTop: "10px" }}>
@@ -595,92 +684,97 @@ const EmailVerification = () => {
               </div>
             )}
 
-            {/* OR Divider */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                margin: "24px 0",
-                gap: "16px",
-              }}
-            >
-              <div style={{ flex: 1, height: "1px", backgroundColor: "#E2E8F0" }} />
-              <span
-                style={{
-                  fontSize: "13px",
-                  fontWeight: "600",
-                  color: "#94A3B8",
-                  letterSpacing: "0.5px",
-                  fontFamily: "'Inter', sans-serif",
-                }}
-              >
-                OR
-              </span>
-              <div style={{ flex: 1, height: "1px", backgroundColor: "#E2E8F0" }} />
-            </div>
-
-            {/* Google Auth Sign-in Option */}
-            <button
-              type="button"
-              onClick={() => handleGoogleLogin()}
-              disabled={googleLoading || isSending || isVerifying}
-              style={{
-                width: "100%",
-                height: "52px",
-                backgroundColor: "#ffffff",
-                border: "1px solid #CBD5E1",
-                borderRadius: "12px",
-                fontSize: "15px",
-                fontWeight: "600",
-                color: "#1E293B",
-                fontFamily: "'Inter', sans-serif",
-                cursor: googleLoading ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "12px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                transition: "all 0.2s ease",
-              }}
-            >
-              {googleLoading ? (
-                <>
+            {/* Fallback Google Auth Option when on OTP screen */}
+            {otpSent && (
+              <>
+                {/* OR Divider */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    margin: "24px 0",
+                    gap: "16px",
+                  }}
+                >
+                  <div style={{ flex: 1, height: "1px", backgroundColor: "#E2E8F0" }} />
                   <span
-                    className="spinner"
                     style={{
-                      width: "16px",
-                      height: "16px",
-                      borderTopColor: "#EA650A",
-                      borderColor: "rgba(234, 101, 10, 0.2)",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      color: "#94A3B8",
+                      letterSpacing: "0.5px",
+                      fontFamily: "'Inter', sans-serif",
                     }}
-                  ></span>
-                  Connecting with Google...
-                </>
-              ) : (
-                <>
-                  {/* Google 'G' Logo */}
-                  <svg width="22" height="22" viewBox="0 0 24 24">
-                    <path
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      fill="#4285F4"
-                    />
-                    <path
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      fill="#34A853"
-                    />
-                    <path
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                      fill="#FBBC05"
-                    />
-                    <path
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                      fill="#EA4335"
-                    />
-                  </svg>
-                  <span>Continue with Google</span>
-                </>
-              )}
-            </button>
+                  >
+                    OR
+                  </span>
+                  <div style={{ flex: 1, height: "1px", backgroundColor: "#E2E8F0" }} />
+                </div>
+
+                {/* Google Auth Sign-in Option */}
+                <button
+                  type="button"
+                  onClick={() => handleGoogleLogin()}
+                  disabled={googleLoading || isSending || isVerifying}
+                  style={{
+                    width: "100%",
+                    height: "52px",
+                    backgroundColor: "#ffffff",
+                    border: "1px solid #CBD5E1",
+                    borderRadius: "12px",
+                    fontSize: "15px",
+                    fontWeight: "600",
+                    color: "#1E293B",
+                    fontFamily: "'Inter', sans-serif",
+                    cursor: googleLoading ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "12px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  {googleLoading ? (
+                    <>
+                      <span
+                        className="spinner"
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          borderTopColor: "#EA650A",
+                          borderColor: "rgba(234, 101, 10, 0.2)",
+                        }}
+                      ></span>
+                      Connecting with Google...
+                    </>
+                  ) : (
+                    <>
+                      {/* Google 'G' Logo */}
+                      <svg width="22" height="22" viewBox="0 0 24 24">
+                        <path
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                          fill="#4285F4"
+                        />
+                        <path
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                          fill="#34A853"
+                        />
+                        <path
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                          fill="#FBBC05"
+                        />
+                        <path
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                          fill="#EA4335"
+                        />
+                      </svg>
+                      <span>Continue with Google</span>
+                    </>
+                  )}
+                </button>
+              </>
+            )}
 
             {/* Secure Footer Text */}
             <p

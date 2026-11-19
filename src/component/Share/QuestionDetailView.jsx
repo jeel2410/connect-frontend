@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, Sparkles, Info, ThumbsUp, ThumbsDown, MessageSquare, Share2, ChevronDown, ChevronUp, Send } from 'lucide-react';
 import API_BASE_URL from '../../utils/config';
 import { getCookie } from '../../utils/auth';
@@ -9,7 +10,7 @@ const cleanStr = (val, fallback = '') => (!val || typeof val !== 'string' || isO
 
 const renderFormattedText = (text) => {
   if (!text) return text;
-  const parts = text.split(/(\*\*[^\*\n]+?\*\*|\*[^\*\n]+?\*)/g);
+  const parts = text.split(/(\*\*[^*\n]+?\*\*|\*[^*\n]+?\*)/g);
   return parts.map((part, index) => {
     if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
       return <strong key={index}>{part.slice(2, -2)}</strong>;
@@ -32,6 +33,8 @@ const QuestionDetailView = ({
   formatTimeAgo,
   onCommentAdded
 }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showAddForm, setShowAddForm] = useState(false);
   const [newCommentText, setNewCommentText] = useState('');
   const [isPostingComment, setIsPostingComment] = useState(false);
@@ -41,6 +44,46 @@ const QuestionDetailView = ({
   const [replyTextMap, setReplyTextMap] = useState({});
   const [expandedRepliesMap, setExpandedRepliesMap] = useState({});
   const [loadingCommentAction, setLoadingCommentAction] = useState({});
+
+  const redirectToLogin = (msg = 'Please log in to continue') => {
+    toast.info(msg);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('loginRedirect', location.pathname);
+    }
+    navigate('/login', { state: { from: location.pathname } });
+  };
+
+  const handleShareQuestion = async () => {
+    if (!selectedQuestionDetail?._id) return;
+    const shareUrl = `${window.location.origin}/ask/${selectedQuestionDetail._id}`;
+    const questionText = selectedQuestionDetail.question || selectedQuestionDetail.title || 'Check out this question on Connect.in';
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: questionText,
+          text: questionText,
+          url: shareUrl,
+        });
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success('Question link copied to clipboard!');
+    } catch (err) {
+      const textArea = document.createElement('textarea');
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      toast.success('Question link copied to clipboard!');
+    }
+  };
 
   if (!selectedQuestionDetail) return null;
 
@@ -75,7 +118,7 @@ const QuestionDetailView = ({
       setIsPostingComment(true);
       const token = getCookie('authToken');
       if (!token) {
-        toast.error('Please log in to submit an answer');
+        redirectToLogin('Please log in to submit an answer');
         return;
       }
       const response = await fetch(`${API_BASE_URL}/api/posts/${selectedQuestionDetail._id}/comment`, {
@@ -110,7 +153,7 @@ const QuestionDetailView = ({
     try {
       const token = getCookie('authToken');
       if (!token) {
-        toast.error('Please log in to like an answer');
+        redirectToLogin('Please log in to react');
         return;
       }
       const response = await fetch(`${API_BASE_URL}/api/posts/${selectedQuestionDetail._id}/comment/${commentId}/like`, {
@@ -144,7 +187,7 @@ const QuestionDetailView = ({
       setLoadingCommentAction(prev => ({ ...prev, [commentId]: true }));
       const token = getCookie('authToken');
       if (!token) {
-        toast.error('Please log in to reply');
+        redirectToLogin('Please log in to reply');
         return;
       }
       const response = await fetch(`${API_BASE_URL}/api/posts/${selectedQuestionDetail._id}/comment/${commentId}/reply`, {
@@ -183,7 +226,7 @@ const QuestionDetailView = ({
     try {
       const token = getCookie('authToken');
       if (!token) {
-        toast.error('Please log in to give feedback');
+        redirectToLogin('Please log in to rate responses');
         return;
       }
       setAiHelpful(prev => (prev === feedbackType ? null : feedbackType));
@@ -204,12 +247,32 @@ const QuestionDetailView = ({
     }
   };
 
+  const displayQuestion = (selectedQuestionDetail.question || selectedQuestionDetail.title || '').trim();
+  const rawContent = (selectedQuestionDetail.content || '').trim();
+  const isContentSameAsQuestion = Boolean(
+    displayQuestion &&
+    rawContent &&
+    displayQuestion.toLowerCase().replace(/[^a-z0-9]/g, '') === rawContent.toLowerCase().replace(/[^a-z0-9]/g, '')
+  );
+  const showPostContent = rawContent && (!displayQuestion || !isContentSameAsQuestion);
+
   return (
     <div style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E8EDF3', padding: '28px', textAlign: 'left' }}>
+      {/* Top Header Row: Question and AI Status Badge */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#09122E', margin: 0, flex: 1, lineHeight: '1.3' }}>
-          {selectedQuestionDetail.content || selectedQuestionDetail.title || 'Untitled Question'}
-        </h1>
+        <h2 style={{
+          fontSize: '22px',
+          fontWeight: '700',
+          color: '#09122E',
+          margin: 0,
+          flex: 1,
+          lineHeight: '1.35',
+          whiteSpace: 'pre-line',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word'
+        }}>
+          {displayQuestion || rawContent || 'Untitled Question'}
+        </h2>
         <div style={{
           background: hasAiDetail ? '#EBF3FF' : '#FFE8EC',
           color: hasAiDetail ? '#0066FF' : '#FF3B30',
@@ -217,8 +280,7 @@ const QuestionDetailView = ({
           fontWeight: '600',
           padding: '6px 14px',
           borderRadius: '20px',
-          flexShrink: 0,
-          marginLeft: '12px'
+          flexShrink: 0
         }}>
           {hasAiDetail ? '✨ AI Answered' : 'Needs Answers'}
         </div>
@@ -240,9 +302,21 @@ const QuestionDetailView = ({
         </span>
       </div>
 
-      <p style={{ fontSize: '15px', color: '#353945', lineHeight: '1.6', marginBottom: '16px' }}>
-        {selectedQuestionDetail.content || selectedQuestionDetail.title || 'Untitled Question'}
-      </p>
+      {/* Post Content - shown after the question */}
+      {showPostContent && (
+        <div style={{
+          fontSize: '15px',
+          fontWeight: '400',
+          color: '#353945',
+          lineHeight: '1.6',
+          marginBottom: '20px',
+          whiteSpace: 'pre-line',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word'
+        }}>
+          {rawContent}
+        </div>
+      )}
 
       {(() => {
         const interests = selectedQuestionDetail.targetSegments?.interests || [];
@@ -271,7 +345,14 @@ const QuestionDetailView = ({
       <div style={{ display: 'flex', gap: '24px', borderTop: '1px solid #E8EDF3', paddingTop: '16px', fontSize: '14px', color: '#545A69' }}>
         <button
           type="button"
-          onClick={(e) => onLikePost(selectedQuestionDetail._id, e)}
+          onClick={(e) => {
+            const token = getCookie('authToken');
+            if (!token) {
+              redirectToLogin('Please log in to react');
+              return;
+            }
+            if (onLikePost) onLikePost(selectedQuestionDetail._id, e);
+          }}
           style={{
             background: 'none',
             border: 'none',
@@ -285,10 +366,25 @@ const QuestionDetailView = ({
         >
           <ThumbsUp size={18} color={isLikedDetail ? '#0066FF' : '#545A69'} /> {likesCount}
         </button>
-        <button style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#545A69', fontWeight: '600' }}>
+        <button
+          type="button"
+          onClick={() => {
+            const token = getCookie('authToken');
+            if (!token) {
+              redirectToLogin('Please log in to add an answer');
+              return;
+            }
+            setShowAddForm(true);
+          }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#545A69', fontWeight: '600' }}
+        >
           <MessageSquare size={18} color="#545A69" /> {answersCount}
         </button>
-        <button style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#545A69', fontWeight: '600' }}>
+        <button
+          type="button"
+          onClick={handleShareQuestion}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#545A69', fontWeight: '600' }}
+        >
           <Share2 size={18} color="#545A69" /> Share
         </button>
       </div>
@@ -369,7 +465,14 @@ const QuestionDetailView = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button
               type="button"
-              onClick={() => setShowAddForm(!showAddForm)}
+              onClick={() => {
+                const token = getCookie('authToken');
+                if (!token) {
+                  redirectToLogin('Please log in to add an answer');
+                  return;
+                }
+                setShowAddForm(!showAddForm);
+              }}
               style={{
                 background: '#FF4D00',
                 color: '#FFFFFF',
@@ -554,7 +657,14 @@ const QuestionDetailView = ({
 
                       <button
                         type="button"
-                        onClick={() => setActiveReplyId(isReplying ? null : (comment._id || idx))}
+                        onClick={() => {
+                          const token = getCookie('authToken');
+                          if (!token) {
+                            redirectToLogin('Please log in to reply');
+                            return;
+                          }
+                          setActiveReplyId(isReplying ? null : (comment._id || idx));
+                        }}
                         style={{
                           background: 'none',
                           border: 'none',

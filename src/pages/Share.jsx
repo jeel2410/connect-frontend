@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import Header from '../component/Header';
 import Footer from '../component/Footer';
 import CreatePost from '../component/CreatePost';
@@ -18,6 +18,8 @@ import ShareSidebar from '../component/Share/ShareSidebar';
 
 const Share = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const location = useLocation();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -62,12 +64,20 @@ const Share = () => {
     }
   };
 
+  const redirectToLogin = (msg = 'Please log in to continue') => {
+    toast.info(msg);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('loginRedirect', location.pathname);
+    }
+    navigate('/login', { state: { from: location.pathname } });
+  };
+
   const handleConnectUser = async (targetUserId) => {
     if (!targetUserId) return;
     try {
       const token = getCookie('authToken');
       if (!token) {
-        toast.error('Please log in to send connection requests');
+        redirectToLogin('Please log in to send connection requests');
         return;
       }
       const response = await fetch(`${API_BASE_URL}/api/connection/connectionrequest/${targetUserId}`, {
@@ -97,7 +107,7 @@ const Share = () => {
     try {
       const token = getCookie('authToken');
       if (!token) {
-        toast.error('Please log in to react to posts');
+        redirectToLogin('Please log in to react');
         return;
       }
       const response = await fetch(`${API_BASE_URL}/api/posts/${postId}/react`, {
@@ -137,29 +147,74 @@ const Share = () => {
 
   const handleQuestionClick = (question) => {
     if (!question) return;
+    const targetId = question._id;
+    if (!targetId) return;
+
     const currentViews = (question.views || question.viewsCount || 0) + 1;
     const updatedQuestion = { ...question, views: currentViews, viewsCount: currentViews };
     setSelectedQuestionDetail(updatedQuestion);
     setPosts(prevPosts =>
-      prevPosts.map(p => (p._id === question._id ? { ...p, views: currentViews } : p))
+      prevPosts.map(p => (p._id === targetId ? { ...p, views: currentViews } : p))
     );
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigate(`/ask/${targetId}`);
 
     try {
       const token = getCookie('authToken');
-      if (token && question._id) {
-        fetch(`${API_BASE_URL}/api/posts/${question._id}/view`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }).catch(console.error);
-      }
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      fetch(`${API_BASE_URL}/api/posts/${targetId}/view`, {
+        method: 'POST',
+        headers
+      }).catch(console.error);
     } catch (err) {
       console.error('Error incrementing post view:', err);
     }
   };
+
+  // Watch URL route id parameter to display specific question directly
+  useEffect(() => {
+    if (id) {
+      if (selectedQuestionDetail && selectedQuestionDetail._id === id) {
+        return;
+      }
+
+      const postMatch = posts.find(p => p._id === id);
+      if (postMatch) {
+        setSelectedQuestionDetail(postMatch);
+      }
+
+      const fetchQuestionById = async () => {
+        try {
+          const token = getCookie('authToken');
+          const headers = { 'Content-Type': 'application/json' };
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+          const res = await fetch(`${API_BASE_URL}/api/posts/${id}`, { headers });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.data) {
+              setSelectedQuestionDetail(data.data);
+              fetch(`${API_BASE_URL}/api/posts/${id}/view`, {
+                method: 'POST',
+                headers
+              }).catch(() => {});
+            }
+          } else {
+            toast.error('Question not found');
+            navigate('/ask');
+          }
+        } catch (err) {
+          console.error('Error fetching question by id:', err);
+        }
+      };
+
+      fetchQuestionById();
+    } else {
+      setSelectedQuestionDetail(null);
+    }
+  }, [id]);
 
   const fetchPosts = useCallback(async (pageNum = 1, isInitial = false) => {
     try {
@@ -170,12 +225,13 @@ const Share = () => {
 
       const token = getCookie('authToken');
       const limit = 10;
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const response = await fetch(`${API_BASE_URL}/api/posts?sortBy=${sortBy}&filter=${activeTab}&page=${pageNum}&limit=${limit}`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers
       });
 
       if (!response.ok) {
@@ -209,9 +265,12 @@ const Share = () => {
   const fetchTopSharers = async () => {
     try {
       const token = getCookie('authToken');
-      if (!token) return;
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const res = await fetch(`${API_BASE_URL}/api/posts/top-sharers`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers
       });
       if (res.ok) {
         const data = await res.json();
@@ -292,6 +351,15 @@ const Share = () => {
     }
   };
 
+  const handleTabClick = (tabId) => {
+    const token = getCookie('authToken');
+    if (!token && tabId !== 'all') {
+      redirectToLogin('Please log in to view personalized topics');
+      return;
+    }
+    setActiveTab(tabId);
+  };
+
   const dynamicTrendingQuestions = [...posts].sort((a, b) => {
     const scoreA = (a.reactions?.length || 0) + (a.commentsCount || 0) + (a.reshareCount || 0);
     const scoreB = (b.reactions?.length || 0) + (b.commentsCount || 0) + (b.reshareCount || 0);
@@ -355,7 +423,10 @@ const Share = () => {
                 {selectedQuestionDetail && (
                   <button
                     type="button"
-                    onClick={() => setSelectedQuestionDetail(null)}
+                    onClick={() => {
+                      setSelectedQuestionDetail(null);
+                      navigate('/ask');
+                    }}
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -412,7 +483,14 @@ const Share = () => {
                         </div>
                         <button
                           type="button"
-                          onClick={() => setIsCreateExpanded(true)}
+                          onClick={() => {
+                            const token = getCookie('authToken');
+                            if (!token) {
+                              redirectToLogin('Please log in to ask or share');
+                              return;
+                            }
+                            setIsCreateExpanded(true);
+                          }}
                           style={{
                             background: '#FF4D00',
                             color: '#FFFFFF',
@@ -448,7 +526,7 @@ const Share = () => {
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', width: '100%' }}>
                           <select
                             value={activeTab}
-                            onChange={(e) => setActiveTab(e.target.value)}
+                            onChange={(e) => handleTabClick(e.target.value)}
                             style={{
                               flex: 1,
                               minWidth: 0,
@@ -465,9 +543,9 @@ const Share = () => {
                             }}
                           >
                             <option value="all">All</option>
-                            <option value="my">My Questions</option>
+                            <option value="my">My Topics</option>
                             <option value="connections">From Connections</option>
-                            <option value="unanswered">Unanswered</option>
+                            <option value="shared">Shared with me</option>
                           </select>
 
                           <select
@@ -497,14 +575,14 @@ const Share = () => {
                           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                             {[
                               { id: 'all', label: 'All' },
-                              { id: 'my', label: 'My Questions' },
+                              { id: 'my', label: 'My Topics' },
                               { id: 'connections', label: 'From Connections' },
-                              { id: 'unanswered', label: 'Unanswered' }
+                              { id: 'shared', label: 'Shared with me' }
                             ].map((tab) => (
                               <button
                                 key={tab.id}
                                 type="button"
-                                onClick={() => setActiveTab(tab.id)}
+                                onClick={() => handleTabClick(tab.id)}
                                 style={{
                                   padding: '8px 20px',
                                   borderRadius: '20px',

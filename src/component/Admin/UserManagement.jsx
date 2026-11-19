@@ -30,6 +30,31 @@ const UserManagement = () => {
   const [interests, setInterests] = useState([]);
   const religions = ["Hinduism", "Islam", "Christianity", "Sikhism", "Buddhism", "Jainism"];
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "N/A";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return "N/A";
+      return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    } catch {
+      return "N/A";
+    }
+  };
+
+  const getIndustryName = (user) => {
+    const rawInd = user.userDetails?.industry;
+    if (!rawInd || rawInd === "N/A") return "N/A";
+    const found = industries.find(
+      (i) => String(i._id) === String(rawInd) || (i.name && i.name.toLowerCase() === String(rawInd).toLowerCase())
+    );
+    if (found) return found.name;
+    // If it's a 24-character hexadecimal ObjectId and not found in industries, fallback to N/A
+    if (typeof rawInd === "string" && /^[0-9a-fA-F]{24}$/.test(rawInd.trim())) {
+      return "N/A";
+    }
+    return rawInd;
+  };
+
   // Bounced / Unsubscribed CSV upload state
   const [showBounceModal, setShowBounceModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -390,7 +415,7 @@ const UserManagement = () => {
               <th>Phone Number</th>
               <th>City</th>
               <th>Industry</th>
-              <th>Religion</th>
+              <th>Sign Up Date</th>
               <th>Traffic Source</th>
               <th>Status</th>
               <th>Actions</th>
@@ -443,10 +468,10 @@ const UserManagement = () => {
                         {user.userDetails?.city || "N/A"}
                       </span>
                     </td>
-                    <td>{user.userDetails?.industry || "N/A"}</td>
+                    <td>{getIndustryName(user)}</td>
                     <td>
-                      <span className="table-cell-badge badge-religion">
-                        {user.userDetails?.religion || "N/A"}
+                      <span style={{ fontSize: "13px", color: "#545A69", whiteSpace: "nowrap" }}>
+                        {formatDate(user.createdAt)}
                       </span>
                     </td>
                     <td>

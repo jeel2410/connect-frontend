@@ -25,7 +25,6 @@ const QuestionFeedCard = ({
     : resolveImageUrl(authorDetail.profileImage);
   const defaultAvatar = getAvatar(authorDetail.gender, authorDetail.dateOfBirth);
 
-  const title = post.content || post.title || 'Untitled Question';
   const isLiked = post.reactions?.some(r => {
     const rId = typeof r.userId === 'object' ? r.userId?._id : r.userId;
     return String(rId) === String(currentUserId);
@@ -35,6 +34,15 @@ const QuestionFeedCard = ({
   const viewsCount = post.views || post.viewsCount || 0;
   const hasAi = post.targetSegments?.getAiResponses !== false && Boolean(post.aiAnswer?.content);
   const categoryTag = post.targetSegments?.interests?.[0] || post.targetSegments?.industries?.[0] || '';
+
+  const displayQuestion = (post.question || post.title || '').trim();
+  const rawContent = (post.content || '').trim();
+  const isContentSameAsQuestion = Boolean(
+    displayQuestion &&
+    rawContent &&
+    displayQuestion.toLowerCase().replace(/[^a-z0-9]/g, '') === rawContent.toLowerCase().replace(/[^a-z0-9]/g, '')
+  );
+  const showPostContent = rawContent && (!displayQuestion || !isContentSameAsQuestion);
 
   return (
     <div
@@ -95,14 +103,47 @@ const QuestionFeedCard = ({
         )}
       </div>
 
-      <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#09122E', margin: '0 0 10px 0', lineHeight: '1.4' }}>
-        {title}
-      </h3>
+      {/* Question populated by AI */}
+      {displayQuestion && (
+        <h4 style={{
+          fontSize: '17px',
+          fontWeight: '700',
+          color: '#09122E',
+          margin: '0 0 10px 0',
+          lineHeight: '1.4',
+          whiteSpace: 'pre-line',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word'
+        }}>
+          {displayQuestion}
+        </h4>
+      )}
 
-      {post.content && post.title && (
-        <p style={{ fontSize: '14px', color: '#545A69', margin: '0 0 14px 0', lineHeight: '1.5' }}>
-          {post.content}
-        </p>
+      {/* Main post content shown after the question */}
+      {showPostContent && (
+        <div style={{
+          fontSize: '15px',
+          fontWeight: '400',
+          color: '#545A69',
+          margin: '0 0 14px 0',
+          lineHeight: '1.6',
+          whiteSpace: 'pre-line',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word'
+        }}>
+          {rawContent}
+        </div>
+      )}
+      {!displayQuestion && !showPostContent && (
+        <div style={{
+          fontSize: '15px',
+          fontWeight: '400',
+          color: '#545A69',
+          margin: '0 0 14px 0',
+          lineHeight: '1.6'
+        }}>
+          Untitled Question
+        </div>
       )}
 
       {categoryTag && (

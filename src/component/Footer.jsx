@@ -54,19 +54,23 @@ const Footer = () => {
         </>
       )}
     </nav> */}
-        {
-          isLoggedIn && (
-            <nav className="footer-nav center-nav">
-
-              <>
-                <a href="/" className="footer-link">Home</a>
-                <a href="/offers" className="footer-link">Offers</a>
-                <a href="/directory" className="footer-link">Directory</a>
-              </>
-
-            </nav>
-          )
-        }
+        <nav className="footer-nav center-nav">
+          {isLoggedIn ? (
+            <>
+              <a href="/" className="footer-link">Home</a>
+              <a href="/ask" className="footer-link">Ask / Share</a>
+              <a href="/offers" className="footer-link">Offers</a>
+              <a href="/directory" className="footer-link">Directory</a>
+            </>
+          ) : (
+            <>
+              <a href="/ask" className="footer-link">Ask / Share</a>
+              <a href="/features" className="footer-link">Features</a>
+              <a href="/resources" className="footer-link">Resources</a>
+              <a href="/download-app" className="footer-link">Download App</a>
+            </>
+          )}
+        </nav>
 
         <div className="footer-bottom-row">
           <div className="left-section">
@@ -78,6 +82,8 @@ const Footer = () => {
             </p>
           </div>
           <div className="legal-links">
+            <a href="/ask" className="legal-link">Ask / Share</a>
+            <span className="separator">•</span>
             <a href="/directory" className="legal-link">Directory</a>
             <span className="separator">•</span>
             <a href="/privacy-policy" className="legal-link">Privacy</a>

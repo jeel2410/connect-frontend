@@ -186,7 +186,8 @@ const ShareSidebar = ({
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {dynamicTrendingQuestions.map((item, idx) => {
-                      const title = item.content || item.title || 'Untitled Question';
+                      const rawSidebarText = (item.title || item.content || '').trim();
+                      const title = rawSidebarText.split('\n')[0].trim() || 'Untitled Question';
                       const answersCount = item.commentsCount || (item.comments ? item.comments.length : 0);
                       const viewsCount = item.views || item.viewsCount || 0;
                       const formattedViews = viewsCount >= 1000 ? `${(viewsCount / 1000).toFixed(1)}K` : viewsCount;
@@ -577,7 +578,8 @@ const ShareSidebar = ({
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {dynamicRelatedQuestions.map((item, idx) => {
-                      const title = item.content || item.title || 'Untitled Question';
+                      const rawSidebarText = (item.title || item.content || '').trim();
+                      const title = rawSidebarText.split('\n')[0].trim() || 'Untitled Question';
                       const answersCount = item.commentsCount || (item.comments ? item.comments.length : 0);
                       const viewsCount = item.views || item.viewsCount || 0;
                       const formattedViews = viewsCount >= 1000 ? `${(viewsCount / 1000).toFixed(1)}K` : viewsCount;

@@ -370,35 +370,48 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                   </>
                 ) : statId === "complete-profiles" ? (
                   (() => {
-                    const totalNewSignups = data.reduce((sum, d) => sum + (d.newSignups || 0), 0);
-                    const totalCompleted = data.reduce((sum, d) => sum + (d.count || 0), 0);
-                    const overallPercentage = totalNewSignups > 0
-                      ? ((totalCompleted / totalNewSignups) * 100).toFixed(1)
-                      : 0;
+                    const totalOtpDone = data.reduce((sum, d) => sum + (d.otpDone ?? d.newSignups ?? 0), 0);
+                    const totalEmailVerified = data.reduce((sum, d) => sum + (d.emailVerified ?? d.completedVerified ?? 0), 0);
+                    const totalBasicProfile = data.reduce((sum, d) => sum + (d.basicProfile ?? 0), 0);
+                    const totalFullProfile = data.reduce((sum, d) => sum + (d.fullProfile ?? d.count ?? 0), 0);
+
+                    const emailVerifiedPct = totalOtpDone > 0 ? ((totalEmailVerified / totalOtpDone) * 100).toFixed(1) : 0;
+                    const basicProfilePct = totalOtpDone > 0 ? ((totalBasicProfile / totalOtpDone) * 100).toFixed(1) : 0;
+                    const fullProfilePct = totalOtpDone > 0 ? ((totalFullProfile / totalOtpDone) * 100).toFixed(1) : 0;
+
                     return (
                       <>
                         <div className="trend-summary-card">
-                          <span className="summary-label">7-Day New Signups</span>
+                          <span className="summary-label">7-Day OTP Done</span>
                           <span className="summary-val" style={{ color: currentTheme.main }}>
-                            {totalNewSignups.toLocaleString()}
+                            {totalOtpDone.toLocaleString()}
                           </span>
                         </div>
                         <div className="trend-summary-card">
-                          <span className="summary-label">7-Day Completed</span>
-                          <span className="summary-val" style={{ color: currentTheme.main }}>
-                            {totalCompleted.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="trend-summary-card">
-                          <span className="summary-label">Completion Rate</span>
-                          <span className="summary-val" style={{ color: currentTheme.main }}>
-                            {overallPercentage}%
-                          </span>
-                        </div>
-                        <div className="trend-summary-card">
-                          <span className="summary-label">Verified Email %</span>
+                          <span className="summary-label">7-Day EMAIL Verified</span>
                           <span className="summary-val" style={{ color: "#2563EB" }}>
-                            {stats?.completedVerifiedEmailPercentage ?? 0}% ({stats?.completedVerifiedProfiles || 0}/{stats?.totalCompleteProfiles || 0})
+                            {totalEmailVerified.toLocaleString()}{" "}
+                            <span style={{ fontSize: "13px", fontWeight: 500, color: "#64748B" }}>
+                              ({emailVerifiedPct}%)
+                            </span>
+                          </span>
+                        </div>
+                        <div className="trend-summary-card">
+                          <span className="summary-label">7-Day BASIC PROFILE</span>
+                          <span className="summary-val" style={{ color: "#D97706" }}>
+                            {totalBasicProfile.toLocaleString()}{" "}
+                            <span style={{ fontSize: "13px", fontWeight: 500, color: "#64748B" }}>
+                              ({basicProfilePct}%)
+                            </span>
+                          </span>
+                        </div>
+                        <div className="trend-summary-card">
+                          <span className="summary-label">7-Day FULL PROFILE</span>
+                          <span className="summary-val" style={{ color: "#059669" }}>
+                            {totalFullProfile.toLocaleString()}{" "}
+                            <span style={{ fontSize: "13px", fontWeight: 500, color: "#64748B" }}>
+                              ({fullProfilePct}%)
+                            </span>
                           </span>
                         </div>
                       </>
@@ -438,10 +451,10 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                     ) : statId === "complete-profiles" ? (
                       <tr>
                         <th>Date</th>
-                        <th style={{ textAlign: "right" }}>New Signups</th>
-                        <th style={{ textAlign: "right" }}>Completed</th>
-                        <th style={{ textAlign: "right" }}>Completion %</th>
-                        <th style={{ textAlign: "right" }}>Verified Emails</th>
+                        <th style={{ textAlign: "right" }}>OTP Done</th>
+                        <th style={{ textAlign: "right" }}>EMAIL Verified</th>
+                        <th style={{ textAlign: "right" }}>BASIC PROFILE</th>
+                        <th style={{ textAlign: "right" }}>FULL PROFILE</th>
                       </tr>
                     ) : (
                       <tr>
@@ -468,17 +481,32 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                           </>
                         ) : statId === "complete-profiles" ? (
                           <>
-                            <td className="trend-td-count" style={{ fontWeight: "500", textAlign: "right" }}>
-                              {(row.newSignups || 0).toLocaleString()}
+                            <td className="trend-td-count" style={{ fontWeight: "600", textAlign: "right" }}>
+                              {(row.otpDone ?? row.newSignups ?? 0).toLocaleString()}
                             </td>
-                            <td className="trend-td-count" style={{ color: currentTheme.main, fontWeight: "600", textAlign: "right" }}>
-                              {row.count.toLocaleString()}
+                            <td className="trend-td-count" style={{ color: "#2563EB", fontWeight: "600", textAlign: "right" }}>
+                              {(row.emailVerified ?? row.completedVerified ?? 0).toLocaleString()}
+                              {(row.otpDone ?? row.newSignups ?? 0) > 0 && (
+                                <span style={{ fontSize: "12px", color: "#64748B", marginLeft: "4px", fontWeight: "500" }}>
+                                  ({(((row.emailVerified ?? row.completedVerified ?? 0) / (row.otpDone ?? row.newSignups ?? 1)) * 100).toFixed(1)}%)
+                                </span>
+                              )}
+                            </td>
+                            <td className="trend-td-count" style={{ color: "#D97706", fontWeight: "600", textAlign: "right" }}>
+                              {(row.basicProfile ?? 0).toLocaleString()}
+                              {(row.otpDone ?? row.newSignups ?? 0) > 0 && (
+                                <span style={{ fontSize: "12px", color: "#64748B", marginLeft: "4px", fontWeight: "500" }}>
+                                  ({(((row.basicProfile ?? 0) / (row.otpDone ?? row.newSignups ?? 1)) * 100).toFixed(1)}%)
+                                </span>
+                              )}
                             </td>
                             <td className="trend-td-count" style={{ color: currentTheme.main, fontWeight: "700", textAlign: "right" }}>
-                              {(row.percentage || 0)}%
-                            </td>
-                            <td className="trend-td-count" style={{ color: "#2563EB", fontWeight: "700", textAlign: "right" }}>
-                              {(row.completedVerified || 0).toLocaleString()} ({(row.verifiedEmailPercentage || 0)}%)
+                              {(row.fullProfile ?? row.count ?? 0).toLocaleString()}
+                              {(row.otpDone ?? row.newSignups ?? 0) > 0 && (
+                                <span style={{ fontSize: "12px", color: "#64748B", marginLeft: "4px", fontWeight: "500" }}>
+                                  ({(((row.fullProfile ?? row.count ?? 0) / (row.otpDone ?? row.newSignups ?? 1)) * 100).toFixed(1)}%)
+                                </span>
+                              )}
                             </td>
                           </>
                         ) : (

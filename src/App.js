@@ -81,14 +81,14 @@ function App() {
             element={<RootRoute />}
           />
 
-          {/* Redirect /Login and /login to / */}
+          {/* /login routes - Show Register/Login form while preserving redirect state */}
           <Route
             path="/Login"
-            element={<Navigate to="/" replace />}
+            element={<RootRoute />}
           />
           <Route
             path="/login"
-            element={<Navigate to="/" replace />}
+            element={<RootRoute />}
           />
 
           {/* Public Routes - Redirect to home if already authenticated */}
@@ -165,18 +165,6 @@ function App() {
             }
           />
           <Route
-            path="/ask"
-            element={
-              <ProtectedRoute>
-                <Share />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/share"
-            element={<Navigate to="/ask" replace />}
-          />
-          <Route
             path="/delete-account"
             element={
               <ProtectedRoute>
@@ -193,6 +181,26 @@ function App() {
             }
           />
           {/* Public Routes - Accessible without authentication */}
+          <Route
+            path="/ask"
+            element={<Share />}
+          />
+          <Route
+            path="/ask/:id"
+            element={<Share />}
+          />
+          <Route
+            path="/share"
+            element={<Navigate to="/ask" replace />}
+          />
+          <Route
+            path="/share/:id"
+            element={<Share />}
+          />
+          <Route
+            path="/question/:id"
+            element={<Share />}
+          />
           <Route
             path="/features"
             element={<Features />}

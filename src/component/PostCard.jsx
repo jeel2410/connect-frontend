@@ -27,6 +27,14 @@ const PostCard = ({ post, onReact, onPostUpdated, onPostDeleted }) => {
   const isLongContent = content && content.length > MAX_CAPTION_LENGTH;
   const displayedContent = isLongContent && !isExpanded ? content.slice(0, MAX_CAPTION_LENGTH) : content;
 
+  const displayQuestion = (post.question || post.title || '').trim();
+  const isContentSameAsQuestion = Boolean(
+    displayQuestion &&
+    content &&
+    displayQuestion.toLowerCase().replace(/[^a-z0-9]/g, '') === content.toLowerCase().replace(/[^a-z0-9]/g, '')
+  );
+  const showPostContent = displayedContent && (!displayQuestion || !isContentSameAsQuestion);
+
   const resharedContent = sharedPostId?.content || '';
   const isLongResharedContent = resharedContent && resharedContent.length > MAX_CAPTION_LENGTH;
   const displayedResharedContent = isLongResharedContent && !isResharedExpanded ? resharedContent.slice(0, MAX_CAPTION_LENGTH) : resharedContent;
@@ -422,9 +430,33 @@ const PostCard = ({ post, onReact, onPostUpdated, onPostDeleted }) => {
           </div>
         ) : (
           <>
-            <p style={{ whiteSpace: 'pre-line', wordBreak: 'break-word', overflowWrap: 'break-word', margin: 0 }}>
-              {displayedContent}
-            </p>
+            {displayQuestion && (
+              <h4 style={{
+                fontSize: '16px',
+                fontWeight: '700',
+                color: '#09122E',
+                margin: '0 0 8px 0',
+                lineHeight: '1.4',
+                whiteSpace: 'pre-line',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word'
+              }}>
+                {displayQuestion}
+              </h4>
+            )}
+            {showPostContent && (
+              <p style={{
+                whiteSpace: 'pre-line',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+                margin: 0,
+                color: displayQuestion ? '#545A69' : '#353945',
+                fontSize: '15px',
+                lineHeight: '1.6'
+              }}>
+                {displayedContent}
+              </p>
+            )}
             {isLongContent && (
               <button
                 onClick={() => setIsExpanded(!isExpanded)}

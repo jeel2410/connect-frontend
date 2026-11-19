@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   FileText, X, Send, Paperclip, Plus,
   Users, ChevronDown, ChevronUp, Info, MapPin, Target, Tag, Building2
@@ -8,6 +9,7 @@ import { getCookie } from '../utils/auth';
 import { toast } from 'react-toastify';
 
 const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: propSetIsExpanded }) => {
+  const navigate = useNavigate();
   const [content, setContent] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [isPosting, setIsPosting] = useState(false);
@@ -17,6 +19,7 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
   
   // Note: default to 'post' (Ask Question) and hide Reel Video tab per user request
   const [shareType, setShareType] = useState('post'); // 'post' or 'link'
+  const [postType, setPostType] = useState('ask'); // 'ask' or 'share'
   const [getAiResponses, setGetAiResponses] = useState(true);
   const [selectedAudienceCard, setSelectedAudienceCard] = useState('help'); // 'help' | 'connections' | 'city' | 'custom'
   const [isAudienceDetailsOpen, setIsAudienceDetailsOpen] = useState(false);
@@ -132,6 +135,7 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
   const handleCancel = () => {
     setContent('');
     setAttachments([]);
+    setPostType('ask');
     setGetAiResponses(true);
     setSelectedAudienceCard('help');
     setTargetConnections(true);
@@ -148,18 +152,20 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
     if (e && e.preventDefault) e.preventDefault();
 
     if (!content.trim() && attachments.length === 0) {
-      toast.error('Please add a question before submitting');
+      toast.error(postType === 'ask' ? 'Please add a question before submitting' : 'Please add content before submitting');
       return;
     }
 
     setIsPosting(true);
     const formData = new FormData();
     formData.append('content', content.trim());
+    formData.append('postType', postType);
     attachments.forEach((file) => {
       formData.append('attachments', file);
     });
 
     const targetSegments = {
+      postType,
       getAiResponses,
       audienceType: selectedAudienceCard,
       connections: targetConnections,
@@ -173,6 +179,15 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
 
     try {
       const token = getCookie('authToken');
+      if (!token) {
+        toast.info('Please log in to submit');
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('loginRedirect', window.location.pathname);
+        }
+        navigate('/login', { state: { from: window.location.pathname } });
+        setIsPosting(false);
+        return;
+      }
       const response = await fetch(`${API_BASE_URL}/api/posts`, {
         method: 'POST',
         headers: {
@@ -183,11 +198,11 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
 
       const data = await response.json();
       if (data.success) {
-        toast.success(data.message || 'Question asked successfully');
+        toast.success(data.message || (postType === 'ask' ? 'Question asked successfully' : 'Post shared successfully'));
         handleCancel();
         if (onPostCreated) onPostCreated(data.data);
       } else {
-        toast.error(data.message || 'Failed to submit question');
+        toast.error(data.message || (postType === 'ask' ? 'Failed to submit question' : 'Failed to submit post'));
       }
     } catch (err) {
       console.error('Error creating post:', err);
@@ -204,12 +219,21 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
           <button
             className="create-btn-main"
             onClick={() => {
+              const token = getCookie('authToken');
+              if (!token) {
+                toast.info('Please log in to ask or share');
+                if (typeof window !== 'undefined') {
+                  sessionStorage.setItem('loginRedirect', window.location.pathname);
+                }
+                navigate('/login', { state: { from: window.location.pathname } });
+                return;
+              }
               setShareType('post');
               setIsExpanded(true);
             }}
           >
             <Plus size={20} />
-            <span>Ask</span>
+            <span>Ask / Share</span>
           </button>
         </div>
       ) : (
@@ -217,9 +241,11 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
           {/* Header */}
           <div className="create-post-form-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
             <div style={{ textAlign: 'left' }}>
-              <h3 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#09122E' }}>Ask / Share</h3>
+              <h3 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#09122E' }}>
+                {postType === 'ask' ? 'Ask a Question' : 'Share with Community'}
+              </h3>
               <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#777E90' }}>
-                Ask anything or describe what you need help with.
+                {postType === 'ask' ? 'Ask anything or describe what you need help with.' : 'Share knowledge, ideas, updates, or opportunities.'}
               </p>
             </div>
 
@@ -230,11 +256,11 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
             </div>
           </div>
 
-          {/* Ask Question Input Box */}
+          {/* Ask Question / Share Input Box */}
           <div style={{ position: 'relative', marginBottom: '16px' }}>
             <textarea
               className="post-textarea-premium"
-              placeholder="What would you like to Ask / Share?"
+              placeholder={postType === 'ask' ? 'What would you like to Ask?' : 'What would you like to Share?'}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={4}
@@ -259,25 +285,66 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
             </div>
           </div>
 
-          {/* Get responses from AI Checkbox */}
+          {/* Option buttons (Ask / Share) beside Get responses from AI Checkbox */}
           <div style={{ marginBottom: '24px', textAlign: 'left' }}>
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '15px', fontWeight: '700', color: '#09122E' }}>
-              <input
-                type="checkbox"
-                checked={getAiResponses}
-                onChange={(e) => setGetAiResponses(e.target.checked)}
-                style={{
-                  accentColor: '#EA650A',
-                  width: '18px',
-                  height: '18px',
-                  cursor: 'pointer'
-                }}
-              />
-              <span>Get responses from AI</span>
-              <Info size={16} color="#777E90" style={{ cursor: 'pointer' }} />
-            </label>
-            <p style={{ margin: '4px 0 0 26px', fontSize: '13px', color: '#777E90' }}>
-              AI will answer and also find relevant people and businesses.
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+              {/* Option button group: Ask / Share */}
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '20px' }}>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '15px', fontWeight: postType === 'ask' ? '700' : '600', color: postType === 'ask' ? '#EA650A' : '#09122E' }}>
+                  <input
+                    type="radio"
+                    name="postType"
+                    value="ask"
+                    checked={postType === 'ask'}
+                    onChange={() => setPostType('ask')}
+                    style={{
+                      accentColor: '#EA650A',
+                      width: '18px',
+                      height: '18px',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <span>Ask</span>
+                </label>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '15px', fontWeight: postType === 'share' ? '700' : '600', color: postType === 'share' ? '#EA650A' : '#09122E' }}>
+                  <input
+                    type="radio"
+                    name="postType"
+                    value="share"
+                    checked={postType === 'share'}
+                    onChange={() => setPostType('share')}
+                    style={{
+                      accentColor: '#EA650A',
+                      width: '18px',
+                      height: '18px',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <span>Share</span>
+                </label>
+              </div>
+
+              {/* Get responses from AI Checkbox */}
+              <div>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '15px', fontWeight: '700', color: '#09122E' }}>
+                  <input
+                    type="checkbox"
+                    checked={getAiResponses}
+                    onChange={(e) => setGetAiResponses(e.target.checked)}
+                    style={{
+                      accentColor: '#EA650A',
+                      width: '18px',
+                      height: '18px',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <span>Get responses from AI</span>
+                  <Info size={16} color="#777E90" style={{ cursor: 'pointer' }} />
+                </label>
+              </div>
+            </div>
+            <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: '#777E90' }}>
+              AI will automatically formulate the question, provide answers, and find relevant people and businesses.
             </p>
           </div>
 
@@ -285,7 +352,7 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
           <div style={{ marginBottom: '20px', textAlign: 'left' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
               <h4 style={{ fontSize: '18px', fontWeight: '800', color: '#09122E', margin: 0 }}>
-                Who would you like to Ask / Share?
+                {postType === 'ask' ? 'Who would you like to Ask?' : 'Who would you like to Share with?'}
               </h4>
               <Info size={16} color="#777E90" style={{ cursor: 'pointer' }} />
             </div>

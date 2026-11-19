@@ -3,7 +3,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import logo from "../../src/assets/image/connect_logo.png"
 import mobileIcon from "../../src/assets/image/mobile.png";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import API_BASE_URL from "../utils/config";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
@@ -14,6 +14,7 @@ const Register = () => {
   const [apiError, setApiError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
 
   const scrollToFirstError = () => {
     setTimeout(() => {
@@ -117,9 +118,13 @@ const Register = () => {
         localStorage.setItem("phoneNumber", fullPhoneNumber);
 
         // Redirect after a short delay to show success message
+        const returnUrl = location.state?.from || (typeof window !== 'undefined' ? sessionStorage.getItem('loginRedirect') : null);
         setTimeout(() => {
           navigate("/otp-verification", {
-            state: { phoneNumber: fullPhoneNumber }
+            state: {
+              phoneNumber: fullPhoneNumber,
+              from: returnUrl
+            }
           });
         }, 1500);
 
