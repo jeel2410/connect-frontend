@@ -9,7 +9,8 @@ import {
   sendGeneralSmsBroadcast,
   sendTestOfferEmail,
   sendTestGeneralSms,
-  sendTestIncompleteSms
+  sendTestIncompleteSms,
+  getTargetedEmailUserCount
 } from "../../utils/adminApi";
 import { getCookie, getUserProfile } from "../../utils/auth";
 import API_BASE_URL from "../../utils/config";
