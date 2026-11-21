@@ -352,6 +352,11 @@ const ShareSidebar = ({
                   <Users size={16} color="#FF4D00" />
                 </div>
                 <span>People who can help</span>
+                {selectedQuestionDetail?.aiRecommendations?.people?.length > 0 && (
+                  <span style={{ fontSize: '12px', fontWeight: '600', color: '#777E90' }}>
+                    ({selectedQuestionDetail.aiRecommendations.people.length})
+                  </span>
+                )}
               </h3>
               {isHelpPeopleOpen ? <ChevronUp size={20} color="#777E90" /> : <ChevronDown size={20} color="#777E90" />}
             </div>
@@ -373,7 +378,7 @@ const ShareSidebar = ({
                   }
 
                   return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '420px', overflowY: 'auto', paddingRight: '4px' }}>
                       {displayPeople.map((person, idx) => {
                         const targetId = person.user || person._id || idx;
                         const isConnected = followedUsers[targetId];
@@ -452,6 +457,11 @@ const ShareSidebar = ({
                   <Building2 size={16} color="#FF4D00" />
                 </div>
                 <span>Businesses that can help</span>
+                {selectedQuestionDetail?.aiRecommendations?.businesses?.length > 0 && (
+                  <span style={{ fontSize: '12px', fontWeight: '600', color: '#777E90' }}>
+                    ({selectedQuestionDetail.aiRecommendations.businesses.length})
+                  </span>
+                )}
               </h3>
               {isHelpBizOpen ? <ChevronUp size={20} color="#777E90" /> : <ChevronDown size={20} color="#777E90" />}
             </div>
@@ -473,7 +483,7 @@ const ShareSidebar = ({
                   }
 
                   return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '420px', overflowY: 'auto', paddingRight: '4px' }}>
                       {displayBusinesses.map((biz, idx) => {
                         const targetId = biz.user || biz._id || idx;
                         const isFollowing = followedUsers[targetId];

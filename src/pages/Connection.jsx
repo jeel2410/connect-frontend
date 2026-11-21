@@ -736,8 +736,8 @@ const Connection = () => {
                   onChange={(e) => setFilterBusinesses(e.target.checked)}
                   style={{ width: "18px", height: "18px", accentColor: "#EA650A", cursor: "pointer" }}
                 />
-                <label htmlFor="filterBusinesses" style={{ fontSize: "14px", fontWeight: "600", color: "#4b5563", cursor: "pointer" }}>
-                  Filter by Businesses
+                <label htmlFor="filterBusinesses" style={{ fontSize: "14px", fontWeight: "600", color: "#4b5563", cursor: "pointer", whiteSpace: "nowrap" }}>
+                  Show Businesses
                 </label>
               </div>
             </div>

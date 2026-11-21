@@ -137,11 +137,11 @@ const TrafficSourceStats = () => {
           <thead>
             <tr>
               <th>Traffic Parameter</th>
-              <th>Registered Users</th>
-              <th>Completed Profiles</th>
-              <th>Completion Rate</th>
-              <th>Verified Emails</th>
-              <th>Percentage of Total</th>
+              <th style={{ textAlign: "right" }}>OTP Done</th>
+              <th style={{ textAlign: "right" }}>EMAIL Verified</th>
+              <th style={{ textAlign: "right" }}>BASIC PROFILE</th>
+              <th style={{ textAlign: "right" }}>FULL PROFILE</th>
+              <th style={{ textAlign: "right" }}>Percentage of Total</th>
             </tr>
           </thead>
           <tbody>
@@ -154,7 +154,11 @@ const TrafficSourceStats = () => {
             ) : (
               stats.map((item, index) => {
                 const percentage = totalUsers > 0 ? ((item.count / totalUsers) * 100).toFixed(1) : 0;
-                const completionRate = item.count > 0 ? (((item.completeCount || 0) / item.count) * 100).toFixed(1) : 0;
+                const otpDone = item.otpDone ?? item.count ?? 0;
+                const emailVerified = item.emailVerified ?? item.verifiedCount ?? 0;
+                const basicProfile = item.basicProfile ?? 0;
+                const fullProfile = item.fullProfile ?? item.completeCount ?? 0;
+
                 return (
                   <tr key={index}>
                     <td>
@@ -180,29 +184,44 @@ const TrafficSourceStats = () => {
                         <span>{item.trafficSource}</span>
                       </button>
                     </td>
-                    <td>
+                    <td style={{ textAlign: "right" }}>
                       <span className="table-cell-badge badge-city" style={{ fontWeight: 600 }}>
-                        {item.count.toLocaleString()} users
+                        {otpDone.toLocaleString()}
                       </span>
                     </td>
-                    <td>
-                      <span className="table-cell-badge" style={{ fontWeight: 600, backgroundColor: "#D1FAE5", color: "#065F46" }}>
-                        {(item.completeCount || 0).toLocaleString()} profiles
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ fontWeight: 600, color: "#065F46" }}>
-                        {completionRate}%
-                      </span>
-                    </td>
-                    <td>
+                    <td style={{ textAlign: "right" }}>
                       <span style={{ fontWeight: 600, color: "#2563EB" }}>
-                        {(item.verifiedCount || 0).toLocaleString()} ({item.verifiedRate || 0}%)
+                        {emailVerified.toLocaleString()}
+                        {otpDone > 0 && (
+                          <span style={{ fontSize: "12px", color: "#64748B", marginLeft: "4px", fontWeight: "500" }}>
+                            ({((emailVerified / otpDone) * 100).toFixed(1)}%)
+                          </span>
+                        )}
                       </span>
                     </td>
-                    <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%" }}>
-                        <div style={{ flex: 1, height: "8px", background: "#EDF2F7", borderRadius: "4px", overflow: "hidden", minWidth: "120px" }}>
+                    <td style={{ textAlign: "right" }}>
+                      <span style={{ fontWeight: 600, color: "#D97706" }}>
+                        {basicProfile.toLocaleString()}
+                        {otpDone > 0 && (
+                          <span style={{ fontSize: "12px", color: "#64748B", marginLeft: "4px", fontWeight: "500" }}>
+                            ({((basicProfile / otpDone) * 100).toFixed(1)}%)
+                          </span>
+                        )}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      <span className="table-cell-badge" style={{ fontWeight: 700, backgroundColor: "#D1FAE5", color: "#065F46" }}>
+                        {fullProfile.toLocaleString()}
+                        {otpDone > 0 && (
+                          <span style={{ fontSize: "12px", marginLeft: "4px", fontWeight: "600" }}>
+                            ({((fullProfile / otpDone) * 100).toFixed(1)}%)
+                          </span>
+                        )}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "10px", width: "100%" }}>
+                        <div style={{ flex: 1, height: "8px", background: "#EDF2F7", borderRadius: "4px", overflow: "hidden", minWidth: "80px", maxWidth: "120px" }}>
                           <div style={{ width: `${percentage}%`, height: "100%", background: "#0B63E5", borderRadius: "4px" }}></div>
                         </div>
                         <span style={{ fontSize: "14px", fontWeight: 600, color: "#4A5568" }}>{percentage}%</span>
@@ -255,11 +274,14 @@ const TrafficSourceTrendModal = ({ source, onClose }) => {
   }, [source]);
 
   // Math insights
-  const totalRegistrations = data.reduce((sum, d) => sum + (d.totalCount || 0), 0);
-  const totalCompletions = data.reduce((sum, d) => sum + (d.completeCount || 0), 0);
-  const avgCompletionRate = totalRegistrations > 0 
-    ? ((totalCompletions / totalRegistrations) * 100).toFixed(1) 
-    : "0.0";
+  const totalOtpDone = data.reduce((sum, d) => sum + (d.otpDone ?? d.totalCount ?? 0), 0);
+  const totalEmailVerified = data.reduce((sum, d) => sum + (d.emailVerified ?? 0), 0);
+  const totalBasicProfile = data.reduce((sum, d) => sum + (d.basicProfile ?? 0), 0);
+  const totalFullProfile = data.reduce((sum, d) => sum + (d.fullProfile ?? d.completeCount ?? 0), 0);
+
+  const emailVerifiedPct = totalOtpDone > 0 ? ((totalEmailVerified / totalOtpDone) * 100).toFixed(1) : "0.0";
+  const basicProfilePct = totalOtpDone > 0 ? ((totalBasicProfile / totalOtpDone) * 100).toFixed(1) : "0.0";
+  const fullProfilePct = totalOtpDone > 0 ? ((totalFullProfile / totalOtpDone) * 100).toFixed(1) : "0.0";
 
   return (
     <div className="trend-modal-overlay" onClick={onClose}>
@@ -290,18 +312,37 @@ const TrafficSourceTrendModal = ({ source, onClose }) => {
           ) : (
             <>
               {/* Summary Cards */}
-              <div className="trend-summary-row" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "15px", marginBottom: "20px" }}>
+              <div className="trend-summary-row" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "15px", marginBottom: "20px" }}>
                 <div className="trend-summary-card" style={{ padding: "15px", background: "#F8FAFC", borderRadius: "10px", border: "1px solid #E2E8F0", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <span className="summary-label" style={{ fontSize: "12px", color: "#64748B", fontWeight: 500, marginBottom: "5px" }}>7-Day Registrations</span>
-                  <span className="summary-val" style={{ fontSize: "20px", color: "#0B63E5", fontWeight: "700" }}>{totalRegistrations.toLocaleString()}</span>
+                  <span className="summary-label" style={{ fontSize: "12px", color: "#64748B", fontWeight: 500, marginBottom: "5px" }}>7-Day OTP Done</span>
+                  <span className="summary-val" style={{ fontSize: "20px", color: "#0B63E5", fontWeight: "700" }}>{totalOtpDone.toLocaleString()}</span>
                 </div>
                 <div className="trend-summary-card" style={{ padding: "15px", background: "#F8FAFC", borderRadius: "10px", border: "1px solid #E2E8F0", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <span className="summary-label" style={{ fontSize: "12px", color: "#64748B", fontWeight: 500, marginBottom: "5px" }}>7-Day Completed Profiles</span>
-                  <span className="summary-val" style={{ fontSize: "20px", color: "#059669", fontWeight: "700" }}>{totalCompletions.toLocaleString()}</span>
+                  <span className="summary-label" style={{ fontSize: "12px", color: "#64748B", fontWeight: 500, marginBottom: "5px" }}>7-Day EMAIL Verified</span>
+                  <span className="summary-val" style={{ fontSize: "20px", color: "#2563EB", fontWeight: "700" }}>
+                    {totalEmailVerified.toLocaleString()}{" "}
+                    <span style={{ fontSize: "13px", fontWeight: 500, color: "#64748B" }}>
+                      ({emailVerifiedPct}%)
+                    </span>
+                  </span>
                 </div>
                 <div className="trend-summary-card" style={{ padding: "15px", background: "#F8FAFC", borderRadius: "10px", border: "1px solid #E2E8F0", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <span className="summary-label" style={{ fontSize: "12px", color: "#64748B", fontWeight: 500, marginBottom: "5px" }}>7-Day Completion Rate</span>
-                  <span className="summary-val" style={{ fontSize: "20px", color: "#D97706", fontWeight: "700" }}>{avgCompletionRate}%</span>
+                  <span className="summary-label" style={{ fontSize: "12px", color: "#64748B", fontWeight: 500, marginBottom: "5px" }}>7-Day BASIC PROFILE</span>
+                  <span className="summary-val" style={{ fontSize: "20px", color: "#D97706", fontWeight: "700" }}>
+                    {totalBasicProfile.toLocaleString()}{" "}
+                    <span style={{ fontSize: "13px", fontWeight: 500, color: "#64748B" }}>
+                      ({basicProfilePct}%)
+                    </span>
+                  </span>
+                </div>
+                <div className="trend-summary-card" style={{ padding: "15px", background: "#F8FAFC", borderRadius: "10px", border: "1px solid #E2E8F0", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <span className="summary-label" style={{ fontSize: "12px", color: "#64748B", fontWeight: 500, marginBottom: "5px" }}>7-Day FULL PROFILE</span>
+                  <span className="summary-val" style={{ fontSize: "20px", color: "#059669", fontWeight: "700" }}>
+                    {totalFullProfile.toLocaleString()}{" "}
+                    <span style={{ fontSize: "13px", fontWeight: 500, color: "#64748B" }}>
+                      ({fullProfilePct}%)
+                    </span>
+                  </span>
                 </div>
               </div>
 
@@ -311,34 +352,55 @@ const TrafficSourceTrendModal = ({ source, onClose }) => {
                   <thead>
                     <tr>
                       <th>Date</th>
-                      <th style={{ textAlign: "right" }}>Registrations</th>
-                      <th style={{ textAlign: "right" }}>Completed Profiles</th>
-                      <th style={{ textAlign: "right" }}>Completion Rate</th>
+                      <th style={{ textAlign: "right" }}>OTP Done</th>
+                      <th style={{ textAlign: "right" }}>EMAIL Verified</th>
+                      <th style={{ textAlign: "right" }}>BASIC PROFILE</th>
+                      <th style={{ textAlign: "right" }}>FULL PROFILE</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.length === 0 ? (
                       <tr>
-                        <td colSpan="4" style={{ textAlign: "center", padding: "15px", color: "#718096" }}>
+                        <td colSpan="5" style={{ textAlign: "center", padding: "15px", color: "#718096" }}>
                           No registration data in the last 7 days.
                         </td>
                       </tr>
                     ) : (
                       data.slice().reverse().map((row, i) => {
-                        const rate = row.totalCount > 0 
-                          ? ((row.completeCount / row.totalCount) * 100).toFixed(1)
-                          : "0.0";
+                        const otpDone = row.otpDone ?? row.totalCount ?? 0;
+                        const emailVerified = row.emailVerified ?? 0;
+                        const basicProfile = row.basicProfile ?? 0;
+                        const fullProfile = row.fullProfile ?? row.completeCount ?? 0;
+
                         return (
                           <tr key={i}>
                             <td className="trend-td-date">{row.date}</td>
                             <td className="trend-td-count" style={{ color: "#0B63E5", fontWeight: "600", textAlign: "right" }}>
-                              {row.totalCount.toLocaleString()}
+                              {otpDone.toLocaleString()}
                             </td>
-                            <td className="trend-td-count" style={{ color: "#059669", fontWeight: "600", textAlign: "right" }}>
-                              {row.completeCount.toLocaleString()}
+                            <td className="trend-td-count" style={{ color: "#2563EB", fontWeight: "600", textAlign: "right" }}>
+                              {emailVerified.toLocaleString()}
+                              {otpDone > 0 && (
+                                <span style={{ fontSize: "12px", color: "#64748B", marginLeft: "4px", fontWeight: "500" }}>
+                                  ({(((emailVerified) / otpDone) * 100).toFixed(1)}%)
+                                </span>
+                              )}
                             </td>
                             <td className="trend-td-count" style={{ color: "#D97706", fontWeight: "600", textAlign: "right" }}>
-                              {rate}%
+                              {basicProfile.toLocaleString()}
+                              {otpDone > 0 && (
+                                <span style={{ fontSize: "12px", color: "#64748B", marginLeft: "4px", fontWeight: "500" }}>
+                                  ({(((basicProfile) / otpDone) * 100).toFixed(1)}%)
+                                </span>
+                              )}
+                            </td>
+                            <td className="trend-td-count" style={{ color: "#059669", fontWeight: "700", textAlign: "right" }}>
+                              {fullProfile.toLocaleString()}
+                              {otpDone > 0 && (
+                                <span style={{ fontSize: "12px", color: "#64748B", marginLeft: "4px", fontWeight: "500" }}>
+                                  ({(((fullProfile) / otpDone) * 100).toFixed(1)}%)
+                                </span>
+                              )}
                             </td>
                           </tr>
                         );

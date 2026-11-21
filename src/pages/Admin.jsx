@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Header from "../component/Header";
-import AdminSidebar from "../component/Admin/AdminSidebar";
+import AdminSidebar, { REGISTRATION_FIELD_ITEMS } from "../component/Admin/AdminSidebar";
 import UserManagement from "../component/Admin/UserManagement";
 import BusinessManagement from "../component/Admin/BusinessManagement";
 import BusinessCategoryManagement from "../component/Admin/BusinessCategoryManagement";
@@ -26,6 +26,10 @@ import "../styles/admin.css";
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
 
+  const currentRegField = REGISTRATION_FIELD_ITEMS.find((f) => f.id === activeTab);
+  const isRegField = Boolean(currentRegField) || activeTab === "registration-fields";
+  const effectiveRegTab = activeTab === "registration-fields" ? "business-categories" : activeTab;
+
   return (
     <div className="admin-page">
       <Header />
@@ -37,68 +41,76 @@ const Admin = () => {
               {activeTab === "dashboard" && "Dashboard"}
               {activeTab === "users" && "User Management"}
               {activeTab === "businesses" && "Business Management"}
-              {activeTab === "business-categories" && "Business Category Management"}
-              {activeTab === "post-approvals" && "Ask Approvals"}
-              {activeTab === "shared-posts" && "Shared Post Management"}
-              {activeTab === "skills" && "Skill Management"}
-              {activeTab === "habits" && "Hobby Management"}
-              {activeTab === "companies" && "Company Management"}
-              {activeTab === "interests" && "Interest Management"}
-              {activeTab === "industries" && "Industry Management"}
+              {activeTab === "post-approvals" && "Topic Approval"}
+              {activeTab === "shared-posts" && "Topics"}
               {activeTab === "cards" && "Offer Management"}
-              {activeTab === "cities" && "City Management"}
               {activeTab === "broadcast" && "Broadcast Notification"}
               {activeTab === "inquiries" && "Inquiry Management"}
               {activeTab === "auth-banners" && "Auth Banner Management"}
               {activeTab === "traffic-sources" && "Traffic Sources"}
-              {activeTab === "sports" && "Sport Management"}
-              {activeTab === "positions" && "Position Management"}
               {activeTab === "scheduled-mailers" && "Scheduled Mailers"}
+              {isRegField && `Registration Fields — ${REGISTRATION_FIELD_ITEMS.find((f) => f.id === effectiveRegTab)?.label || "Registration Fields"}`}
             </h1>
             <p className="admin-subtitle">
               {activeTab === "dashboard" && "Platform overview and core metrics snapshot"}
               {activeTab === "users" && "View and manage all users"}
               {activeTab === "businesses" && "View and manage registered businesses"}
-              {activeTab === "business-categories" && "Add, deactivate, or delete business categories"}
-              {activeTab === "post-approvals" && "Review and approve/reject newly submitted questions"}
-              {activeTab === "shared-posts" && "View, disable, or permanently delete live shared posts"}
-              {activeTab === "skills" && "Add, edit, and delete skills"}
-              {activeTab === "habits" && "Add, edit, and delete hobbies"}
-              {activeTab === "interests" && "Add, edit, and delete interests"}
-              {activeTab === "industries" && "Add, edit, and delete industries"}
-              {activeTab === "companies" && "Add, edit, and delete companies"}
+              {activeTab === "post-approvals" && "Review and approve/reject newly submitted topics"}
+              {activeTab === "shared-posts" && "View, disable, or permanently delete live topics"}
               {activeTab === "cards" && "Add, edit, and delete Offers"}
-              {activeTab === "cities" && "Add, edit, and delete cities"}
               {activeTab === "broadcast" && "Send notifications to all users"}
               {activeTab === "inquiries" && "View all inquiries and import from CSV"}
               {activeTab === "auth-banners" && "Manage desktop and mobile banners for login, OTP, and profile verification screens"}
               {activeTab === "traffic-sources" && "View registered user counts by traffic source parameters"}
-              {activeTab === "sports" && "Add, edit, and delete sports"}
-              {activeTab === "positions" && "Add, edit, and delete positions"}
               {activeTab === "scheduled-mailers" && "Monitor automated mail queues, view send logs, and manually trigger tasks"}
+              {isRegField && `Manage dropdown, filter, and profile options for ${REGISTRATION_FIELD_ITEMS.find((f) => f.id === effectiveRegTab)?.label.toLowerCase() || "registration"}.`}
             </p>
+
+            {/* Registration Fields Horizontal Sub-Navigation */}
+            {isRegField && (
+              <div className="registration-fields-subnav">
+                {REGISTRATION_FIELD_ITEMS.map((field) => {
+                  const FieldIcon = field.icon;
+                  const isActive = effectiveRegTab === field.id;
+                  return (
+                    <button
+                      key={field.id}
+                      type="button"
+                      className={`registration-field-pill ${isActive ? "active" : ""}`}
+                      onClick={() => setActiveTab(field.id)}
+                    >
+                      <FieldIcon size={15} />
+                      <span>{field.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
+
           <div className="admin-content-body">
             {activeTab === "dashboard" && <Dashboard />}
             {activeTab === "users" && <UserManagement />}
             {activeTab === "businesses" && <BusinessManagement />}
-            {activeTab === "business-categories" && <BusinessCategoryManagement />}
             {activeTab === "post-approvals" && <PostApproval />}
             {activeTab === "shared-posts" && <SharedPostManagement />}
-            {activeTab === "skills" && <SkillManagement />}
-            {activeTab === "habits" && <HabitManagement />}
-            {activeTab === "interests" && <InterestManagement />}
-            {activeTab === "companies" && <CompanyManagement />}
-            {activeTab === "industries" && <IndustryManagement />}
             {activeTab === "cards" && <CardManagement />}
-            {activeTab === "cities" && <CityManagement />}
             {activeTab === "broadcast" && <BroadcastNotification />}
             {activeTab === "inquiries" && <InquiryManagement />}
             {activeTab === "auth-banners" && <AuthBannerManagement />}
             {activeTab === "traffic-sources" && <TrafficSourceStats />}
-            {activeTab === "sports" && <SportManagement />}
-            {activeTab === "positions" && <PositionManagement />}
             {activeTab === "scheduled-mailers" && <ScheduledMailers />}
+
+            {/* Registration Fields Grouped Components */}
+            {(effectiveRegTab === "business-categories") && <BusinessCategoryManagement />}
+            {effectiveRegTab === "skills" && <SkillManagement />}
+            {effectiveRegTab === "habits" && <HabitManagement />}
+            {effectiveRegTab === "interests" && <InterestManagement />}
+            {effectiveRegTab === "sports" && <SportManagement />}
+            {effectiveRegTab === "companies" && <CompanyManagement />}
+            {effectiveRegTab === "industries" && <IndustryManagement />}
+            {effectiveRegTab === "positions" && <PositionManagement />}
+            {effectiveRegTab === "cities" && <CityManagement />}
           </div>
         </div>
       </div>

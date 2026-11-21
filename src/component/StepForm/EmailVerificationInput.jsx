@@ -24,6 +24,9 @@ const EmailVerificationInput = ({
   const [countdown, setCountdown] = useState(0);
   const inputRefs = useRef([]);
   const timerRef = useRef(null);
+  const isVerifyingRef = useRef(false);
+  const isSuccessRef = useRef(false);
+  const verifyTimeoutRef = useRef(null);
 
   // Email format regex check
   const isValidEmail = (val) => {
@@ -86,6 +89,8 @@ const EmailVerificationInput = ({
 
   // Handle individual digit input
   const handleOtpChange = (index, value) => {
+    if (isSuccessRef.current) return;
+
     // Multi-digit entry (e.g. mobile autofill)
     if (value && value.length > 1) {
       const digits = value.replace(/\D/g, "").slice(0, 6);
@@ -98,8 +103,11 @@ const EmailVerificationInput = ({
       setErrorMessage("");
       const lastIndex = Math.min(digits.length - 1, 5);
       inputRefs.current[lastIndex]?.focus();
-      if (digits.length === 6) {
-        verifyCode(newOtp.join(""));
+      if (digits.length === 6 && !isVerifyingRef.current && !isSuccessRef.current) {
+        if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current);
+        verifyTimeoutRef.current = setTimeout(() => {
+          verifyCode(newOtp.join(""));
+        }, 150);
       }
       return;
     }
@@ -116,8 +124,11 @@ const EmailVerificationInput = ({
     }
 
     const codeStr = newOtp.join("");
-    if (codeStr.length === 6) {
-      verifyCode(codeStr);
+    if (codeStr.length === 6 && !isVerifyingRef.current && !isSuccessRef.current) {
+      if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current);
+      verifyTimeoutRef.current = setTimeout(() => {
+        verifyCode(codeStr);
+      }, 150);
     }
   };
 
@@ -129,6 +140,7 @@ const EmailVerificationInput = ({
 
   const handlePaste = (e) => {
     e.preventDefault();
+    if (isSuccessRef.current) return;
     const pasted = e.clipboardData.getData("text").trim();
     if (!/^\d+$/.test(pasted)) return;
 
@@ -142,19 +154,24 @@ const EmailVerificationInput = ({
     const lastIndex = Math.min(digits.length - 1, 5);
     inputRefs.current[lastIndex]?.focus();
 
-    if (digits.length === 6) {
-      verifyCode(newOtp.join(""));
+    if (digits.length === 6 && !isVerifyingRef.current && !isSuccessRef.current) {
+      if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current);
+      verifyTimeoutRef.current = setTimeout(() => {
+        verifyCode(newOtp.join(""));
+      }, 150);
     }
   };
 
   // Verify the 6-digit OTP
   const verifyCode = async (codeToVerify) => {
+    if (isVerifyingRef.current || isSuccessRef.current) return;
     const code = codeToVerify || otp.join("");
     if (code.length !== 6) {
       setErrorMessage("Please enter all 6 digits of the verification code.");
       return;
     }
 
+    isVerifyingRef.current = true;
     setErrorMessage("");
     setStatusMessage("");
     setIsVerifying(true);
@@ -179,6 +196,7 @@ const EmailVerificationInput = ({
       }
 
       // Success
+      isSuccessRef.current = true;
       setIsEmailVerified(true);
       if (typeof updateData === "function") {
         updateData("isEmailVerified", true);
@@ -187,11 +205,13 @@ const EmailVerificationInput = ({
       setStatusMessage("Email confirmed successfully!");
       setErrorMessage("");
     } catch (err) {
+      if (isSuccessRef.current) return;
       setErrorMessage(err.message || "Invalid verification code");
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     } finally {
       setIsVerifying(false);
+      isVerifyingRef.current = false;
     }
   };
 

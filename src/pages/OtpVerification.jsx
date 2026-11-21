@@ -15,6 +15,10 @@ const OtpVerification = () => {
   const [apiError, setApiError] = useState("");
   const [success, setSuccess] = useState("");
   const inputRefs = useRef([]);
+  const isVerifyingRef = useRef(false);
+  const isSuccessRef = useRef(false);
+  const autoSubmitTimeoutRef = useRef(null);
+  const lastProcessedOtpRef = useRef("");
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -58,6 +62,11 @@ const OtpVerification = () => {
     },
     validationSchema: validationSchema,
     onSubmit: async (values, { setSubmitting, setFieldError }) => {
+      // Guard against concurrent or duplicate submissions
+      if (isVerifyingRef.current || isSuccessRef.current) {
+        return;
+      }
+      isVerifyingRef.current = true;
       setApiError("");
       setSuccess("");
       setLoading(true);
@@ -67,6 +76,7 @@ const OtpVerification = () => {
         setApiError("Phone number not found. Please register again.");
         setLoading(false);
         setSubmitting(false);
+        isVerifyingRef.current = false;
         return;
       }
 
@@ -101,25 +111,31 @@ const OtpVerification = () => {
 
         // Success - handle response
         if (data.success && data.data) {
-          const { token, isProfileComplete } = data.data;
+          isSuccessRef.current = true;
+          setApiError(""); // Clear any stale errors immediately
+
+          const { 
+            token, 
+            isProfileComplete, 
+            isEmailVerified, 
+            hasCompletedBasicProfile 
+          } = data.data;
 
           // Save token to cookie
           if (token) {
             setCookie("authToken", token, 7); // 7 days expiry
           }
 
+          // If user has completed Basic Profile, their profile is considered complete for login
+          const shouldBeComplete = Boolean(isProfileComplete || hasCompletedBasicProfile);
+
           // Save isProfileComplete status to cookie
-          setCookie("isProfileComplete", isProfileComplete ? "true" : "false", 7);
+          setCookie("isProfileComplete", shouldBeComplete ? "true" : "false", 7);
           localStorage.removeItem("trafficSource");
+
           // Handle redirect based on user status
-          if (!isProfileComplete) {
-            // New user with incomplete profile - redirect to standalone email verification
-            setSuccess("OTP verified successfully! Redirecting...");
-            setTimeout(() => {
-              navigate("/email-verification", { state: { phoneNumber: storedPhoneNumber } });
-            }, 1000);
-          } else {
-            // Existing user or profile complete - redirect to home or return path
+          if (shouldBeComplete) {
+            // Completed Basic Profile or full profile - redirect to dashboard/home!
             setSuccess("Login successful! Redirecting...");
             const returnUrl = location.state?.from || (typeof window !== 'undefined' ? sessionStorage.getItem('loginRedirect') : null) || "/";
             if (typeof window !== 'undefined') {
@@ -128,12 +144,34 @@ const OtpVerification = () => {
             setTimeout(() => {
               navigate(returnUrl);
             }, 1000);
+          } else if (!isEmailVerified) {
+            // New user with incomplete profile and unverified email - redirect to standalone email verification
+            setSuccess("OTP verified successfully! Redirecting...");
+            setTimeout(() => {
+              navigate("/email-verification", { state: { phoneNumber: storedPhoneNumber } });
+            }, 1000);
+          } else {
+            // Email is already verified, but Basic Profile not yet completed - redirect to profile completion
+            setSuccess("OTP verified successfully! Redirecting...");
+            setTimeout(() => {
+              navigate("/profile-complete", { 
+                state: { 
+                  phoneNumber: storedPhoneNumber, 
+                  isEmailVerified: true 
+                } 
+              });
+            }, 1000);
           }
         } else {
           throw new Error("Invalid response from server");
         }
 
       } catch (err) {
+        // If already succeeded, ignore any subsequent error (e.g. duplicate response)
+        if (isSuccessRef.current) {
+          return;
+        }
+
         // Handle network errors (Failed to fetch)
         if (err.message === "Failed to fetch" || err.name === "TypeError") {
           setApiError(`Unable to connect to server. Please check if the server is running on ${API_BASE_URL}`);
@@ -145,11 +183,15 @@ const OtpVerification = () => {
         // Clear OTP on error
         setOtp(["", "", "", "", "", ""]);
         formik.setFieldValue("otp", "");
+        lastProcessedOtpRef.current = "";
         inputRefs.current[0]?.focus();
       } finally {
         setLoading(false);
         setSubmitting(false);
-        scrollToFirstError();
+        isVerifyingRef.current = false;
+        if (!isSuccessRef.current) {
+          scrollToFirstError();
+        }
       }
     },
   });
@@ -161,10 +203,15 @@ const OtpVerification = () => {
   }, [apiError, formik.submitCount, formik.isValid]);
 
   const handleOtpChange = (index, value) => {
+    if (isSuccessRef.current) return;
+
     // Handle multi-digit input (mobile autofill / OTP suggestion fills full code)
     if (value && value.length > 1) {
       const digits = value.replace(/\D/g, "").slice(0, 6);
       if (!digits) return;
+      if (lastProcessedOtpRef.current === digits && digits.length === 6) return;
+      lastProcessedOtpRef.current = digits;
+
       const newOtp = ["", "", "", "", "", ""];
       digits.split("").forEach((d, i) => { newOtp[i] = d; });
       setOtp(newOtp);
@@ -174,8 +221,13 @@ const OtpVerification = () => {
       setSuccess("");
       const lastIndex = Math.min(digits.length - 1, 5);
       inputRefs.current[lastIndex]?.focus();
-      if (otpString.length === 6) {
-        setTimeout(() => { formik.handleSubmit(); }, 100);
+      if (otpString.length === 6 && !isVerifyingRef.current && !isSuccessRef.current) {
+        if (autoSubmitTimeoutRef.current) clearTimeout(autoSubmitTimeoutRef.current);
+        autoSubmitTimeoutRef.current = setTimeout(() => {
+          if (!isVerifyingRef.current && !isSuccessRef.current) {
+            formik.handleSubmit();
+          }
+        }, 150);
       }
       return;
     }
@@ -201,23 +253,27 @@ const OtpVerification = () => {
     }
 
     // Auto-submit if 6 digits entered
-    if (otpString.length === 6) {
-      setTimeout(() => {
-        formik.handleSubmit();
-      }, 100);
+    if (otpString.length === 6 && !isVerifyingRef.current && !isSuccessRef.current) {
+      if (autoSubmitTimeoutRef.current) clearTimeout(autoSubmitTimeoutRef.current);
+      autoSubmitTimeoutRef.current = setTimeout(() => {
+        if (!isVerifyingRef.current && !isSuccessRef.current) {
+          formik.handleSubmit();
+        }
+      }, 150);
     }
   };
 
   // Fallback for browsers that fire 'input' event during autofill instead of 'change'
   const handleOtpInput = (index, e) => {
     const value = e.target.value;
-    if (value.length > 1) {
+    if (value && value.length > 1 && value !== lastProcessedOtpRef.current) {
       handleOtpChange(index, value);
     }
   };
 
   const handlePaste = (e) => {
     e.preventDefault();
+    if (isSuccessRef.current) return;
     const data = e.clipboardData.getData("text").trim();
     
     // Only process if it's a number
@@ -232,6 +288,7 @@ const OtpVerification = () => {
     setOtp(newOtp);
     const otpString = newOtp.join("");
     formik.setFieldValue("otp", otpString);
+    lastProcessedOtpRef.current = otpString;
     setApiError("");
     setSuccess("");
 
@@ -240,10 +297,13 @@ const OtpVerification = () => {
     inputRefs.current[lastIndex]?.focus();
 
     // Auto-submit if 6 digits entered
-    if (otpString.length === 6) {
-      setTimeout(() => {
-        formik.handleSubmit();
-      }, 100);
+    if (otpString.length === 6 && !isVerifyingRef.current && !isSuccessRef.current) {
+      if (autoSubmitTimeoutRef.current) clearTimeout(autoSubmitTimeoutRef.current);
+      autoSubmitTimeoutRef.current = setTimeout(() => {
+        if (!isVerifyingRef.current && !isSuccessRef.current) {
+          formik.handleSubmit();
+        }
+      }, 150);
     }
   };
 
@@ -385,9 +445,9 @@ const OtpVerification = () => {
               <button
                 type="submit"
                 className="login-button"
-                disabled={loading || formik.isSubmitting || otp.join("").length !== 6}
+                disabled={loading || formik.isSubmitting || isVerifyingRef.current || isSuccessRef.current || otp.join("").length !== 6}
               >
-                {loading || formik.isSubmitting ? (
+                {loading || formik.isSubmitting || isVerifyingRef.current ? (
                   <>
                     <span className="spinner"></span>
                     Verifying...

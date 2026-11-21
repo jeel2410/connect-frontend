@@ -226,8 +226,8 @@ const PostApproval = () => {
       {posts.length === 0 ? (
         <div className="empty-state-card" style={{ background: "#ffffff", border: "1px solid #E8EDF3", borderRadius: "12px", padding: "60px 20px", textAlign: "center" }}>
           <ShieldAlert size={48} color="#777E90" style={{ marginBottom: "16px" }} />
-          <h3 style={{ fontSize: "18px", fontWeight: "600", color: "#353945", marginBottom: "8px" }}>No Pending Questions</h3>
-          <p style={{ fontSize: "14px", color: "#777E90" }}>All submitted questions are currently approved.</p>
+          <h3 style={{ fontSize: "18px", fontWeight: "600", color: "#353945", marginBottom: "8px" }}>No Pending Topics</h3>
+          <p style={{ fontSize: "14px", color: "#777E90" }}>All submitted topics are currently approved.</p>
         </div>
       ) : (
         <div className="pending-posts-grid" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>

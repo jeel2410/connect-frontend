@@ -77,9 +77,9 @@ const SharedPostManagement = () => {
       {/* Header */}
       <div className="admin-section-header">
         <div className="section-title-group">
-          <h2 className="section-title">Shared Post Management</h2>
+          <h2 className="section-title">Topics</h2>
           <span className="admin-total-badge">
-            {loading ? "—" : `${pagination.totalItems.toLocaleString()} posts`}
+            {loading ? "—" : `${pagination.totalItems.toLocaleString()} topics`}
           </span>
         </div>
         <div className="search-controls-group">

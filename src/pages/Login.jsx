@@ -60,29 +60,39 @@ const Login = () => {
 
         // Success - handle response
         if (data.success && data.data) {
-          const { token, isProfileComplete } = data.data;
+          const { 
+            token, 
+            isProfileComplete, 
+            isEmailVerified, 
+            hasCompletedBasicProfile 
+          } = data.data;
 
           // Save token to cookie
           if (token) {
             setCookie("authToken", token, 7); // 7 days expiry
           }
 
+          const shouldBeComplete = Boolean(isProfileComplete || hasCompletedBasicProfile);
+
           // Save isProfileComplete status to cookie
-          setCookie("isProfileComplete", isProfileComplete ? "true" : "false", 7);
+          setCookie("isProfileComplete", shouldBeComplete ? "true" : "false", 7);
 
           // Handle redirect based on profile status
-          if (!isProfileComplete) {
-            // Profile not complete - redirect to profile completion
-            setSuccess("Login successful! Redirecting to complete profile...");
-            setTimeout(() => {
-              navigate("/profile-complete");
-            }, 1000);
-          } else {
-            // Profile complete - redirect to target or home
+          if (shouldBeComplete) {
             const targetUrl = location.state?.from || "/";
             setSuccess("Login successful! Redirecting...");
             setTimeout(() => {
               navigate(targetUrl);
+            }, 1000);
+          } else if (!isEmailVerified) {
+            setSuccess("Login successful! Redirecting to email verification...");
+            setTimeout(() => {
+              navigate("/email-verification");
+            }, 1000);
+          } else {
+            setSuccess("Login successful! Redirecting to complete profile...");
+            setTimeout(() => {
+              navigate("/profile-complete");
             }, 1000);
           }
         } else {
@@ -131,27 +141,39 @@ const Login = () => {
         const data = await response.json();
 
         if (data.success && data.data) {
-          const { token, isProfileComplete } = data.data;
+          const { 
+            token, 
+            isProfileComplete, 
+            isEmailVerified, 
+            hasCompletedBasicProfile 
+          } = data.data;
 
           // Save token to cookie
           if (token) {
             setCookie("authToken", token, 7);
           }
 
+          const shouldBeComplete = Boolean(isProfileComplete || hasCompletedBasicProfile);
+
           // Save isProfileComplete status to cookie
-          setCookie("isProfileComplete", isProfileComplete ? "true" : "false", 7);
+          setCookie("isProfileComplete", shouldBeComplete ? "true" : "false", 7);
 
           // Handle redirect based on profile status
-          if (!isProfileComplete) {
-            setSuccess("Login successful! Redirecting to complete profile...");
-            setTimeout(() => {
-              navigate("/profile-complete");
-            }, 1000);
-          } else {
+          if (shouldBeComplete) {
             const targetUrl = location.state?.from || "/";
             setSuccess("Login successful! Redirecting...");
             setTimeout(() => {
               navigate(targetUrl);
+            }, 1000);
+          } else if (!isEmailVerified) {
+            setSuccess("Login successful! Redirecting to email verification...");
+            setTimeout(() => {
+              navigate("/email-verification");
+            }, 1000);
+          } else {
+            setSuccess("Login successful! Redirecting to complete profile...");
+            setTimeout(() => {
+              navigate("/profile-complete");
             }, 1000);
           }
         } else {

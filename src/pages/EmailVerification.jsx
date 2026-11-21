@@ -5,7 +5,7 @@ import Header from "../component/Header";
 import Footer from "../component/Footer";
 import DynamicAuthImage from "../component/DynamicAuthImage";
 import API_BASE_URL from "../utils/config";
-import { getCookie } from "../utils/auth";
+import { getCookie, setCookie } from "../utils/auth";
 
 const EmailVerification = () => {
   const [email, setEmail] = useState("");
@@ -20,12 +20,60 @@ const EmailVerification = () => {
 
   const inputRefs = useRef([]);
   const timerRef = useRef(null);
+  const isVerifyingRef = useRef(false);
+  const isSuccessRef = useRef(false);
+  const verifyTimeoutRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   // Retrieve phone number from state or localStorage
   const phoneNumber =
     location.state?.phoneNumber || localStorage.getItem("phoneNumber") || "";
+
+  // Check if user is already authenticated and their verification / basic profile status
+  useEffect(() => {
+    const token = getCookie("authToken");
+    if (!token) return;
+
+    const checkVerificationStatus = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/user/profile/progress`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.success && data.data) {
+          const { isProfileComplete, hasCompletedBasicProfile, profile } = data.data;
+          const isEmailVerified = profile?.isEmailVerified;
+          const basicComplete = isProfileComplete || hasCompletedBasicProfile || (profile?.lastCompletedStep >= 1) ||
+            Boolean(profile?.fullName && (profile?.gender || profile?.city || profile?.dateOfBirth)) ||
+            Boolean(profile?.businessName);
+
+          if (basicComplete) {
+            setCookie("isProfileComplete", "true", 7);
+            navigate("/", { replace: true });
+          } else if (isEmailVerified) {
+            navigate("/profile-complete", {
+              replace: true,
+              state: {
+                phoneNumber: phoneNumber || profile?.phoneNumber || "",
+                isEmailVerified: true,
+                email: profile?.email || ""
+              }
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Error checking verification status in EmailVerification:", e);
+      }
+    };
+
+    checkVerificationStatus();
+  }, [navigate, phoneNumber]);
 
   // Email validation regex
   const isValidEmail = (val) => {
@@ -102,12 +150,14 @@ const EmailVerification = () => {
 
   // Verify the 6-digit OTP
   const handleVerifyCode = async (codeToVerify) => {
+    if (isVerifyingRef.current || isSuccessRef.current) return;
     const code = codeToVerify || otp.join("");
     if (code.length !== 6) {
       setApiError("Please enter all 6 digits of the verification code.");
       return;
     }
 
+    isVerifyingRef.current = true;
     setApiError("");
     setSuccess("");
     setIsVerifying(true);
@@ -132,6 +182,8 @@ const EmailVerification = () => {
         throw new Error(data.message || "Invalid or expired verification code.");
       }
 
+      isSuccessRef.current = true;
+      setApiError("");
       setSuccess("Email verified successfully! Redirecting...");
       localStorage.setItem("verifiedEmail", email.trim().toLowerCase());
 
@@ -145,16 +197,20 @@ const EmailVerification = () => {
         });
       }, 1000);
     } catch (err) {
+      if (isSuccessRef.current) return;
       setApiError(err.message || "Invalid verification code.");
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     } finally {
       setIsVerifying(false);
+      isVerifyingRef.current = false;
     }
   };
 
   // Handle digit inputs
   const handleOtpChange = (index, value) => {
+    if (isSuccessRef.current) return;
+
     // Handle full code paste / mobile autofill
     if (value && value.length > 1) {
       const digits = value.replace(/\D/g, "").slice(0, 6);
@@ -167,8 +223,11 @@ const EmailVerification = () => {
       setApiError("");
       const lastIndex = Math.min(digits.length - 1, 5);
       inputRefs.current[lastIndex]?.focus();
-      if (digits.length === 6) {
-        handleVerifyCode(newOtp.join(""));
+      if (digits.length === 6 && !isVerifyingRef.current && !isSuccessRef.current) {
+        if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current);
+        verifyTimeoutRef.current = setTimeout(() => {
+          handleVerifyCode(newOtp.join(""));
+        }, 150);
       }
       return;
     }
@@ -185,8 +244,11 @@ const EmailVerification = () => {
     }
 
     const codeStr = newOtp.join("");
-    if (codeStr.length === 6) {
-      handleVerifyCode(codeStr);
+    if (codeStr.length === 6 && !isVerifyingRef.current && !isSuccessRef.current) {
+      if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current);
+      verifyTimeoutRef.current = setTimeout(() => {
+        handleVerifyCode(codeStr);
+      }, 150);
     }
   };
 
@@ -325,19 +387,7 @@ const EmailVerification = () => {
             >
               Email Verification
             </h1>
-            <p
-              style={{
-                fontSize: "15px",
-                color: "#64748B",
-                margin: "0 0 28px",
-                lineHeight: "1.5",
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              {otpSent
-                ? `Enter the 6-digit verification code sent to ${email}`
-                : "Enter your email address to receive a 6-digit verification code."}
-            </p>
+          
 
             {/* Feedback Messages */}
             {apiError && (
@@ -777,18 +827,7 @@ const EmailVerification = () => {
             )}
 
             {/* Secure Footer Text */}
-            <p
-              style={{
-                textAlign: "center",
-                color: "#64748B",
-                fontSize: "14px",
-                marginTop: "24px",
-                marginBottom: 0,
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              Verify your email to continue securely.
-            </p>
+          
           </div>
         </div>
       </div>

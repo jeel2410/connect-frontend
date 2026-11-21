@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, ThumbsUp, MessageSquare, Eye } from 'lucide-react';
+import { Sparkles, ThumbsUp, MessageSquare, Eye, Edit3 } from 'lucide-react';
 
 const isObjectIdStr = (str) => typeof str === 'string' && /^[0-9a-fA-F]{24}$/.test(str.trim());
 const cleanStr = (val, fallback = '') => (!val || typeof val !== 'string' || isObjectIdStr(val)) ? fallback : val.trim();
@@ -8,6 +8,8 @@ const QuestionFeedCard = ({
   post,
   idx,
   onQuestionClick,
+  onUserClick,
+  onEditPost,
   onLikePost,
   currentUserId,
   resolveImageUrl,
@@ -25,6 +27,10 @@ const QuestionFeedCard = ({
     : resolveImageUrl(authorDetail.profileImage);
   const defaultAvatar = getAvatar(authorDetail.gender, authorDetail.dateOfBirth);
 
+  const authorUserId = author._id || author.id || (typeof post.userId === 'object' ? post.userId?._id : post.userId);
+  const isOwnPost = Boolean(currentUserId && authorUserId && String(authorUserId) === String(currentUserId));
+  const isPending = post.isApproved === false;
+
   const isLiked = post.reactions?.some(r => {
     const rId = typeof r.userId === 'object' ? r.userId?._id : r.userId;
     return String(rId) === String(currentUserId);
@@ -33,6 +39,7 @@ const QuestionFeedCard = ({
   const answersCount = post.commentsCount || (post.comments ? post.comments.length : 0);
   const viewsCount = post.views || post.viewsCount || 0;
   const hasAi = post.targetSegments?.getAiResponses !== false && Boolean(post.aiAnswer?.content);
+  const isSharePost = (post.postType === 'share') || (post.targetSegments?.postType === 'share');
   const categoryTag = post.targetSegments?.interests?.[0] || post.targetSegments?.industries?.[0] || '';
 
   const displayQuestion = (post.question || post.title || '').trim();
@@ -61,7 +68,17 @@ const QuestionFeedCard = ({
       onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#E8EDF3')}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            const targetId = author._id || author.id || authorDetail.userId || (typeof post.userId === 'string' ? post.userId : null);
+            if (onUserClick && targetId) {
+              onUserClick(targetId);
+            }
+          }}
+          style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+          title={`View ${authorName}'s profile`}
+        >
           <img
             src={authorAvatar || defaultAvatar}
             alt={authorName}
@@ -69,38 +86,90 @@ const QuestionFeedCard = ({
             onError={(e) => { e.target.src = defaultAvatar; }}
           />
           <div>
-            <div style={{ fontSize: '14px', fontWeight: '700', color: '#09122E' }}>{authorName}</div>
+            <div
+              style={{ fontSize: '14px', fontWeight: '700', color: '#09122E' }}
+              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+            >
+              {authorName}
+            </div>
             <div style={{ fontSize: '12px', color: '#777E90' }}>{formatTimeAgo(post.createdAt)}</div>
           </div>
         </div>
 
-        {hasAi ? (
-          <div style={{
-            background: '#EBF3FF',
-            color: '#0066FF',
-            fontSize: '12px',
-            fontWeight: '600',
-            padding: '6px 14px',
-            borderRadius: '20px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}>
-            <Sparkles size={14} color="#0066FF" />
-            <span>AI Answered</span>
-          </div>
-        ) : (
-          <div style={{
-            background: '#FFF0F0',
-            color: '#FF3B30',
-            fontSize: '12px',
-            fontWeight: '600',
-            padding: '6px 14px',
-            borderRadius: '20px'
-          }}>
-            Needs Answers
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {isPending && (
+            <span style={{
+              background: '#FFF3CD',
+              border: '1px solid #FFEBAA',
+              color: '#856404',
+              fontSize: '11px',
+              fontWeight: '700',
+              padding: '4px 10px',
+              borderRadius: '16px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              ⏳ Pending Approval
+            </span>
+          )}
+
+          {isOwnPost && isPending && onEditPost && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditPost(post);
+              }}
+              style={{
+                background: '#FFF0E6',
+                border: '1px solid #FF4D00',
+                color: '#FF4D00',
+                fontSize: '11px',
+                fontWeight: '700',
+                padding: '4px 10px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title="Edit question before approval"
+            >
+              <Edit3 size={12} />
+              <span>Edit</span>
+            </button>
+          )}
+
+          {hasAi ? (
+            <div style={{
+              background: '#EBF3FF',
+              color: '#0066FF',
+              fontSize: '12px',
+              fontWeight: '600',
+              padding: '6px 14px',
+              borderRadius: '20px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <Sparkles size={14} color="#0066FF" />
+              <span>AI Answered</span>
+            </div>
+          ) : !isSharePost && !isPending ? (
+            <div style={{
+              background: '#FFF0F0',
+              color: '#FF3B30',
+              fontSize: '12px',
+              fontWeight: '600',
+              padding: '6px 14px',
+              borderRadius: '20px'
+            }}>
+              Needs Answers
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {/* Question populated by AI */}

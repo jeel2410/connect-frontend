@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Eye, Sparkles, Info, ThumbsUp, ThumbsDown, MessageSquare, Share2, ChevronDown, ChevronUp, Send } from 'lucide-react';
+import { Eye, Sparkles, Info, ThumbsUp, ThumbsDown, MessageSquare, Share2, ChevronDown, ChevronUp, Send, Edit3 } from 'lucide-react';
 import API_BASE_URL from '../../utils/config';
 import { getCookie } from '../../utils/auth';
 import { toast } from 'react-toastify';
@@ -25,6 +25,8 @@ const renderFormattedText = (text) => {
 const QuestionDetailView = ({
   selectedQuestionDetail,
   onLikePost,
+  onUserClick,
+  onEditPost,
   aiHelpful,
   setAiHelpful,
   currentUserId,
@@ -55,7 +57,7 @@ const QuestionDetailView = ({
 
   const handleShareQuestion = async () => {
     if (!selectedQuestionDetail?._id) return;
-    const shareUrl = `${window.location.origin}/ask/${selectedQuestionDetail._id}`;
+    const shareUrl = `${window.location.origin}/ask-share/${selectedQuestionDetail._id}`;
     const questionText = selectedQuestionDetail.question || selectedQuestionDetail.title || 'Check out this question on Connect.in';
 
     if (navigator.share) {
@@ -97,6 +99,10 @@ const QuestionDetailView = ({
     ? resolveImageUrl(authorDetail.businessLogo)
     : resolveImageUrl(authorDetail.profileImage);
   const defaultAvatar = getAvatar(authorDetail.gender, authorDetail.dateOfBirth);
+
+  const authorUserId = author._id || author.id || (typeof selectedQuestionDetail.userId === 'object' ? selectedQuestionDetail.userId?._id : selectedQuestionDetail.userId);
+  const isOwnPost = Boolean(currentUserId && authorUserId && String(authorUserId) === String(currentUserId));
+  const isPending = selectedQuestionDetail.isApproved === false;
 
   const isLikedDetail = selectedQuestionDetail.reactions?.some(r => {
     const rId = typeof r.userId === 'object' ? r.userId?._id : r.userId;
@@ -249,6 +255,7 @@ const QuestionDetailView = ({
 
   const displayQuestion = (selectedQuestionDetail.question || selectedQuestionDetail.title || '').trim();
   const rawContent = (selectedQuestionDetail.content || '').trim();
+  const isSharePost = (selectedQuestionDetail?.postType === 'share') || (selectedQuestionDetail?.targetSegments?.postType === 'share');
   const isContentSameAsQuestion = Boolean(
     displayQuestion &&
     rawContent &&
@@ -258,6 +265,51 @@ const QuestionDetailView = ({
 
   return (
     <div style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E8EDF3', padding: '28px', textAlign: 'left' }}>
+      {/* Pending Notice Banner */}
+      {isPending && (
+        <div style={{
+          background: '#FFF8E6',
+          borderLeft: '4px solid #F59E0B',
+          padding: '12px 18px',
+          borderRadius: '8px',
+          marginBottom: '20px',
+          color: '#8A5300',
+          fontSize: '13px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '12px',
+          flexWrap: 'wrap'
+        }}>
+          <div>
+            <strong>⏳ Pending Admin Review:</strong> This question is waiting for administrator approval before being visible to everyone. You can edit your question details while it is pending.
+          </div>
+          {isOwnPost && onEditPost && (
+            <button
+              type="button"
+              onClick={() => onEditPost(selectedQuestionDetail)}
+              style={{
+                background: '#FF4D00',
+                border: 'none',
+                color: '#FFFFFF',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                flexShrink: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <Edit3 size={14} />
+              <span>Edit Question</span>
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Top Header Row: Question and AI Status Badge */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' }}>
         <h2 style={{
@@ -273,27 +325,99 @@ const QuestionDetailView = ({
         }}>
           {displayQuestion || rawContent || 'Untitled Question'}
         </h2>
-        <div style={{
-          background: hasAiDetail ? '#EBF3FF' : '#FFE8EC',
-          color: hasAiDetail ? '#0066FF' : '#FF3B30',
-          fontSize: '12px',
-          fontWeight: '600',
-          padding: '6px 14px',
-          borderRadius: '20px',
-          flexShrink: 0
-        }}>
-          {hasAiDetail ? '✨ AI Answered' : 'Needs Answers'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', flexShrink: 0 }}>
+          {isPending && (
+            <span style={{
+              background: '#FFF3CD',
+              border: '1px solid #FFEBAA',
+              color: '#856404',
+              fontSize: '12px',
+              fontWeight: '700',
+              padding: '6px 14px',
+              borderRadius: '20px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              ⏳ Pending Approval
+            </span>
+          )}
+          {isOwnPost && isPending && onEditPost && (
+            <button
+              type="button"
+              onClick={() => onEditPost(selectedQuestionDetail)}
+              style={{
+                background: '#FFF0E6',
+                border: '1px solid #FF4D00',
+                color: '#FF4D00',
+                fontSize: '12px',
+                fontWeight: '700',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <Edit3 size={14} />
+              <span>Edit</span>
+            </button>
+          )}
+          {hasAiDetail ? (
+            <div style={{
+              background: '#EBF3FF',
+              color: '#0066FF',
+              fontSize: '12px',
+              fontWeight: '600',
+              padding: '6px 14px',
+              borderRadius: '20px'
+            }}>
+              ✨ AI Answered
+            </div>
+          ) : !isSharePost && !isPending ? (
+            <div style={{
+              background: '#FFE8EC',
+              color: '#FF3B30',
+              fontSize: '12px',
+              fontWeight: '600',
+              padding: '6px 14px',
+              borderRadius: '20px'
+            }}>
+              Needs Answers
+            </div>
+          ) : null}
         </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#777E90', marginBottom: '16px' }}>
-        <img
-          src={authorAvatar || defaultAvatar}
-          alt={authorName}
-          style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
-          onError={(e) => { e.target.src = defaultAvatar; }}
-        />
-        <span><strong style={{ color: '#09122E' }}>{authorName}</strong></span>
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            const targetId = author._id || author.id || authorDetail.userId || (typeof selectedQuestionDetail.userId === 'string' ? selectedQuestionDetail.userId : null);
+            if (onUserClick && targetId) {
+              onUserClick(targetId);
+            }
+          }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+          title={`View ${authorName}'s profile`}
+        >
+          <img
+            src={authorAvatar || defaultAvatar}
+            alt={authorName}
+            style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
+            onError={(e) => { e.target.src = defaultAvatar; }}
+          />
+          <span>
+            <strong
+              style={{ color: '#09122E' }}
+              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+            >
+              {authorName}
+            </strong>
+          </span>
+        </div>
         <span>•</span>
         <span>{formatTimeAgo(selectedQuestionDetail.createdAt)}</span>
         <span>•</span>
@@ -596,7 +720,17 @@ const QuestionDetailView = ({
                 }}>
                   {/* Answer Header */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const cUserId = comment.userId?._id || comment.userId?.id || (typeof comment.userId === 'string' ? comment.userId : null);
+                        if (onUserClick && cUserId) {
+                          onUserClick(cUserId);
+                        }
+                      }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+                      title={`View ${cName}'s profile`}
+                    >
                       <img
                         src={cAvatar || cDefaultAvatar}
                         alt={cName}
@@ -605,7 +739,11 @@ const QuestionDetailView = ({
                       />
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '15px', fontWeight: '700', color: '#09122E' }}>
+                          <span
+                            style={{ fontSize: '15px', fontWeight: '700', color: '#09122E' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                            onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+                          >
                             {cName}
                           </span>
                           <span style={{

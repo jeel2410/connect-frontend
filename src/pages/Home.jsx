@@ -660,8 +660,143 @@ export default function Home() {
               </button>
             </div>
           </div>
-          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "nowrap", justifyContent: "flex-end", minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+          <div className="home-search-controls">
+            <div className="home-search-filter-row">
+              <div className="home-search-input-wrapper">
+                <img
+                  src={searchIcon}
+                  alt="search"
+                  style={{
+                    position: "absolute",
+                    left: "12px",
+                    width: "18px",
+                    height: "18px",
+                    zIndex: 1,
+                    pointerEvents: "none"
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder={activeTab === "Businesses" ? "Search by business name..." : "Search by name or username..."}
+                  value={searchQuery}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSearchQuery(value);
+                    if (value.trim() !== "") {
+                      setIsSearchActive(true);
+                    } else {
+                      setIsSearchActive(false);
+                    }
+                  }}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter" && searchQuery.trim() !== "") {
+                      setIsSearchActive(true);
+                      setFilters(prev => ({ ...prev }));
+                    }
+                  }}
+                  onBlur={() => {
+                    if (searchQuery.trim() !== "") {
+                      setIsSearchActive(true);
+                      setFilters(prev => ({ ...prev }));
+                    }
+                  }}
+                  style={{
+                    padding: "10px 20px 10px 40px",
+                    border: "1px solid #EA650A",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    width: "100%",
+                    maxWidth: "100%",
+                    boxSizing: "border-box",
+                    outline: "none",
+                    backgroundColor: "#fff"
+                  }}
+                />
+                {isSearchActive && searchQuery.trim() !== "" && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery("");
+                      setIsSearchActive(false);
+                      setFilters(prev => ({ ...prev }));
+                    }}
+                    style={{
+                      position: "absolute",
+                      right: "8px",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "18px",
+                      color: "#999",
+                      padding: "0",
+                      width: "20px",
+                      height: "20px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              {activeTab === "Businesses" && (
+                <select
+                  className="home-category-select"
+                  value={selectedBusinessCategory}
+                  onChange={(e) => {
+                    setSelectedBusinessCategory(e.target.value);
+                    setFeedData([]);
+                    setPage(1);
+                    setHasMore(true);
+                  }}
+                  style={{
+                    padding: "10px 16px",
+                    border: "1px solid #EA650A",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#4b5563",
+                    outline: "none",
+                    backgroundColor: "#fff",
+                    cursor: "pointer",
+                    minWidth: "180px",
+                    flexShrink: 0
+                  }}
+                >
+                  <option value="">All Categories</option>
+                  {businessCategories.map(cat => (
+                    <option key={cat._id} value={cat._id}>{cat.name}</option>
+                  ))}
+                </select>
+              )}
+
+              {activeTab === "People" && (
+                <button
+                  className="filter-btn home-filter-btn"
+                  onClick={() => setIsFilterOpen(true)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "10px 20px",
+                    flexShrink: 0,
+                    backgroundColor: "#fff",
+                    border: "1px solid #EA650A",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#EA650A"
+                  }}
+                >
+                  <img src={filterIcon} alt="filter" className="filter-icon" style={{ width: "18px", height: "18px" }} />
+                  Filter
+                </button>
+              )}
+            </div>
+
+            <div className="home-ai-matches-wrapper">
               <input
                 type="checkbox"
                 id="aiMatchesOnly"
@@ -678,146 +813,48 @@ export default function Home() {
                 <span>✨ AI Matches</span>
               </label>
             </div>
-            {activeTab === "Businesses" && (
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-                <input
-                  type="checkbox"
-                  id="verifiedOnly"
-                  checked={verifiedOnly}
-                  onChange={(e) => setVerifiedOnly(e.target.checked)}
-                  style={{ width: "18px", height: "18px", accentColor: "#EA650A", cursor: "pointer" }}
-                />
-                <label htmlFor="verifiedOnly" style={{ fontSize: "14px", fontWeight: "600", color: "#4b5563", cursor: "pointer", whiteSpace: "nowrap" }}>
-                  Verified only
-                </label>
-              </div>
-            )}
-            <div style={{ position: "relative", display: "flex", alignItems: "center", flex: "0 1 280px", width: "100%", maxWidth: "280px", minWidth: 0 }}>
-              <img
-                src={searchIcon}
-                alt="search"
-                style={{
-                  position: "absolute",
-                  left: "12px",
-                  width: "18px",
-                  height: "18px",
-                  zIndex: 1,
-                  pointerEvents: "none"
-                }}
-              />
-              <input
-                type="text"
-                placeholder={activeTab === "Businesses" ? "Search by business name..." : "Search by name or username..."}
-                value={searchQuery}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setSearchQuery(value);
-                  if (value.trim() !== "") {
-                    setIsSearchActive(true);
-                  } else {
-                    setIsSearchActive(false);
-                  }
-                }}
-                onKeyPress={(e) => {
-                  if (e.key === "Enter" && searchQuery.trim() !== "") {
-                    setIsSearchActive(true);
-                    setFilters(prev => ({ ...prev }));
-                  }
-                }}
-                onBlur={() => {
-                  if (searchQuery.trim() !== "") {
-                    setIsSearchActive(true);
-                    setFilters(prev => ({ ...prev }));
-                  }
-                }}
-                style={{
-                  padding: "10px 20px 10px 40px",
-                  border: "1px solid #EA650A",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  width: "100%",
-                  maxWidth: "100%",
-                  boxSizing: "border-box",
-                  outline: "none",
-                  backgroundColor: "#fff"
-                }}
-              />
-              {isSearchActive && searchQuery.trim() !== "" && (
-                <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    setIsSearchActive(false);
-                    setFilters(prev => ({ ...prev }));
-                  }}
-                  style={{
-                    position: "absolute",
-                    right: "8px",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: "18px",
-                    color: "#999",
-                    padding: "0",
-                    width: "20px",
-                    height: "20px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
-                  }}
-                >
-                  ×
-                </button>
-              )}
-            </div>
-
-            {activeTab === "Businesses" && (
-              <select
-                value={selectedBusinessCategory}
-                onChange={(e) => setSelectedBusinessCategory(e.target.value)}
-                style={{
-                  padding: "10px 16px",
-                  border: "1px solid #EA650A",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  color: "#4b5563",
-                  outline: "none",
-                  backgroundColor: "#fff",
-                  cursor: "pointer"
-                }}
-              >
-                <option value="">All Categories</option>
-                {businessCategories.map(cat => (
-                  <option key={cat._id} value={cat._id}>{cat.name}</option>
-                ))}
-              </select>
-            )}
-
-            {activeTab === "People" && (
-              <button
-                className="filter-btn"
-                onClick={() => setIsFilterOpen(true)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "10px 20px",
-                  flexShrink: 0,
-                  backgroundColor: "#fff",
-                  border: "1px solid #EA650A",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  color: "#EA650A"
-                }}
-              >
-                <img src={filterIcon} alt="filter" className="filter-icon" style={{ width: "18px", height: "18px" }} />
-                Filter
-              </button>
-            )}
           </div>
         </div>
+
+        {activeTab === "Businesses" && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              marginTop: "-24px",
+              marginBottom: "24px"
+            }}
+          >
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+              <input
+                type="checkbox"
+                id="verifiedOnly"
+                checked={verifiedOnly}
+                onChange={(e) => {
+                  setVerifiedOnly(e.target.checked);
+                  setFeedData([]);
+                  setPage(1);
+                  setHasMore(true);
+                }}
+                style={{ width: "18px", height: "18px", accentColor: "#EA650A", cursor: "pointer" }}
+              />
+              <label
+                htmlFor="verifiedOnly"
+                style={{
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: "#4b5563",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  userSelect: "none"
+                }}
+              >
+                Verified Businesses
+              </label>
+            </div>
+          </div>
+        )}
         <Usercard
           feedData={feedData}
           loading={loadingFeed}

@@ -182,8 +182,16 @@ function App() {
           />
           {/* Public Routes - Accessible without authentication */}
           <Route
-            path="/ask"
+            path="/ask-share"
             element={<Share />}
+          />
+          <Route
+            path="/ask-share/:id"
+            element={<Share />}
+          />
+          <Route
+            path="/ask"
+            element={<Navigate to="/ask-share" replace />}
           />
           <Route
             path="/ask/:id"
@@ -191,7 +199,7 @@ function App() {
           />
           <Route
             path="/share"
-            element={<Navigate to="/ask" replace />}
+            element={<Navigate to="/ask-share" replace />}
           />
           <Route
             path="/share/:id"

@@ -83,6 +83,134 @@
   flex-shrink: 0;
 }
 
+/* Admin Sidebar Group & Submenu */
+.admin-sidebar-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-sidebar-group-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.admin-sidebar-group-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-sidebar-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777E90;
+  margin-left: auto;
+}
+
+.admin-sidebar-item.active .admin-sidebar-chevron {
+  color: #EA650A;
+}
+
+.admin-sidebar-submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-left: 10px;
+  margin-top: 4px;
+  margin-bottom: 6px;
+  margin-left: 18px;
+  border-left: 2px solid #E8EDF3;
+}
+
+.admin-sidebar-subitem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: #777E90;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Inter', sans-serif;
+  text-align: left;
+  width: 100%;
+}
+
+.admin-sidebar-subitem:hover {
+  background-color: #F4F5F6;
+  color: #09122E;
+}
+
+.admin-sidebar-subitem.active {
+  background-color: #FFF4ED;
+  color: #EA650A;
+  font-weight: 600;
+}
+
+.admin-sidebar-subitem svg {
+  flex-shrink: 0;
+  color: #777E90;
+}
+
+.admin-sidebar-subitem.active svg {
+  color: #EA650A;
+}
+
+/* Registration Fields Top Subnav Pills */
+.registration-fields-subnav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  padding: 8px;
+  background: #FFFFFF;
+  border: 1px solid #E8EDF3;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.registration-field-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border: 1px solid transparent;
+  background: #F4F5F6;
+  border-radius: 8px;
+  color: #545A69;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+}
+
+.registration-field-pill:hover {
+  background: #E8EDF3;
+  color: #09122E;
+}
+
+.registration-field-pill.active {
+  background: #EA650A;
+  color: #FFFFFF;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(234, 101, 10, 0.25);
+}
+
+.registration-field-pill.active svg {
+  color: #FFFFFF;
+}
+
 /* Admin Main Content */
 .admin-main-content {
   flex: 1;
@@ -632,6 +760,26 @@
   .admin-sidebar-item {
     white-space: nowrap;
     min-width: fit-content;
+  }
+
+  .admin-sidebar-group {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .admin-sidebar-submenu {
+    display: none;
+  }
+
+  .registration-fields-subnav {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .registration-field-pill {
+    flex-shrink: 0;
   }
 
   .admin-main-content {

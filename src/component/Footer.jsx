@@ -58,13 +58,13 @@ const Footer = () => {
           {isLoggedIn ? (
             <>
               <a href="/" className="footer-link">Home</a>
-              <a href="/ask" className="footer-link">Ask / Share</a>
+              <a href="/ask-share" className="footer-link">Ask / Share</a>
               <a href="/offers" className="footer-link">Offers</a>
               <a href="/directory" className="footer-link">Directory</a>
             </>
           ) : (
             <>
-              <a href="/ask" className="footer-link">Ask / Share</a>
+              <a href="/ask-share" className="footer-link">Ask / Share</a>
               <a href="/features" className="footer-link">Features</a>
               <a href="/resources" className="footer-link">Resources</a>
               <a href="/download-app" className="footer-link">Download App</a>
@@ -74,15 +74,12 @@ const Footer = () => {
 
         <div className="footer-bottom-row">
           <div className="left-section">
-            <p className="copyright desktop-copyright">
+            <p className="copyright">
               copyright © 2026 <span className="highlight">Connect.in</span> All Rights Reserved
-            </p>
-            <p className="agreement-text mobile-agreement">
-              By continuing, you agree to our
             </p>
           </div>
           <div className="legal-links">
-            <a href="/ask" className="legal-link">Ask / Share</a>
+            <a href="/ask-share" className="legal-link">Ask / Share</a>
             <span className="separator">•</span>
             <a href="/directory" className="legal-link">Directory</a>
             <span className="separator">•</span>

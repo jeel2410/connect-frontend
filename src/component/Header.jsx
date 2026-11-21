@@ -381,7 +381,7 @@ const Header = () => {
                     <span className="chat-badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>
                   )}
                 </a>
-                <a href="/ask" className={`nav-link ${location.pathname.startsWith('/ask') || location.pathname.startsWith('/share') ? "active" : ""}`}>
+                <a href="/ask-share" className={`nav-link ${location.pathname.startsWith('/ask-share') || location.pathname.startsWith('/ask') || location.pathname.startsWith('/share') ? "active" : ""}`}>
                   Ask / Share
                 </a>
                 <a href="/offers" className={`nav-link ${location.pathname === "/offers" ? "active" : ""}`}>
@@ -390,7 +390,7 @@ const Header = () => {
               </>
             ) : (
               <>
-                <a href="/ask" className={`nav-link ${location.pathname.startsWith('/ask') || location.pathname.startsWith('/share') ? "active" : ""}`}>
+                <a href="/ask-share" className={`nav-link ${location.pathname.startsWith('/ask-share') || location.pathname.startsWith('/ask') || location.pathname.startsWith('/share') ? "active" : ""}`}>
                   Ask / Share
                 </a>
                 <a href="/features" className="nav-link">
@@ -510,7 +510,7 @@ const Header = () => {
                       <span className="chat-badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>
                     )}
                   </a>
-                  <a href="/ask" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                  <a href="/ask-share" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     Ask / Share
                   </a>
                   <a href="/offers" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
@@ -519,7 +519,7 @@ const Header = () => {
                 </>
               ) : (
                 <>
-                  <a href="/ask" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                  <a href="/ask-share" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     Ask / Share
                   </a>
                   <a href="/features" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>

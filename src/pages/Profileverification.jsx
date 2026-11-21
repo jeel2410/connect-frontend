@@ -399,9 +399,18 @@ const Profileverification = () => {
         const data = await response.json();
 
         if (data.success && data.data) {
-          const { lastCompletedStep, profile, isProfileComplete } = data.data;
+          const { lastCompletedStep, profile, isProfileComplete, hasCompletedBasicProfile } = data.data;
 
-          if (isProfileComplete) {
+          const basicComplete = Boolean(
+            isProfileComplete || 
+            hasCompletedBasicProfile || 
+            (lastCompletedStep >= 1) ||
+            (profile?.fullName && (profile?.gender || profile?.city || profile?.dateOfBirth)) ||
+            profile?.businessName
+          );
+
+          if (basicComplete) {
+            setCookie("isProfileComplete", "true", 7);
             navigate("/", { replace: true });
             return;
           }
@@ -1335,6 +1344,7 @@ const Profileverification = () => {
               <ProgressSteps
                 currentStep={currentStep}
                 totalSteps={totalSteps}
+                isBusiness={formik.values.isBusinessProfile}
               />
             </div>
 

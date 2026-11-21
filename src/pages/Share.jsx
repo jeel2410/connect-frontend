@@ -12,6 +12,7 @@ import '../styles/style.css';
 
 // Sub-components
 import ManageInterestsModal from '../component/Share/ManageInterestsModal';
+import EditQuestionModal from '../component/Share/EditQuestionModal';
 import QuestionFeedCard from '../component/Share/QuestionFeedCard';
 import QuestionDetailView from '../component/Share/QuestionDetailView';
 import ShareSidebar from '../component/Share/ShareSidebar';
@@ -50,9 +51,29 @@ const Share = () => {
   // Active question detail and follow state
   const [selectedQuestionDetail, setSelectedQuestionDetail] = useState(null);
   const [followedUsers, setFollowedUsers] = useState({});
+  const [editingPost, setEditingPost] = useState(null);
 
   const currentUser = getUserProfile();
   const currentUserId = currentUser?.originalid || currentUser?._id || currentUser?.id || currentUser?.userId || currentUser?.user?._id;
+
+  const handlePostUpdated = (updatedPost) => {
+    if (!updatedPost?._id) return;
+    setPosts((prevPosts) =>
+      prevPosts.map((p) => (p._id === updatedPost._id ? { ...p, ...updatedPost } : p))
+    );
+    if (selectedQuestionDetail && selectedQuestionDetail._id === updatedPost._id) {
+      setSelectedQuestionDetail((prev) => ({ ...prev, ...updatedPost }));
+    }
+  };
+
+  const handlePostDeleted = (deletedPostId) => {
+    if (!deletedPostId) return;
+    setPosts((prevPosts) => prevPosts.filter((p) => p._id !== deletedPostId));
+    if (selectedQuestionDetail && selectedQuestionDetail._id === deletedPostId) {
+      setSelectedQuestionDetail(null);
+      navigate('/ask-share');
+    }
+  };
 
   const handleUserClick = (userId) => {
     if (!userId) return;
@@ -157,7 +178,7 @@ const Share = () => {
       prevPosts.map(p => (p._id === targetId ? { ...p, views: currentViews } : p))
     );
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    navigate(`/ask/${targetId}`);
+    navigate(`/ask-share/${targetId}`);
 
     try {
       const token = getCookie('authToken');
@@ -203,7 +224,7 @@ const Share = () => {
             }
           } else {
             toast.error('Question not found');
-            navigate('/ask');
+            navigate('/ask-share');
           }
         } catch (err) {
           console.error('Error fetching question by id:', err);
@@ -353,7 +374,7 @@ const Share = () => {
 
   const handleTabClick = (tabId) => {
     const token = getCookie('authToken');
-    if (!token && tabId !== 'all') {
+    if (!token && tabId !== 'all' && tabId !== 'asked') {
       redirectToLogin('Please log in to view personalized topics');
       return;
     }
@@ -405,7 +426,14 @@ const Share = () => {
       (post.content && post.content.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (post.title && post.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    return matchesSearch;
+    if (!matchesSearch) return false;
+
+    if (activeTab === 'asked') {
+      const isShare = (post.postType === 'share') || (post.targetSegments?.postType === 'share');
+      if (isShare) return false;
+    }
+
+    return true;
   });
 
   return (
@@ -425,7 +453,7 @@ const Share = () => {
                     type="button"
                     onClick={() => {
                       setSelectedQuestionDetail(null);
-                      navigate('/ask');
+                      navigate('/ask-share');
                     }}
                     style={{
                       display: 'inline-flex',
@@ -450,7 +478,7 @@ const Share = () => {
                 {isCreateExpanded && (
                   <CreatePost
                     onPostCreated={(newPost) => {
-                      if (newPost && newPost.isApproved !== false) {
+                      if (newPost) {
                         setPosts((prevPosts) => [newPost, ...prevPosts]);
                       }
                       setIsCreateExpanded(false);
@@ -543,6 +571,7 @@ const Share = () => {
                             }}
                           >
                             <option value="all">All</option>
+                            <option value="asked">Asked</option>
                             <option value="my">My Topics</option>
                             <option value="connections">From Connections</option>
                             <option value="shared">Shared with me</option>
@@ -575,6 +604,7 @@ const Share = () => {
                           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                             {[
                               { id: 'all', label: 'All' },
+                              { id: 'asked', label: 'Asked' },
                               { id: 'my', label: 'My Topics' },
                               { id: 'connections', label: 'From Connections' },
                               { id: 'shared', label: 'Shared with me' }
@@ -662,6 +692,8 @@ const Share = () => {
                             post={post}
                             idx={idx}
                             onQuestionClick={handleQuestionClick}
+                            onUserClick={handleUserClick}
+                            onEditPost={(p) => setEditingPost(p)}
                             onLikePost={handleLikePost}
                             currentUserId={currentUserId}
                             resolveImageUrl={resolveImageUrl}
@@ -677,6 +709,8 @@ const Share = () => {
                   <QuestionDetailView
                     selectedQuestionDetail={selectedQuestionDetail}
                     onLikePost={handleLikePost}
+                    onUserClick={handleUserClick}
+                    onEditPost={(p) => setEditingPost(p)}
                     aiHelpful={aiHelpful}
                     setAiHelpful={setAiHelpful}
                     currentUserId={currentUserId}
@@ -740,6 +774,15 @@ const Share = () => {
         handleSaveInterests={handleSaveInterests}
         savingInterests={savingInterests}
         getTopicIcon={getTopicIcon}
+      />
+
+      {/* Edit Question Modal */}
+      <EditQuestionModal
+        isOpen={Boolean(editingPost)}
+        onClose={() => setEditingPost(null)}
+        post={editingPost}
+        onPostUpdated={handlePostUpdated}
+        onPostDeleted={handlePostDeleted}
       />
 
       <Footer />

@@ -202,8 +202,8 @@ const Likes = () => {
               )}
             </div>
             
-            <div className="likes-page-tabs" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", gap: "10px" }}>
+            <div className="likes-page-tabs-container">
+              <div className="likes-page-tabs">
                 <button
                   className={`likes-page-tab ${activeTab === "likes" ? "active" : ""}`}
                   onClick={() => setActiveTab("likes")}
@@ -217,7 +217,7 @@ const Likes = () => {
                   <img src={blackHeart} alt="You Liked"></img> You Liked
                 </button>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginRight: "16px" }}>
+              <div className="likes-page-business-filter">
                 <input
                   type="checkbox"
                   id="filterBusinesses"
@@ -225,8 +225,8 @@ const Likes = () => {
                   onChange={(e) => setFilterBusinesses(e.target.checked)}
                   style={{ width: "18px", height: "18px", accentColor: "#EA650A", cursor: "pointer" }}
                 />
-                <label htmlFor="filterBusinesses" style={{ fontSize: "14px", fontWeight: "600", color: "#4b5563", cursor: "pointer" }}>
-                  Filter by Businesses
+                <label htmlFor="filterBusinesses" style={{ fontSize: "14px", fontWeight: "600", color: "#4b5563", cursor: "pointer", whiteSpace: "nowrap" }}>
+                  Show Businesses
                 </label>
               </div>
             </div>
