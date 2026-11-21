@@ -57,7 +57,7 @@ const Footer = () => {
         <nav className="footer-nav center-nav">
           {isLoggedIn ? (
             <>
-              <a href="/" className="footer-link">Home</a>
+              <a href="/" className="footer-link">People</a>
               <a href="/ask-share" className="footer-link">Ask / Share</a>
               <a href="/offers" className="footer-link">Offers</a>
               <a href="/directory" className="footer-link">Directory</a>

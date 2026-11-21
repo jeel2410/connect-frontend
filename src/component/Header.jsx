@@ -367,7 +367,7 @@ const Header = () => {
             {isLoggedIn ? (
               <>
                 <a href="/" className={`nav-link ${location.pathname === "/" ? "active" : ""}`}>
-                  Home
+                  People
                 </a>
                 <a href="/connections" className={`nav-link ${location.pathname === "/connections" ? "active" : ""}`}>
                   Connections
@@ -496,7 +496,7 @@ const Header = () => {
               {isLoggedIn ? (
                 <>
                   <a href="/" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                    Home
+                    People
                   </a>
                   <a href="/connections" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     Connections

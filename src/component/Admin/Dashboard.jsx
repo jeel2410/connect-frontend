@@ -128,7 +128,7 @@ const Dashboard = () => {
     },
     {
       id: "likes-shares",
-      title: "Likes & Shares",
+      title: "Likes",
       value: (stats?.totalLikes || 0) + (stats?.totalReshares || 0),
       icon: Heart,
       color: "pink",
@@ -161,7 +161,7 @@ const Dashboard = () => {
     },
     {
       id: "shared",
-      title: "Shared Items",
+      title: "Asked / Shared",
       value: stats?.totalSharedItems || 0,
       icon: Share2,
       color: "emerald",

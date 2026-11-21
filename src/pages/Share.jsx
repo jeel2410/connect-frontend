@@ -503,7 +503,7 @@ const Share = () => {
                       }}>
                         <div>
                           <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '800', color: '#09122E' }}>
-                            Topics
+                            Community Voice
                           </h1>
                           <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#545A69' }}>
                             Ask questions, share knowledge, exchange ideas, and connect with people who can help.

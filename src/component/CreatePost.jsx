@@ -399,7 +399,7 @@ const CreatePost = ({ onPostCreated, isExpanded: propIsExpanded, setIsExpanded: 
                     People who can help
                   </div>
                   <div style={{ fontSize: '11px', color: '#777E90', lineHeight: '1.3' }}>
-                    Let AI find relevant people on Connect
+                    Ask up to 500 prospects in your city and age group
                   </div>
                 </div>
               </div>
