@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Users, ArrowLeftRight, Heart, CreditCard, Share2, MessageSquare, RefreshCw, Loader2, ArrowUpRight, Activity, Smile, TrendingUp, Building2, Download, AlertCircle, X } from "lucide-react";
-import { getDashboardStats, getStatsTrend, downloadStageIncompleteProfilesCSV } from "../../utils/adminApi";
+import { getDashboardStats, getStatsTrend, downloadStageIncompleteProfilesCSV, getStageIncompleteCounts } from "../../utils/adminApi";
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
@@ -429,6 +429,7 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
   const [downloadSuccess, setDownloadSuccess] = useState(null);
   const [showPasscodeModal, setShowPasscodeModal] = useState(false);
   const [pendingDownload, setPendingDownload] = useState(null);
+  const [stageCounts, setStageCounts] = useState({ all: null, '7': null });
 
   const handleRequestDownload = (stage, title, options = {}) => {
     setDownloadError(null);
@@ -474,6 +475,9 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
         const response = await getStatsTrend(statId);
         if (response.success && response.data?.trend) {
           setData(response.data.trend);
+          if (response.data.stageCounts) {
+            setStageCounts(response.data.stageCounts);
+          }
         } else {
           setError(response.message || "Failed to load trend data");
         }
@@ -487,6 +491,29 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
 
     fetchTrend();
   }, [isOpen, statId]);
+
+  // Ensure counts for active scope are fetched if not yet cached
+  useEffect(() => {
+    if (!isOpen || statId !== "complete-profiles") return;
+    if (stageCounts[downloadScope]) return;
+
+    const fetchCounts = async () => {
+      try {
+        const res = await getStageIncompleteCounts(downloadScope);
+        if (res.success && res.data) {
+          setStageCounts(prev => ({ ...prev, [downloadScope]: res.data }));
+        }
+      } catch (err) {
+        console.error("Error loading stage counts:", err);
+      }
+    };
+    fetchCounts();
+  }, [isOpen, statId, downloadScope, stageCounts]);
+
+  const currentCounts = stageCounts[downloadScope] || stageCounts.all || null;
+  const emailCountStr = currentCounts && currentCounts.email !== undefined ? ` (${currentCounts.email.toLocaleString()})` : "";
+  const basicCountStr = currentCounts && currentCounts.basic !== undefined ? ` (${currentCounts.basic.toLocaleString()})` : "";
+  const fullCountStr = currentCounts && currentCounts.full !== undefined ? ` (${currentCounts.full.toLocaleString()})` : "";
 
   if (!isOpen) return null;
 
@@ -720,7 +747,7 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                       }}
                     >
                       <Download size={14} />
-                      Stage 1: Incomplete Email Sign-in
+                      Stage 1: Incomplete Email Sign-in{emailCountStr}
                     </button>
 
                     <button
@@ -743,7 +770,7 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                       }}
                     >
                       <Download size={14} />
-                      Stage 2: Incomplete Basic Profile
+                      Stage 2: Incomplete Basic Profile{basicCountStr}
                     </button>
 
                     <button
@@ -766,7 +793,7 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                       }}
                     >
                       <Download size={14} />
-                      Stage 3: Incomplete Full Profile
+                      Stage 3: Incomplete Full Profile{fullCountStr}
                     </button>
                   </div>
                 </div>
@@ -808,7 +835,7 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                                 cursor: "pointer"
                               }}
                             >
-                              <Download size={10} /> Download Incomplete
+                              <Download size={10} /> Download Incomplete{emailCountStr}
                             </button>
                           </div>
                         </th>
@@ -833,7 +860,7 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                                 cursor: "pointer"
                               }}
                             >
-                              <Download size={10} /> Download Incomplete
+                              <Download size={10} /> Download Incomplete{basicCountStr}
                             </button>
                           </div>
                         </th>
@@ -858,7 +885,7 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                                 cursor: "pointer"
                               }}
                             >
-                              <Download size={10} /> Download Incomplete
+                              <Download size={10} /> Download Incomplete{fullCountStr}
                             </button>
                           </div>
                         </th>

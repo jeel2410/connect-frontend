@@ -2757,6 +2757,28 @@ export const downloadStageIncompleteProfilesCSV = async (stage, { days = "all", 
   }
 };
 
+export const getStageIncompleteCounts = async (days = "all") => {
+  try {
+    const token = getCookie("authToken");
+    const response = await fetch(`${API_BASE_URL}/api/admin/dashboard-stats/incomplete-profiles/counts?days=${days}`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to fetch counts");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching stage incomplete counts:", error);
+    throw error;
+  }
+};
+
 
 
 

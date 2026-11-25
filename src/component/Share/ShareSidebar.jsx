@@ -67,7 +67,25 @@ const ShareSidebar = ({
         8: 'Profile Photo'
       };
 
+  const STEP_ACTION_LABELS = isBusiness
+    ? {
+        1: 'Complete Business Details',
+        2: 'Add Contact Details',
+        3: 'Add Social Links'
+      }
+    : {
+        1: 'Complete Basic Details',
+        2: 'Choose Language',
+        3: 'Choose Habits',
+        4: 'Choose Interests',
+        5: 'Add Skills',
+        6: 'Choose Sports',
+        7: 'Add Work & Industry',
+        8: 'Upload Profile Photo'
+      };
+
   const nextStepName = STEP_LABELS[nextStep] || `Step ${nextStep}`;
+  const nextStepButtonLabel = STEP_ACTION_LABELS[nextStep] || (nextStepName ? `Complete ${nextStepName}` : 'Complete Profile');
   const progressPercent = Math.min(100, Math.round((lastCompletedStep / totalSteps) * 100));
 
   const handleCompleteProfileClick = () => {
@@ -221,7 +239,7 @@ const ShareSidebar = ({
             onMouseEnter={(e) => (e.currentTarget.style.background = '#E04400')}
             onMouseLeave={(e) => (e.currentTarget.style.background = '#FF4D00')}
           >
-            <span>Continue: {nextStepName}</span>
+            <span>{nextStepButtonLabel}</span>
             <ChevronRight size={15} />
           </button>
         </div>
