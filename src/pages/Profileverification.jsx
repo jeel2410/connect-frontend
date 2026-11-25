@@ -79,7 +79,8 @@ const Profileverification = () => {
 
         if (response.ok) {
           const data = await response.json();
-          if (data.success && data.data && data.data.isProfileComplete) {
+          const isExplicitResume = Boolean(location.state?.resumeProfile || location.state?.targetStep);
+          if (data.success && data.data && data.data.isProfileComplete && !isExplicitResume) {
             navigate("/", { replace: true });
             return;
           }
@@ -401,6 +402,8 @@ const Profileverification = () => {
         if (data.success && data.data) {
           const { lastCompletedStep, profile, isProfileComplete, hasCompletedBasicProfile } = data.data;
 
+          const isExplicitResume = Boolean(location.state?.resumeProfile || location.state?.targetStep);
+
           const basicComplete = Boolean(
             isProfileComplete || 
             hasCompletedBasicProfile || 
@@ -409,7 +412,7 @@ const Profileverification = () => {
             profile?.businessName
           );
 
-          if (basicComplete) {
+          if (basicComplete && !isExplicitResume && isProfileComplete) {
             setCookie("isProfileComplete", "true", 7);
             navigate("/", { replace: true });
             return;
@@ -423,7 +426,9 @@ const Profileverification = () => {
             // Immediately set step so the page does not get stuck on Step 1 while lookups resolve
             const currentTotalSteps = profile.isBusinessProfile ? 3 : 8;
             let nextStep;
-            if (lastCompletedStep === currentTotalSteps && !isProfileComplete) {
+            if (location.state?.targetStep) {
+              nextStep = Math.min(Math.max(1, Number(location.state.targetStep)), currentTotalSteps);
+            } else if (lastCompletedStep === currentTotalSteps && !isProfileComplete) {
               nextStep = currentTotalSteps;
             } else if (lastCompletedStep >= currentTotalSteps) {
               nextStep = currentTotalSteps;

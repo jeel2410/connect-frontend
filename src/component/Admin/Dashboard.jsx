@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Users, ArrowLeftRight, Heart, CreditCard, Share2, MessageSquare, RefreshCw, Loader2, ArrowUpRight, Activity, Smile, TrendingUp, Building2 } from "lucide-react";
-import { getDashboardStats, getStatsTrend } from "../../utils/adminApi";
+import { Users, ArrowLeftRight, Heart, CreditCard, Share2, MessageSquare, RefreshCw, Loader2, ArrowUpRight, Activity, Smile, TrendingUp, Building2, Download, AlertCircle, X } from "lucide-react";
+import { getDashboardStats, getStatsTrend, downloadStageIncompleteProfilesCSV } from "../../utils/adminApi";
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
@@ -267,11 +267,202 @@ const Dashboard = () => {
   );
 };
 
+// PasscodeModal sub-component for authorizing downloads
+const PasscodeModal = ({ isOpen, onClose, onConfirm, actionTitle = "Download Mobile Numbers", requiredPasscode = "8282" }) => {
+  const [passcode, setPasscode] = useState("");
+  const [error, setError] = useState("");
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (passcode.trim() === String(requiredPasscode).trim()) {
+      setError("");
+      setPasscode("");
+      onConfirm(passcode.trim());
+      onClose();
+    } else {
+      setError("Incorrect security passcode! Please try again.");
+    }
+  };
+
+  const handleClose = () => {
+    setPasscode("");
+    setError("");
+    onClose();
+  };
+
+  return (
+    <div style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(9, 18, 46, 0.6)",
+      backdropFilter: "blur(4px)",
+      zIndex: 10001,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "20px"
+    }}>
+      <div style={{
+        background: "#ffffff",
+        borderRadius: "16px",
+        maxWidth: "420px",
+        width: "100%",
+        padding: "24px",
+        boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+        position: "relative"
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "#FEF2F2", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <AlertCircle size={18} style={{ color: "#DC2626" }} />
+            </div>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "700", color: "#09122E", fontFamily: "Basier Square, sans-serif" }}>Confirm Security Passcode</h3>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", borderRadius: "50%" }}
+          >
+            <X size={18} color="#777E90" />
+          </button>
+        </div>
+
+        <p style={{ fontSize: "13px", color: "#4B5563", marginBottom: "16px", lineHeight: "1.5" }}>
+          To authorize <strong>{actionTitle}</strong>, please enter the security passcode.
+        </p>
+
+        {error && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "10px 14px",
+            background: "#FEF2F2",
+            border: "1px solid #FECACA",
+            borderRadius: 8,
+            color: "#DC2626",
+            marginBottom: 16,
+            fontSize: 13
+          }}>
+            <AlertCircle size={16} />
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ fontSize: "13px", fontWeight: "600", color: "#353945", marginBottom: "6px", display: "block" }}>
+              Security Passcode <span style={{ color: "#EC7523" }}>*</span>
+            </label>
+            <input
+              type="password"
+              value={passcode}
+              onChange={(e) => { setPasscode(e.target.value); setError(""); }}
+              placeholder="Enter security passcode"
+              required
+              autoFocus
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                border: "1px solid #E2E8F0",
+                borderRadius: "8px",
+                fontSize: "14px",
+                boxSizing: "border-box"
+              }}
+            />
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+            <button
+              type="button"
+              onClick={handleClose}
+              style={{
+                padding: "8px 16px",
+                borderRadius: "8px",
+                border: "1px solid #DDE2EE",
+                background: "#F8F9FA",
+                color: "#4B5563",
+                fontWeight: "600",
+                fontSize: "13px",
+                cursor: "pointer"
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              style={{
+                padding: "8px 20px",
+                borderRadius: "8px",
+                border: "none",
+                background: "#0284C7",
+                color: "#FFFFFF",
+                fontWeight: "600",
+                fontSize: "13px",
+                cursor: "pointer"
+              }}
+            >
+              Authorize & Download
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // TrendModal sub-component definition
 const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: Icon, stats }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Incomplete profile mobile download state
+  const [downloadScope, setDownloadScope] = useState("all");
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState(null);
+  const [downloadSuccess, setDownloadSuccess] = useState(null);
+  const [showPasscodeModal, setShowPasscodeModal] = useState(false);
+  const [pendingDownload, setPendingDownload] = useState(null);
+
+  const handleRequestDownload = (stage, title, options = {}) => {
+    setDownloadError(null);
+    setDownloadSuccess(null);
+    setPendingDownload({
+      stage,
+      title,
+      options: {
+        days: options.date ? undefined : (options.days || downloadScope),
+        date: options.date,
+      }
+    });
+    setShowPasscodeModal(true);
+  };
+
+  const handleConfirmDownload = async (passcode) => {
+    if (!pendingDownload) return;
+    try {
+      setDownloading(true);
+      setDownloadError(null);
+      await downloadStageIncompleteProfilesCSV(pendingDownload.stage, {
+        days: pendingDownload.options.days,
+        date: pendingDownload.options.date,
+        passcode: passcode
+      });
+      setDownloadSuccess(`Successfully downloaded mobile numbers for ${pendingDownload.title}!`);
+      setTimeout(() => setDownloadSuccess(null), 6000);
+    } catch (err) {
+      setDownloadError(err.message || "Failed to download CSV");
+    } finally {
+      setDownloading(false);
+      setPendingDownload(null);
+    }
+  };
 
   useEffect(() => {
     if (!isOpen || !statId) return;
@@ -437,6 +628,150 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                 )}
               </div>
 
+              {/* Action Box for Downloading Incomplete Profile Stages */}
+              {statId === "complete-profiles" && (
+                <div style={{
+                  background: "#F8FAFC",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "14px",
+                  padding: "16px 20px",
+                  marginBottom: "16px"
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "14px" }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <Download size={16} color="#0284C7" />
+                        <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "700", color: "#0F172A", fontFamily: "Basier Square, sans-serif" }}>
+                          Download Incomplete Stage Profiles (Mobile Numbers Only)
+                        </h4>
+                      </div>
+                      <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#64748B" }}>
+                        One-click download mobile numbers of users dropped off at each registration stage (Mobile Numbers Only)
+                      </p>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#E2E8F0", borderRadius: 8, padding: 3 }}>
+                      <button
+                        type="button"
+                        onClick={() => setDownloadScope("all")}
+                        style={{
+                          border: "none",
+                          background: downloadScope === "all" ? "#fff" : "transparent",
+                          color: downloadScope === "all" ? "#0F172A" : "#64748B",
+                          fontWeight: "600",
+                          fontSize: "12px",
+                          padding: "5px 12px",
+                          borderRadius: 6,
+                          cursor: "pointer",
+                          boxShadow: downloadScope === "all" ? "0 1px 2px rgba(0,0,0,0.06)" : "none"
+                        }}
+                      >
+                        All Time
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDownloadScope("7")}
+                        style={{
+                          border: "none",
+                          background: downloadScope === "7" ? "#fff" : "transparent",
+                          color: downloadScope === "7" ? "#0F172A" : "#64748B",
+                          fontWeight: "600",
+                          fontSize: "12px",
+                          padding: "5px 12px",
+                          borderRadius: 6,
+                          cursor: "pointer",
+                          boxShadow: downloadScope === "7" ? "0 1px 2px rgba(0,0,0,0.06)" : "none"
+                        }}
+                      >
+                        Last 7 Days
+                      </button>
+                    </div>
+                  </div>
+
+                  {downloadError && (
+                    <div style={{ padding: "8px 12px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, color: "#DC2626", fontSize: 12, marginBottom: 12 }}>
+                      {downloadError}
+                    </div>
+                  )}
+                  {downloadSuccess && (
+                    <div style={{ padding: "8px 12px", background: "#ECFDF5", border: "1px solid #A7F3D0", borderRadius: 8, color: "#059669", fontSize: 12, marginBottom: 12 }}>
+                      {downloadSuccess}
+                    </div>
+                  )}
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
+                    <button
+                      type="button"
+                      disabled={downloading}
+                      onClick={() => handleRequestDownload('email', `Incomplete Email Sign-in (${downloadScope === 'all' ? 'All Time' : 'Last 7 Days'})`)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        background: "#EFF6FF",
+                        border: "1px solid #BFDBFE",
+                        borderRadius: 10,
+                        padding: "10px 14px",
+                        color: "#1D4ED8",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: downloading ? "not-allowed" : "pointer"
+                      }}
+                    >
+                      <Download size={14} />
+                      Stage 1: Incomplete Email Sign-in
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={downloading}
+                      onClick={() => handleRequestDownload('basic', `Incomplete Basic Profile (${downloadScope === 'all' ? 'All Time' : 'Last 7 Days'})`)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        background: "#FFFBEB",
+                        border: "1px solid #FDE68A",
+                        borderRadius: 10,
+                        padding: "10px 14px",
+                        color: "#B45309",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: downloading ? "not-allowed" : "pointer"
+                      }}
+                    >
+                      <Download size={14} />
+                      Stage 2: Incomplete Basic Profile
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={downloading}
+                      onClick={() => handleRequestDownload('full', `Incomplete Full Profile (${downloadScope === 'all' ? 'All Time' : 'Last 7 Days'})`)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        background: "#ECFDF5",
+                        border: "1px solid #A7F3D0",
+                        borderRadius: 10,
+                        padding: "10px 14px",
+                        color: "#047857",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: downloading ? "not-allowed" : "pointer"
+                      }}
+                    >
+                      <Download size={14} />
+                      Stage 3: Incomplete Full Profile
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Table list */}
               <div className="trend-table-container">
                 <table className="trend-table">
@@ -452,9 +787,81 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                       <tr>
                         <th>Date</th>
                         <th style={{ textAlign: "right" }}>OTP Done</th>
-                        <th style={{ textAlign: "right" }}>EMAIL Verified</th>
-                        <th style={{ textAlign: "right" }}>BASIC PROFILE</th>
-                        <th style={{ textAlign: "right" }}>FULL PROFILE</th>
+                        <th style={{ textAlign: "right" }}>
+                          <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                            <span>EMAIL Verified</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRequestDownload('email', `Incomplete Email Sign-in (${downloadScope === 'all' ? 'All Time' : 'Last 7 Days'})`)}
+                              title="Download mobile numbers of all users who haven't completed email signin"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                border: "1px solid #BFDBFE",
+                                background: "#EFF6FF",
+                                color: "#1D4ED8",
+                                borderRadius: 6,
+                                padding: "2px 6px",
+                                fontSize: "11px",
+                                fontWeight: "600",
+                                cursor: "pointer"
+                              }}
+                            >
+                              <Download size={10} /> Download Incomplete
+                            </button>
+                          </div>
+                        </th>
+                        <th style={{ textAlign: "right" }}>
+                          <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                            <span>BASIC PROFILE</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRequestDownload('basic', `Incomplete Basic Profile (${downloadScope === 'all' ? 'All Time' : 'Last 7 Days'})`)}
+                              title="Download mobile numbers of all users who haven't completed basic profile"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                border: "1px solid #FDE68A",
+                                background: "#FFFBEB",
+                                color: "#B45309",
+                                borderRadius: 6,
+                                padding: "2px 6px",
+                                fontSize: "11px",
+                                fontWeight: "600",
+                                cursor: "pointer"
+                              }}
+                            >
+                              <Download size={10} /> Download Incomplete
+                            </button>
+                          </div>
+                        </th>
+                        <th style={{ textAlign: "right" }}>
+                          <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                            <span>FULL PROFILE</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRequestDownload('full', `Incomplete Full Profile (${downloadScope === 'all' ? 'All Time' : 'Last 7 Days'})`)}
+                              title="Download mobile numbers of all users who haven't completed full profile"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                border: "1px solid #A7F3D0",
+                                background: "#ECFDF5",
+                                color: "#047857",
+                                borderRadius: 6,
+                                padding: "2px 6px",
+                                fontSize: "11px",
+                                fontWeight: "600",
+                                cursor: "pointer"
+                              }}
+                            >
+                              <Download size={10} /> Download Incomplete
+                            </button>
+                          </div>
+                        </th>
                       </tr>
                     ) : (
                       <tr>
@@ -485,28 +892,88 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                               {(row.otpDone ?? row.newSignups ?? 0).toLocaleString()}
                             </td>
                             <td className="trend-td-count" style={{ color: "#2563EB", fontWeight: "600", textAlign: "right" }}>
-                              {(row.emailVerified ?? row.completedVerified ?? 0).toLocaleString()}
-                              {(row.otpDone ?? row.newSignups ?? 0) > 0 && (
-                                <span style={{ fontSize: "12px", color: "#64748B", marginLeft: "4px", fontWeight: "500" }}>
-                                  ({(((row.emailVerified ?? row.completedVerified ?? 0) / (row.otpDone ?? row.newSignups ?? 1)) * 100).toFixed(1)}%)
-                                </span>
-                              )}
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 5 }}>
+                                <span>{(row.emailVerified ?? row.completedVerified ?? 0).toLocaleString()}</span>
+                                {(row.otpDone ?? row.newSignups ?? 0) > 0 && (
+                                  <span style={{ fontSize: "12px", color: "#64748B", fontWeight: "500" }}>
+                                    ({(((row.emailVerified ?? row.completedVerified ?? 0) / (row.otpDone ?? row.newSignups ?? 1)) * 100).toFixed(1)}%)
+                                  </span>
+                                )}
+                                {row.rawDate && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRequestDownload('email', `Incomplete Email Sign-in (${row.date})`, { date: row.rawDate })}
+                                    title={`Download incomplete email mobiles for ${row.date}`}
+                                    style={{
+                                      border: "none",
+                                      background: "transparent",
+                                      color: "#60A5FA",
+                                      cursor: "pointer",
+                                      padding: 2,
+                                      display: "inline-flex",
+                                      alignItems: "center"
+                                    }}
+                                  >
+                                    <Download size={12} />
+                                  </button>
+                                )}
+                              </div>
                             </td>
                             <td className="trend-td-count" style={{ color: "#D97706", fontWeight: "600", textAlign: "right" }}>
-                              {(row.basicProfile ?? 0).toLocaleString()}
-                              {(row.otpDone ?? row.newSignups ?? 0) > 0 && (
-                                <span style={{ fontSize: "12px", color: "#64748B", marginLeft: "4px", fontWeight: "500" }}>
-                                  ({(((row.basicProfile ?? 0) / (row.otpDone ?? row.newSignups ?? 1)) * 100).toFixed(1)}%)
-                                </span>
-                              )}
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 5 }}>
+                                <span>{(row.basicProfile ?? 0).toLocaleString()}</span>
+                                {(row.otpDone ?? row.newSignups ?? 0) > 0 && (
+                                  <span style={{ fontSize: "12px", color: "#64748B", fontWeight: "500" }}>
+                                    ({(((row.basicProfile ?? 0) / (row.otpDone ?? row.newSignups ?? 1)) * 100).toFixed(1)}%)
+                                  </span>
+                                )}
+                                {row.rawDate && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRequestDownload('basic', `Incomplete Basic Profile (${row.date})`, { date: row.rawDate })}
+                                    title={`Download incomplete basic profile mobiles for ${row.date}`}
+                                    style={{
+                                      border: "none",
+                                      background: "transparent",
+                                      color: "#FBBF24",
+                                      cursor: "pointer",
+                                      padding: 2,
+                                      display: "inline-flex",
+                                      alignItems: "center"
+                                    }}
+                                  >
+                                    <Download size={12} />
+                                  </button>
+                                )}
+                              </div>
                             </td>
                             <td className="trend-td-count" style={{ color: currentTheme.main, fontWeight: "700", textAlign: "right" }}>
-                              {(row.fullProfile ?? row.count ?? 0).toLocaleString()}
-                              {(row.otpDone ?? row.newSignups ?? 0) > 0 && (
-                                <span style={{ fontSize: "12px", color: "#64748B", marginLeft: "4px", fontWeight: "500" }}>
-                                  ({(((row.fullProfile ?? row.count ?? 0) / (row.otpDone ?? row.newSignups ?? 1)) * 100).toFixed(1)}%)
-                                </span>
-                              )}
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 5 }}>
+                                <span>{(row.fullProfile ?? row.count ?? 0).toLocaleString()}</span>
+                                {(row.otpDone ?? row.newSignups ?? 0) > 0 && (
+                                  <span style={{ fontSize: "12px", color: "#64748B", fontWeight: "500" }}>
+                                    ({(((row.fullProfile ?? row.count ?? 0) / (row.otpDone ?? row.newSignups ?? 1)) * 100).toFixed(1)}%)
+                                  </span>
+                                )}
+                                {row.rawDate && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRequestDownload('full', `Incomplete Full Profile (${row.date})`, { date: row.rawDate })}
+                                    title={`Download incomplete full profile mobiles for ${row.date}`}
+                                    style={{
+                                      border: "none",
+                                      background: "transparent",
+                                      color: "#34D399",
+                                      cursor: "pointer",
+                                      padding: 2,
+                                      display: "inline-flex",
+                                      alignItems: "center"
+                                    }}
+                                  >
+                                    <Download size={12} />
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </>
                         ) : (
@@ -519,6 +986,15 @@ const TrendModal = ({ isOpen, onClose, statId, statTitle, statColor, statIcon: I
                   </tbody>
                 </table>
               </div>
+
+              {/* Passcode Confirmation Modal */}
+              <PasscodeModal
+                isOpen={showPasscodeModal}
+                onClose={() => setShowPasscodeModal(false)}
+                onConfirm={handleConfirmDownload}
+                actionTitle={pendingDownload?.title}
+                requiredPasscode="8282"
+              />
             </>
           )}
         </div>
