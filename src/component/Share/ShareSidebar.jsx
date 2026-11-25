@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Settings, TrendingUp, ChevronRight, Users, Building2, Check, Plus, Award, ChevronDown, ChevronUp
 } from 'lucide-react';
+import { getCookie, getUserProfile } from '../../utils/auth';
 
 const isObjectIdStr = (str) => typeof str === 'string' && /^[0-9a-fA-F]{24}$/.test(str.trim());
 const cleanStr = (val, fallback = '') => (!val || typeof val !== 'string' || isObjectIdStr(val)) ? fallback : val.trim();
 
 const ShareSidebar = ({
   selectedQuestionDetail,
+  currentUserProfile,
   userInterests = [],
   allAvailableInterests = [],
   toggleInterestPill,
@@ -24,7 +27,58 @@ const ShareSidebar = ({
   getAvatar,
   formatTimeAgo = () => 'Recently'
 }) => {
+  const navigate = useNavigate();
   const isMobileInitial = typeof window !== 'undefined' ? window.innerWidth <= 991 : false;
+
+  const token = typeof document !== 'undefined' ? getCookie('authToken') : null;
+  const profile = currentUserProfile || getUserProfile();
+  const isLoggedIn = Boolean(token && (profile || getCookie('userPhoneNumber')));
+  const isBusiness = Boolean(profile?.isBusinessProfile);
+  const totalSteps = isBusiness ? 3 : 8;
+  const lastCompletedStep = Number(profile?.lastCompletedStep) || 0;
+
+  // A profile is fully complete only if all steps are completed
+  const hasCompletedAllSteps = lastCompletedStep >= totalSteps;
+  const isLegacyCompleted = Boolean(
+    profile?.isProfileComplete === true &&
+    (profile?.profileImage || profile?.photo) &&
+    (isBusiness ? (profile?.website || profile?.whatsappNumber) : (profile?.industry || profile?.company))
+  );
+  const isProfileCompleted = hasCompletedAllSteps || isLegacyCompleted;
+
+  const shouldShowProfilePrompt = isLoggedIn && !isProfileCompleted;
+
+  const nextStep = Math.min(lastCompletedStep + 1, totalSteps);
+
+  const STEP_LABELS = isBusiness
+    ? {
+        1: 'Business Details',
+        2: 'Contact Details',
+        3: 'Social Links'
+      }
+    : {
+        1: 'Basic Details',
+        2: 'Language',
+        3: 'Habits',
+        4: 'Interests',
+        5: 'Skills',
+        6: 'Sports',
+        7: 'Work & Industry',
+        8: 'Profile Photo'
+      };
+
+  const nextStepName = STEP_LABELS[nextStep] || `Step ${nextStep}`;
+  const progressPercent = Math.min(100, Math.round((lastCompletedStep / totalSteps) * 100));
+
+  const handleCompleteProfileClick = () => {
+    navigate('/profile-complete', {
+      state: {
+        resumeProfile: true,
+        targetStep: nextStep,
+        phoneNumber: profile?.phoneNumber || localStorage.getItem('phoneNumber') || ''
+      }
+    });
+  };
 
   // Your Interests: Folded (collapsed) by default on BOTH Desktop and Mobile
   const [isInterestsOpen, setIsInterestsOpen] = useState(false);
@@ -46,6 +100,132 @@ const ShareSidebar = ({
 
   return (
     <>
+      {/* Complete Your Profile Prompt (shown whenever user profile is incomplete) */}
+      {shouldShowProfilePrompt && (
+        <div
+          className="share-sidebar-card"
+          onClick={handleCompleteProfileClick}
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            border: '1px solid #FFE4D6',
+            padding: '20px 24px',
+            textAlign: 'left',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            boxShadow: '0 2px 8px rgba(255, 77, 0, 0.05)',
+            marginBottom: '20px'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#FF4D00';
+            e.currentTarget.style.boxShadow = '0 4px 14px rgba(255, 77, 0, 0.12)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#FFE4D6';
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 77, 0, 0.05)';
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '10px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#09122E' }}>
+                Complete Your Profile
+              </h3>
+              <span
+                style={{
+                  fontSize: '11px',
+                  background: '#FFF0E6',
+                  color: '#FF4D00',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  fontWeight: '600'
+                }}
+              >
+                {lastCompletedStep}/{totalSteps} completed
+              </span>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                background: '#FFF0E6',
+                flexShrink: 0
+              }}
+            >
+              <ChevronRight size={16} color="#FF4D00" />
+            </div>
+          </div>
+
+          <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#777E90', lineHeight: '1.5' }}>
+            Your profile is incomplete. Finish setup to increase visibility and connect with professionals.
+          </p>
+
+          {/* Progress Tracker */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#545A69', marginBottom: '6px' }}>
+            <span>Next up: <strong style={{ color: '#09122E' }}>{nextStepName}</strong></span>
+            <span style={{ fontWeight: '600', color: '#FF4D00' }}>{progressPercent}%</span>
+          </div>
+          <div
+            style={{
+              width: '100%',
+              height: '6px',
+              background: '#F1F4F9',
+              borderRadius: '3px',
+              overflow: 'hidden',
+              marginBottom: '14px'
+            }}
+          >
+            <div
+              style={{
+                width: `${Math.max(8, progressPercent)}%`,
+                height: '100%',
+                background: '#FF4D00',
+                borderRadius: '3px',
+                transition: 'width 0.3s ease'
+              }}
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCompleteProfileClick();
+            }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              padding: '9px 16px',
+              borderRadius: '10px',
+              border: 'none',
+              background: '#FF4D00',
+              color: '#FFFFFF',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'background 0.15s ease'
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#E04400')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#FF4D00')}
+          >
+            <span>Continue: {nextStepName}</span>
+            <ChevronRight size={15} />
+          </button>
+        </div>
+      )}
       {!selectedQuestionDetail ? (
         <>
           {/* Main Feed Sidebar */}

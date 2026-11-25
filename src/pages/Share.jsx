@@ -42,6 +42,7 @@ const Share = () => {
   }, []);
 
   // Dynamic Interest Block States
+  const [currentUserProfile, setCurrentUserProfile] = useState(() => getUserProfile());
   const [userInterests, setUserInterests] = useState([]);
   const [allAvailableInterests, setAllAvailableInterests] = useState([]);
   const [isManageInterestsOpen, setIsManageInterestsOpen] = useState(false);
@@ -319,6 +320,7 @@ const Share = () => {
         if (profRes.ok) {
           const profData = await profRes.json();
           const profile = profData?.data?.profile || profData?.profile || {};
+          setCurrentUserProfile(profile);
           if (Array.isArray(profile.interests)) {
             setUserInterests(profile.interests);
           }
@@ -739,6 +741,7 @@ const Share = () => {
                 <div className="share-right-column" style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <ShareSidebar
                     selectedQuestionDetail={selectedQuestionDetail}
+                    currentUserProfile={currentUserProfile}
                     userInterests={userInterests}
                     allAvailableInterests={allAvailableInterests}
                     toggleInterestPill={toggleInterestPill}

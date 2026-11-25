@@ -558,7 +558,7 @@ function OfferEmailSection() {
         </div>
         <div>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#09122E", fontFamily: "Basier Square, sans-serif" }}>Broadcast Offer Email</h3>
-          <p style={{ margin: 0, fontSize: 13, color: "#777E90" }}>Send a promotional offer email to users based on registration date</p>
+          <p style={{ margin: 0, fontSize: 13, color: "#777E90" }}>Send a promotional offer email to active users based on recent activity</p>
         </div>
       </div>
 
@@ -569,18 +569,18 @@ function OfferEmailSection() {
       <form onSubmit={handleSubmit}>
         <div style={{ display: "flex", gap: 20, marginBottom: 20 }}>
           <div className="form-groups" style={{ flex: 1, marginBottom: 0 }}>
-            <label>Registration Duration</label>
+            <label>Active Users Window</label>
             <select
               className="form-input"
               value={formData.days}
               onChange={(e) => setFormData({ ...formData, days: e.target.value })}
               disabled={submitting}
             >
-              <option value="7">Registered in last 7 days</option>
-              <option value="15">Registered in last 15 days</option>
-              <option value="30">Registered in last 30 days</option>
-              <option value="45">Registered in last 45 days</option>
-              <option value="all">All Users</option>
+              <option value="7">Active in last 7 days</option>
+              <option value="15">Active in last 15 days</option>
+              <option value="30">Active in last 30 days</option>
+              <option value="45">Active in last 45 days</option>
+              <option value="all">All Users (Any time)</option>
             </select>
           </div>
           
@@ -870,18 +870,18 @@ function IncompleteProfileSmsSection() {
       <form onSubmit={handleSubmit}>
         <div style={{ display: "flex", gap: 20, marginBottom: 20 }}>
           <div className="form-groups" style={{ flex: 1, marginBottom: 0 }}>
-            <label>Registration Duration</label>
+            <label>Active Users Window</label>
             <select
               className="form-input"
               value={formData.days}
               onChange={(e) => setFormData({ ...formData, days: e.target.value })}
               disabled={submitting}
             >
-              <option value="7">Registered in last 7 days</option>
-              <option value="15">Registered in last 15 days</option>
-              <option value="30">Registered in last 30 days</option>
-              <option value="45">Registered in last 45 days</option>
-              <option value="all">All Time</option>
+              <option value="7">Active in last 7 days</option>
+              <option value="15">Active in last 15 days</option>
+              <option value="30">Active in last 30 days</option>
+              <option value="45">Active in last 45 days</option>
+              <option value="all">All Users (Any time)</option>
             </select>
           </div>
           
@@ -1103,7 +1103,7 @@ function GeneralSmsSection() {
         </div>
         <div>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#09122E", fontFamily: "Basier Square, sans-serif" }}>General SMS Broadcast</h3>
-          <p style={{ margin: 0, fontSize: 13, color: "#777E90" }}>Send an SMS to users based on their registration date</p>
+          <p style={{ margin: 0, fontSize: 13, color: "#777E90" }}>Send an SMS to active users based on their recent activity</p>
         </div>
       </div>
 
@@ -1114,18 +1114,18 @@ function GeneralSmsSection() {
       <form onSubmit={handleSubmit}>
         <div style={{ display: "flex", gap: 20, marginBottom: 20 }}>
           <div className="form-groups" style={{ flex: 1, marginBottom: 0 }}>
-            <label>Registration Duration</label>
+            <label>Active Users Window</label>
             <select
               className="form-input"
               value={formData.days}
               onChange={(e) => setFormData({ ...formData, days: e.target.value })}
               disabled={submitting}
             >
-              <option value="7">Registered in last 7 days</option>
-              <option value="15">Registered in last 15 days</option>
-              <option value="30">Registered in last 30 days</option>
-              <option value="45">Registered in last 45 days</option>
-              <option value="all">All Users</option>
+              <option value="7">Active in last 7 days</option>
+              <option value="15">Active in last 15 days</option>
+              <option value="30">Active in last 30 days</option>
+              <option value="45">Active in last 45 days</option>
+              <option value="all">All Users (Any time)</option>
             </select>
           </div>
           

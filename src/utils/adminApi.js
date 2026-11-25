@@ -2712,6 +2712,52 @@ export const sendTestIncompleteSms = async (data) => {
   }
 };
 
+export const downloadStageIncompleteProfilesCSV = async (stage, { days = "all", date = null, passcode } = {}) => {
+  try {
+    const token = getCookie("authToken");
+    const queryParams = new URLSearchParams({
+      stage,
+      days,
+      passcode
+    });
+    if (date) {
+      queryParams.append("date", date);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/dashboard-stats/incomplete-profiles/csv?${queryParams.toString()}`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "x-passcode": passcode
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to download CSV");
+    }
+
+    const blob = await response.blob();
+    const disposition = response.headers.get("Content-Disposition") || "";
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    const filename = match ? match[1] : `incomplete_${stage}_stage_mobiles.csv`;
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    return { success: true, filename };
+  } catch (error) {
+    console.error("Error downloading incomplete stage CSV:", error);
+    throw error;
+  }
+};
+
+
 
 
 
